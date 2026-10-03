@@ -193,12 +193,12 @@ def test_eval_ride_and_report(world, tmp_path):
     assert row["bump_hit"] + row["bump_miss"] == 3 and row["lamp_hit"] + row["lamp_miss"] == 1
     rows = pd.DataFrame([row, {**row, "condition": "GPS error 10 m", "bump_hit": 1, "bump_miss": 2}])
     text = sim.write_report(rows, tmp_path / "acc.md", seeds=1)
-    assert "MEASURED IN SIMULATION" in text and (tmp_path / "acc.md").read_text() == text
+    assert "MEASURED IN SIMULATION" in text and (tmp_path / "acc.md").read_text(encoding="utf-8") == text
     assert "| baseline | 1 | 3 | 100.0% |" in text and "| GPS error 10 m | 1 | 3 | 33.3% |" in text
 
 
 def test_committed_report_is_labelled_as_simulation():
-    text = sim.REPORT_FILE.read_text()
+    text = sim.REPORT_FILE.read_text(encoding="utf-8")
     assert text.startswith("# Sensor detection accuracy: MEASURED IN SIMULATION")
     assert all(label in text for label, _ in sim.EVAL_CONDITIONS)
 

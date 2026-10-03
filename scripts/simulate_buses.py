@@ -91,7 +91,7 @@ DEMO_RIDES = [("tram17_day_01", 1, False), ("tram17_night_01", 2, True)]  # (nam
 @lru_cache(maxsize=1)
 def road_graph(path: Path = GEOJSON):
     """Undirected graph of `road` segments: (node lon/lat, edge list, csr builder inputs)."""
-    feats = [f for f in json.loads(Path(path).read_text())["features"] if f["properties"]["mode"] == "road"]
+    feats = [f for f in json.loads(Path(path).read_text(encoding="utf-8"))["features"] if f["properties"]["mode"] == "road"]
     nodes: dict[tuple[float, float], int] = {}
 
     def nid(c) -> int:
@@ -261,7 +261,7 @@ def write_demo_rides(defects: list[dict], out_dir: Path = synth.DEMO_DIR) -> lis
 
 
 def load_world(path: Path = WORLD_FILE) -> dict:
-    return json.loads(Path(path).read_text()) if Path(path).exists() else make_world()
+    return json.loads(Path(path).read_text(encoding="utf-8")) if Path(path).exists() else make_world()
 
 
 def vehicle_world(route: synth.Route, defects: list[dict]) -> tuple[dict, list[dict]]:
@@ -395,7 +395,7 @@ def write_report(rows: pd.DataFrame, path: Path, *, seeds: int) -> str:
         "of the fleet every ground-truth defect became exactly one incident; that is a single run, not a statistic.",
         "",
     ])
-    Path(path).write_text(text)
+    Path(path).write_text(text, encoding="utf-8")
     return text
 
 
@@ -692,7 +692,7 @@ def main(argv: list[str] | None = None) -> None:
 
     if args.make_world:
         world = make_world()
-        Path(args.world).write_text(json.dumps(world, ensure_ascii=False, indent=1) + "\n")
+        Path(args.world).write_text(json.dumps(world, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
         print(f"wrote {args.world}: {len(world['defects'])} defects")
         for path in write_demo_rides(world["defects"]):
             print(f"wrote {path.relative_to(REPO_ROOT)}")
@@ -716,7 +716,7 @@ def main(argv: list[str] | None = None) -> None:
     print(f"{len(vehicles)} vehicles, {args.rides} trips each, {'DRY RUN' if args.dry_run else args.api}"
           f" -> {log_path.relative_to(REPO_ROOT)}", flush=True)
     lock, stop = threading.Lock(), threading.Event()
-    with log_path.open("w") as log:
+    with log_path.open("w", encoding="utf-8") as log:
         threads = [threading.Thread(target=run_vehicle, args=(*v, args, defects, log, lock, stop),
                                     name=v[0], daemon=True) for v in vehicles]
         for th in threads:
