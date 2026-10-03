@@ -6,10 +6,13 @@
 With --incident the script first shows the incident (requesting a verification
 vehicle if none is assigned yet), then uploads the ride and prints how the ride
 moved the incident's confidence (candidate -> likely -> verified, or down on a clean pass).
+The incident endpoints are admin-only: pass --token (or CITYECHO_API_TOKEN), or the script signs in
+through dev sign-in (local stack) as the first ADMIN_EMAILS entry.
 """
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import time
 from pathlib import Path
@@ -18,6 +21,8 @@ import httpx
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEMO_DIR = REPO_ROOT / "data" / "demo"
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 
 def _default_file() -> Path | None:
@@ -29,6 +34,19 @@ def _get(client: httpx.Client, path: str) -> dict:
     r = client.get(path)
     r.raise_for_status()
     return r.json()
+
+
+def admin_token(client: httpx.Client) -> str | None:
+    """Dev sign-in (local stack, AUTH_DEV_LOGIN) as the first ADMIN_EMAILS entry -> bearer token, or None."""
+    from backend.config import settings
+
+    if not settings.admin_emails:
+        return None
+    try:
+        r = client.post("/auth/dev", json={"email": settings.admin_emails[0]})
+        return r.json()["token"] if r.status_code == 200 else None
+    except httpx.HTTPError:
+        return None
 
 
 def describe(inc: dict) -> str:
@@ -55,6 +73,8 @@ def main() -> None:
     ap.add_argument("--mode", default="tram", choices=["tram", "road"])
     ap.add_argument("--incident", type=int, default=None, help="incident id to verify with this ride")
     ap.add_argument("--wait", type=float, default=0, help="seconds to pause before uploading (stage drama)")
+    ap.add_argument("--token", default=os.getenv("CITYECHO_API_TOKEN"),
+                    help="admin bearer token for the incident endpoints (default: dev sign-in as the admin)")
     args = ap.parse_args()
 
     path = args.file or _default_file()
@@ -68,6 +88,11 @@ def main() -> None:
             sys.exit(f"API not reachable at {args.api}: {exc}")
 
         if args.incident is not None:
+            token = args.token or admin_token(client)
+            if not token:
+                sys.exit("the incident endpoints are admin-only: pass --token, or enable dev sign-in "
+                         "(AUTH_DEV_LOGIN=1) with an ADMIN_EMAILS entry in .env")
+            client.headers["Authorization"] = f"Bearer {token}"
             try:
                 inc = _get(client, f"/incidents/{args.incident}")
             except httpx.HTTPStatusError as exc:
@@ -75,7 +100,10 @@ def main() -> None:
             print(describe(inc))
             vehicle = inc.get("verify_vehicle")
             if not vehicle and not inc.get("has_sensor"):
-                req = client.post(f"/incidents/{args.incident}/verify").json()
+                r = client.post(f"/incidents/{args.incident}/verify")
+                if r.status_code >= 400:
+                    sys.exit(f"verification request failed ({r.status_code}): {r.text}")
+                req = r.json()
                 vehicle, eta = req.get("vehicle"), req.get("eta_min")
                 print(f"verification requested: {vehicle or 'next vehicle'}" + (f", ETA ~{eta} min" if eta is not None else ""))
             print(f"waiting for {vehicle or f'{args.mode} {args.line}'}…", flush=True)

@@ -284,7 +284,7 @@ def test_scenario_reports_are_dated_before_the_ride(monkeypatch, world):
     sent = []
     monkeypatch.setattr(sim, "stream_ride", lambda *a, **k: sent.append(a) or {"bumps": 4, "ride_id": 9})
     monkeypatch.setattr(sim, "find_incident", lambda api, spot, *a, **k: None)
-    args = types_ns(api="http://x", token=None, chunk_s=10, speed=0)
+    args = types_ns(api="http://x", token="admin-token", chunk_s=10, speed=0)
     first, second = sim.scenario_buses(sim.HIDDEN_POTHOLE)
     show = sim.Scenario(args, {first: "k1", second: "k2"}, world)
     show.api = FakeApi([])
@@ -300,3 +300,9 @@ def test_scenario_reports_are_dated_before_the_ride(monkeypatch, world):
 def types_ns(**kw):
     from types import SimpleNamespace
     return SimpleNamespace(**kw)
+
+
+def test_scenarios_refuse_to_run_without_an_admin_token(monkeypatch, world):
+    monkeypatch.setattr(sim, "admin_token", lambda api: None)
+    with pytest.raises(SystemExit, match="admin-only"):
+        sim.Scenario(types_ns(api="http://x", token=None, chunk_s=10, speed=0), {}, world)

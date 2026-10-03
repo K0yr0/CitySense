@@ -644,6 +644,9 @@ class Scenario:
         self.api = Api(args.api, args.token)
         if self.api.token is None:  # the incident detail and bulk reports are admin-only
             self.api.token = admin_token(self.api)
+        if self.api.token is None:
+            sys.exit("the scenarios read admin-only endpoints: pass --token (or CITYECHO_API_TOKEN), or enable "
+                     "dev sign-in (AUTH_DEV_LOGIN=1) with an ADMIN_EMAILS entry in .env")
         self.trip = 0  # alternate directions across the whole show
 
     def say(self, text: str) -> None:
