@@ -48,7 +48,6 @@ def test_responses_endpoint_moved_out_of_incidents():
 def test_stub_routers():
     client = TestClient(app)
     assert client.get("/mobile/ping").json() == {"ok": True}
-    r = client.post("/devices/stream", json={})
-    assert r.status_code == 501 and r.json() == {"detail": "not implemented yet (owner: C)"}
+    assert client.post("/devices/stream", json={}).status_code == 401  # X-Device-Key required (§8.5)
     assert client.get("/admin/ping").status_code == 401  # require_admin on the whole /admin router
     assert client.get("/users/me").status_code == 401
