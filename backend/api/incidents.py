@@ -48,7 +48,7 @@ order by e.ts, e.id
 
 # Explicit YES/NO answers only: reports already appear as their own timeline events.
 INCIDENT_RESPONSES_SQL = """
-select cr.answer, cr.created_at, coalesce(c.trust, %(default_trust)s) as trust
+select cr.answer, cr.created_at, cr.settled, coalesce(c.trust, %(default_trust)s) as trust
 from citizen_responses cr
 left join contributors c on c.id = cr.contributor_id
 where cr.incident_id = %(id)s and cr.report_id is null
@@ -123,7 +123,7 @@ def list_incidents(
 
 @router.get("/{incident_id}")
 def get_incident(incident_id: int, conn: DB) -> dict:
-    """IncidentSummary + summary, reports, evidence, timeline and the strongest sensor signal."""
+    """IncidentSummary + summary, reports, evidence, timeline, citizen answers and the strongest sensor signal."""
     from backend import db
 
     incident = load_incident(conn, incident_id)
@@ -142,6 +142,7 @@ def get_incident(incident_id: int, conn: DB) -> dict:
         evidence=[ser.evidence_json(e) for e in evidence],
         timeline=ser.build_timeline(incident, reports, evidence, responses),
         signal=ser.strongest_signal(evidence),
+        responses=[ser.response_json(r) for r in responses],
     )
     return out
 

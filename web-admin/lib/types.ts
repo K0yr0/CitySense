@@ -71,6 +71,15 @@ export interface Evidence {
   ride_id: number | null;
   report_id: number | null;
   details: Record<string, unknown>;
+  vehicle: string | null; // "tram 17" for sensor evidence, null for reports
+}
+
+/** One explicit citizen YES/NO answer (admin only; never who answered, only their trust). */
+export interface CitizenResponse {
+  answer: "yes" | "no";
+  trust: number | null;
+  created_at: string;
+  settled: boolean; // already scored against the final outcome (trust updated)
 }
 
 export type TimelineKind =
@@ -103,6 +112,7 @@ export interface IncidentDetail extends IncidentSummary {
   evidence: Evidence[];
   timeline: TimelineEvent[];
   signal: Signal | null;
+  responses: CitizenResponse[];
 }
 
 /** POST /incidents/{id}/verify */

@@ -142,15 +142,28 @@ def report_json(row: dict) -> dict:
 
 
 def evidence_json(row: dict) -> dict:
+    ride_id = _int(row.get("ride_id"), None)
     return {
         "id": int(row["id"]),
         "source": row.get("source"),
         "type": row.get("type"),
         "severity": num(row.get("severity")) or 0.0,
         "ts": iso(row.get("ts")),
-        "ride_id": _int(row.get("ride_id"), None),
+        "ride_id": ride_id,
         "report_id": _int(row.get("report_id"), None),
         "details": _json(row.get("details")),
+        # "tram 17" / "bus 175" when the evidence comes from a ride (joined from rides), else None.
+        "vehicle": vehicle_label(row) if ride_id is not None else None,
+    }
+
+
+def response_json(row: dict) -> dict:
+    """One explicit citizen YES/NO answer for the admin view: never who answered, only their trust."""
+    return {
+        "answer": "yes" if row.get("answer") else "no",
+        "trust": num(row.get("trust"), 3),
+        "created_at": iso(row.get("created_at")),
+        "settled": bool(row.get("settled")),  # already scored against the final outcome
     }
 
 

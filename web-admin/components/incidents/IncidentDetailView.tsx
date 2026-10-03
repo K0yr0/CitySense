@@ -9,6 +9,9 @@ import type { IncidentDetail, VerifyResult } from "@/lib/types";
 import { IconAlert, IconArrowLeft, IconCamera } from "../icons";
 import { Card, IncidentBadges, ScoreBar, SourceTag, StatusChip, verificationText, WorkChip } from "../ui";
 import ConfidenceBreakdown from "./ConfidenceBreakdown";
+import CitizenAnswers from "./CitizenAnswers";
+import EvidenceTable from "./EvidenceTable";
+import PhotoGallery from "./PhotoGallery";
 import SignalChart from "./SignalChart";
 import Timeline from "./Timeline";
 
@@ -18,6 +21,50 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
       <dt className="text-ink-2">{label}</dt>
       <dd className="tabular text-right font-semibold">{children}</dd>
     </div>
+  );
+}
+
+const REPORTS_SHOWN = 5;
+
+/** All merged citizen reports (newest first), with the original text and the English triage summary. */
+function ReportsCard({ incident: inc, now }: { incident: IncidentDetail; now: number }) {
+  const [all, setAll] = useState(false);
+  const list = all ? inc.reports : inc.reports.slice(0, REPORTS_SHOWN);
+  return (
+    <Card title={`Citizen reports (${inc.report_count})`}>
+      {inc.reports.length === 0 ? (
+        <p className="text-lg text-ink-2">No citizen has reported this yet. It was found by vehicle sensors.</p>
+      ) : (
+        <ul className="divide-y divide-line">
+          {list.map((r) => (
+            <li key={r.id} className="flex gap-4 py-3 first:pt-0 last:pb-0">
+              <div className="min-w-0 flex-1">
+                <p lang="pl" className="text-lg leading-snug">&ldquo;{r.raw_text}&rdquo;</p>
+                {r.summary_en && <p className="mt-1 text-ink-2">{r.summary_en}</p>}
+                <p className="mt-1 text-sm text-muted">
+                  #{r.id} · {formatDateTime(r.created_at)} · {timeAgo(r.created_at, now)}
+                  {r.urgency != null ? ` · urgency ${r.urgency}/5` : ""}
+                </p>
+              </div>
+              {r.photo_url && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={photoUrl(r.photo_url) ?? ""} alt="" className="h-20 w-20 shrink-0 rounded-lg object-cover" />
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      {inc.reports.length > REPORTS_SHOWN && (
+        <button type="button" onClick={() => setAll(!all)} className="mt-3 rounded-lg border border-line-strong px-3 py-1.5 text-sm font-semibold hover:bg-surface-2">
+          {all ? "Show fewer" : `Show all ${inc.reports.length} reports`}
+        </button>
+      )}
+      {inc.reports.length > 0 && inc.reports.length < inc.report_count && (
+        <p className="mt-3 text-sm text-muted">
+          Showing {inc.reports.length} of {inc.report_count} merged reports.
+        </p>
+      )}
+    </Card>
   );
 }
 
@@ -87,7 +134,7 @@ export default function IncidentDetailView({ id }: { id: number }) {
     );
   }
 
-  const photo = inc.reports.map((r) => photoUrl(r.photo_url)).find(Boolean) ?? null;
+  const photoCount = inc.reports.filter((r) => r.photo_url).length;
   const summary = inc.summary ?? inc.reports[0]?.summary_en ?? null;
 
   return (
@@ -144,42 +191,19 @@ export default function IncidentDetailView({ id }: { id: number }) {
             </Card>
           )}
 
-          {photo && (
-            <Card title={<span className="inline-flex items-center gap-2"><IconCamera width={18} height={18} /> Photo (anonymised)</span>}>
-              {/* eslint-disable-next-line @next/next/no-img-element -- served by the backend, any size */}
-              <img src={photo} alt={`Citizen photo of ${typeLabel(inc.type).toLowerCase()}`} className="max-h-[28rem] w-full rounded-xl object-cover" />
+          {inc.has_sensor && (
+            <Card title={`Sensor detections (${inc.sensor_count})`} action={<span className="text-sm text-muted">{inc.sensor_rides} distinct ride{inc.sensor_rides === 1 ? "" : "s"}</span>}>
+              <EvidenceTable evidence={inc.evidence} />
             </Card>
           )}
 
-          <Card title={`Citizen reports (${inc.report_count})`}>
-            {inc.reports.length === 0 ? (
-              <p className="text-lg text-ink-2">No citizen has reported this yet. It was found by vehicle sensors.</p>
-            ) : (
-              <ul className="divide-y divide-line">
-                {inc.reports.map((r) => (
-                  <li key={r.id} className="flex gap-4 py-3 first:pt-0 last:pb-0">
-                    <div className="min-w-0 flex-1">
-                      <p lang="pl" className="text-lg leading-snug">&ldquo;{r.raw_text}&rdquo;</p>
-                      {r.summary_en && <p className="mt-1 text-ink-2">{r.summary_en}</p>}
-                      <p className="mt-1 text-sm text-muted">
-                        {formatDateTime(r.created_at)} · {timeAgo(r.created_at, now)}
-                        {r.urgency != null ? ` · urgency ${r.urgency}/5` : ""}
-                      </p>
-                    </div>
-                    {r.photo_url && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={photoUrl(r.photo_url) ?? ""} alt="" className="h-20 w-20 shrink-0 rounded-lg object-cover" />
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {inc.reports.length > 0 && inc.reports.length < inc.report_count && (
-              <p className="mt-3 text-sm text-muted">
-                Showing {inc.reports.length} of {inc.report_count} merged reports.
-              </p>
-            )}
-          </Card>
+          <ReportsCard incident={inc} now={now} />
+
+          {photoCount > 0 && (
+            <Card title={<span className="inline-flex items-center gap-2"><IconCamera width={18} height={18} /> Photos, anonymised ({photoCount})</span>}>
+              <PhotoGallery reports={inc.reports} alt={`Citizen photo of ${typeLabel(inc.type).toLowerCase()}`} />
+            </Card>
+          )}
         </div>
 
         <div className="flex min-w-0 flex-col gap-5">
@@ -187,6 +211,9 @@ export default function IncidentDetailView({ id }: { id: number }) {
             <ConfidenceBreakdown incident={inc} />
           </Card>
           <VerificationCard incident={inc} onDone={reload} />
+          <Card title="Citizen answers">
+            <CitizenAnswers incident={inc} now={now} />
+          </Card>
           <Card title="Evidence timeline">
             <Timeline events={inc.timeline} now={now} />
           </Card>

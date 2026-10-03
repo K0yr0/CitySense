@@ -2,6 +2,7 @@
 // Everything is deterministic (seeded PRNG); timestamps are relative to "now" so the demo stays fresh.
 import { assess, DEFAULT_TRUST, statusFor, type Vote } from "./confidence";
 import type {
+  CitizenResponse,
   Department,
   Evidence,
   IncidentDetail,
@@ -178,7 +179,7 @@ const SEEDS: IncidentSeed[] = [
   },
   {
     id: 102, type: "road_damage", department: "ZDM", at: [21.0091, 52.2349], street: MARSZALKOWSKA,
-    address: "Marszałkowska / Świętokrzyska", reports: 23, sensorRides: 0, sensorCount: 0,
+    address: "Marszałkowska / Świętokrzyska", reports: 23, sensorRides: 0, sensorCount: 0, yes: 3, no: 1,
     sev: null, urg: 4, vuln: 0.85, foundBefore: false, vehicle: "tram 17", eta: 6, firstMin: 9 * 60, lastMin: 4,
     summary: "A deep pothole in the right lane at Świętokrzyska; drivers swerve onto the tram tracks to avoid it. Tram 17 has been asked to verify on its next pass.",
   },
@@ -228,7 +229,7 @@ const SEEDS: IncidentSeed[] = [
   },
   {
     id: 110, type: "streetlight", department: "ZDM", at: [21.0104, 52.2329], street: MARSZALKOWSKA,
-    address: "Marszałkowska / Chmielna", reports: 4, sensorRides: 0, sensorCount: 0,
+    address: "Marszałkowska / Chmielna", reports: 4, sensorRides: 0, sensorCount: 0, yes: 2,
     sev: null, urg: 3, vuln: 0.8, foundBefore: false, vehicle: "tram 15", eta: 3, firstMin: 2 * 60, lastMin: 12,
     summary: "Several lamps out at the Chmielna tram stop; the platform is dark in the evening.",
   },
@@ -415,6 +416,31 @@ function makeSignal(severity: number, rnd: () => number): Signal {
   return { fs, values, peak_index: peak };
 }
 
+// The backend serves all merged reports; the mock caps them to keep the page light.
+const MAX_MOCK_REPORTS = 40;
+const PHOTO_TYPES = new Set<IssueType>(["road_damage", "flooding", "waste", "tram_track"]);
+
+/** Placeholder "photo" for the demo: clearly labelled, never presented as a real picture. */
+function demoPhoto(type: IssueType, k: number): string {
+  const hue = { road_damage: 30, tram_track: 210, flooding: 195, waste: 95, streetlight: 50, other: 0 }[type];
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" viewBox="0 0 640 420">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${hue},25%,${38 + (k % 3) * 6}%)"/><stop offset="1" stop-color="hsl(${hue},20%,22%)"/></linearGradient></defs>
+<rect width="640" height="420" fill="url(#g)"/><ellipse cx="${300 + (k % 5) * 12}" cy="250" rx="150" ry="60" fill="rgba(0,0,0,.35)"/>
+<text x="320" y="200" fill="rgba(255,255,255,.85)" font-family="system-ui,sans-serif" font-size="30" font-weight="600" text-anchor="middle">Demo photo</text>
+<text x="320" y="238" fill="rgba(255,255,255,.7)" font-family="system-ui,sans-serif" font-size="20" text-anchor="middle">${TYPE_NAME[type]} · report ${k + 1}</text></svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+const TYPE_NAME: Record<IssueType, string> = {
+  road_damage: "Road damage", tram_track: "Tram track", streetlight: "Streetlight", flooding: "Flooding", waste: "Waste", other: "Other",
+};
+
+/** The vehicle a sensor ride came from (the asked vehicle, else a plausible line for the mode). */
+function rideVehicle(inc: IncidentSummary, r: number): string {
+  if (inc.verify_vehicle) return inc.verify_vehicle;
+  return inc.type === "tram_track" ? ["tram 17", "tram 4", "tram 15"][r % 3] : ["bus 128", "bus 175", "bus 160"][r % 3];
+}
+
 function vehicleName(v: string | null | undefined): string {
   return v ? v.charAt(0).toUpperCase() + v.slice(1) : "A vehicle";
 }
@@ -436,7 +462,7 @@ export function mockIncidentDetail(id: number): IncidentDetail | null {
   // Citizen reports first (when the incident started from a report).
   const sensorFirst = inc.found_before_report || (inc.has_sensor && !inc.has_report);
   const reportStart = sensorFirst ? first + span * 0.6 : first;
-  const shown = Math.min(inc.report_count, 8);
+  const shown = Math.min(inc.report_count, MAX_MOCK_REPORTS);
   for (let k = 0; k < shown; k++) {
     const created = reportStart + ((last - reportStart) * k) / Math.max(1, shown - 1);
     const [raw, en] = pool[k % pool.length];
@@ -447,7 +473,7 @@ export function mockIncidentDetail(id: number): IncidentDetail | null {
       summary_en: en,
       urgency: Math.max(1, (inc.max_urgency ?? 3) - (k % 2)),
       created_at: new Date(created).toISOString(),
-      photo_url: null,
+      photo_url: PHOTO_TYPES.has(inc.type) && k % 4 === 1 ? demoPhoto(inc.type, k) : null,
     });
     evidence.push({
       id: id * 1000 + k,
@@ -457,6 +483,7 @@ export function mockIncidentDetail(id: number): IncidentDetail | null {
       ts: new Date(created).toISOString(),
       ride_id: null,
       report_id: rid,
+      vehicle: null,
       details: { kind: "report", urgency: inc.max_urgency ?? 3, summary_en: en, hazard_to_people: (inc.max_urgency ?? 0) >= 4, location_confidence: 0.8, location_text: inc.address },
     });
   }
@@ -493,6 +520,7 @@ export function mockIncidentDetail(id: number): IncidentDetail | null {
       ts: new Date(ts).toISOString(),
       ride_id: 400 + id + r * 3,
       report_id: null,
+      vehicle: rideVehicle(inc, r),
       details:
         inc.type === "streetlight"
           ? { kind: "dark_gap", expected_lux: 38, observed_lux: 4 }
@@ -524,8 +552,20 @@ export function mockIncidentDetail(id: number): IncidentDetail | null {
       label: `${vehicleName(inc.verify_vehicle)} passed: no anomaly measured, confidence down`,
     });
   }
-  for (let n = 0; n < inc.no_count; n++) {
-    timeline.push({ ts: new Date(last - (n + 1) * 45 * 60_000).toISOString(), kind: "response", label: `Citizen answered NO, not there (trust ${DEFAULT_TRUST.toFixed(2)})` });
+  // Explicit YES/NO answers (reports already count as YES and are not listed here).
+  const settled = inc.status === "verified" || inc.status === "dismissed";
+  const responses: CitizenResponse[] = [
+    ...Array.from({ length: seed.yes ?? 0 }, () => "yes" as const),
+    ...Array.from({ length: seed.no ?? 0 }, () => "no" as const),
+  ].map((answer, n) => ({
+    answer,
+    trust: Math.round((DEFAULT_TRUST + (rnd() - 0.4) * 0.3) * 100) / 100,
+    created_at: new Date(last - (n + 1) * 45 * 60_000).toISOString(),
+    settled,
+  }));
+  for (const r of responses) {
+    const said = r.answer === "yes" ? "YES, still there" : "NO, not there";
+    timeline.push({ ts: r.created_at, kind: "response", label: `Citizen answered ${said} (trust ${(r.trust ?? DEFAULT_TRUST).toFixed(2)})` });
   }
   const pct = `confidence ${Math.min(99, Math.round(inc.confidence * 100))}%`;
   const lastEvent = timeline.reduce((t, e) => Math.max(t, Date.parse(e.ts)), first);
@@ -537,7 +577,8 @@ export function mockIncidentDetail(id: number): IncidentDetail | null {
   timeline.sort((a, b) => Date.parse(a.ts) - Date.parse(b.ts));
 
   const signal = inc.has_sensor && inc.type !== "streetlight" ? makeSignal(inc.max_severity ?? 0.5, rnd) : null;
-  return { ...inc, summary: seed.summary, reports: reports.reverse(), evidence, timeline, signal };
+  responses.sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
+  return { ...inc, summary: seed.summary, reports: reports.reverse(), evidence, timeline, signal, responses };
 }
 
 // ---------------------------------------------------------------- segments

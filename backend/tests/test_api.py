@@ -33,7 +33,7 @@ SUMMARY_KEYS = {
     "confidence", "sensor_confidence", "citizen_confidence", "yes_count", "no_count",
     "sensor_misses", "awaiting_verification", "work_status", "work_status_changed_at",
 }
-DETAIL_KEYS = SUMMARY_KEYS | {"summary", "reports", "evidence", "timeline", "signal"}
+DETAIL_KEYS = SUMMARY_KEYS | {"summary", "reports", "evidence", "timeline", "signal", "responses"}
 REPORT_STATUS_KEYS = {"report_id", "incident_id", "status", "category", "department", "others_count",
                       "sensor_confirmed", "verify_vehicle", "verify_eta_min", "confidence",
                       "contributor_trust", "message"}
@@ -313,8 +313,10 @@ def test_incident_detail_shape_timeline_signal_and_cached_summary(env):
     assert env.conn.savepoints == 1
 
     assert all(set(rep) == {"id", "raw_text", "summary_en", "urgency", "created_at", "photo_url"} for rep in body["reports"])
-    assert all(set(ev) == {"id", "source", "type", "severity", "ts", "ride_id", "report_id", "details"}
+    assert all(set(ev) == {"id", "source", "type", "severity", "ts", "ride_id", "report_id", "details", "vehicle"}
                for ev in body["evidence"])
+    assert [ev["vehicle"] for ev in body["evidence"]] == [None, "tram 17", "tram 17"]
+    assert body["responses"] == []
     assert body["signal"] == {"fs": 100, "values": [0.1, 2.5, 0.3], "peak_index": 1}  # strongest bump (0.9)
 
     kinds = [t["kind"] for t in body["timeline"]]
@@ -354,6 +356,9 @@ def test_incident_detail_misses_answers_and_proactive(env):
     assert body["timeline"][-1]["label"] == "Citizen answered NO, not there (trust 0.80)"
     assert "proactive" in kinds and body["summary"] is None  # report_count < 2: no LLM summary
     assert body["awaiting_verification"] is False  # the vehicle already passed after the request
+    assert body["responses"] == [{"answer": "no", "trust": 0.8, "created_at": "2026-10-01T15:00:00+00:00", "settled": False}]
+    (sql, _), = env.db.sql_with("from citizen_responses cr")
+    assert "cr.settled" in sql and "cr.report_id is null" in sql
 
 
 def test_verify_incident(env):

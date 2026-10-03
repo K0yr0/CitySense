@@ -1,6 +1,6 @@
 import { formatDateTime, timeAgo } from "@/lib/format";
 import type { TimelineEvent, TimelineKind } from "@/lib/types";
-import { IconCheck, IconClock, IconEyeOff, IconMessage, IconRadar } from "../icons";
+import { IconCheck, IconClock, IconEyeOff, IconMessage, IconRadar, IconX } from "../icons";
 
 const KIND: Record<TimelineKind, { cls: string; Icon: typeof IconCheck }> = {
   first_report: { cls: "bg-report text-white", Icon: IconMessage },
@@ -13,6 +13,7 @@ const KIND: Record<TimelineKind, { cls: string; Icon: typeof IconCheck }> = {
   verified: { cls: "bg-good text-white", Icon: IconCheck },
   dismissed: { cls: "bg-line-strong text-ink", Icon: IconEyeOff },
 };
+const NO_ANSWER = { cls: "bg-line-strong text-ink", Icon: IconX };
 
 /** Evidence timeline: reports, citizen answers, sensor hits and misses, verified / dismissed. */
 export default function Timeline({ events, now }: { events: TimelineEvent[]; now: number }) {
@@ -20,7 +21,8 @@ export default function Timeline({ events, now }: { events: TimelineEvent[]; now
   return (
     <ol className="relative">
       {events.map((e, idx) => {
-        const k = KIND[e.kind] ?? KIND.report;
+        // A NO answer must not look like a confirmation.
+        const k = e.kind === "response" && /\bNO\b/.test(e.label) ? NO_ANSWER : (KIND[e.kind] ?? KIND.report);
         const last = idx === events.length - 1;
         return (
           <li key={`${e.ts}-${idx}`} className="relative flex gap-3 pb-5 last:pb-0">
