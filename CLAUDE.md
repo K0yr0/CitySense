@@ -9,6 +9,7 @@ Details:
 - File ownership (enforced by the machine): [OWNERS](OWNERS)
 - Architecture and API contracts: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - What has been built and tested: [BUILD_REPORT.md](BUILD_REPORT.md)
+- **Open security findings, person by person:** [docs/SECURITY.md](docs/SECURITY.md). Fix only your own; mark ✅ when done.
 
 ## 1. At the start of a session: who are you working with?
 
