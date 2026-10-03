@@ -40,7 +40,12 @@ VEHICLES = {
     "tram": {"acc": ACC, "dec": DEC, "axle_m": BOGIE_M, "vmax_kmh": (30, 45)},
     "bus": {"acc": 1.2, "dec": 1.5, "axle_m": 6.0, "vmax_kmh": (25, 50)},
 }
-ON_ROUTE_M = 4.0          # a world defect farther than this from a route's path is not driven over
+ON_ROUTE_M = 4.0
+# Recording conditions (accuracy sweeps, S4). Defaults reproduce the demo rides exactly.
+#   noise: running-vibration / sensor-noise multiplier   speed: cruise-speed multiplier
+#   pose: phone orientation, "random" (anywhere) | "flat" (lying on a seat/dashboard) | "upright"
+#   gps_m: GPS error sigma in metres (correlated, AR(1))
+DEFAULT_CONDITIONS = {"noise": 1.0, "speed": 1.0, "pose": "random", "gps_m": 2.5}          # a world defect farther than this from a route's path is not driven over
 LAMP_SPACING_M = 33.0
 N_BROKEN_LAMPS = 4
 
@@ -206,7 +211,7 @@ def _add_pulse(x: np.ndarray, t0: float, amp: float, freq: float, tau: float) ->
     x[i0:i0 + m] += pulse[:m]
 
 
-def _speed_profile(route: Route, world: dict, rng: np.random.Generator):
+def _speed_profile(route: Route, world: dict, rng: np.random.Generator, speed: float = 1.0):
     """Distance-based kinematics with stops and red lights -> (t, s(t), v(t), dwell windows)."""
     n_red, red = int(rng.integers(1, 3)), []  # 1-2 red lights, away from stops and defects
     for _ in range(1000):
@@ -223,7 +228,7 @@ def _speed_profile(route: Route, world: dict, rng: np.random.Generator):
     v = np.zeros_like(s_grid)
     for (a, _), (b, _) in zip(halts[:-1], halts[1:]):
         m = (s_grid >= a) & (s_grid <= b)
-        vmax = rng.uniform(*route.vehicle["vmax_kmh"]) / 3.6
+        vmax = min(rng.uniform(*route.vehicle["vmax_kmh"]) * speed, 70.0) / 3.6
         acc, dec = route.vehicle["acc"], route.vehicle["dec"]
         v[m] = np.minimum(vmax, np.minimum(np.sqrt(2 * acc * (s_grid[m] - a)), np.sqrt(2 * dec * (b - s_grid[m]))))
     v = np.maximum(v, 0.3)  # creep speed avoids infinite time at the halts
@@ -256,16 +261,19 @@ def _speed_profile(route: Route, world: dict, rng: np.random.Generator):
 
 def generate_ride(*, line: str = "17", seed: int = 1, night: bool = False, bumps: int = 6,
                   start: str | datetime | None = None, route: Route | None = None,
-                  world: dict | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
+                  world: dict | None = None, conditions: dict | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Simulate one ride. Returns (samples with SAMPLE_COLUMNS, truth with kind/lon/lat).
 
     Default: built-in `line` with its fixed _world (`bumps` defects). The simulator passes its own
-    `route` (any line, bus or tram) and `world` (see world_on_route) instead.
+    `route` (any line, bus or tram) and `world` (see world_on_route) instead. `conditions`
+    overrides DEFAULT_CONDITIONS (noise, speed, phone pose, GPS error).
     """
+    cond = {**DEFAULT_CONDITIONS, **(conditions or {})}
+    noise = float(cond["noise"])
     route = route or Route(line)
     world = world if world is not None else _world(route, bumps)
     rng = np.random.default_rng([seed, 17])
-    t, s_t, v_t, dwells = _speed_profile(route, world, rng)
+    t, s_t, v_t, dwells = _speed_profile(route, world, rng, speed=float(cond["speed"]))
     n = t.size
     speed_scale = np.minimum(v_t / 8.33, 2.0)  # vibration grows with speed (1.0 at 30 km/h)
 
@@ -276,8 +284,8 @@ def generate_ride(*, line: str = "17", seed: int = 1, night: bool = False, bumps
         return float(np.clip(np.interp(tt, t, v_t) / 8.33, 0.5, 2.0))
 
     # Vertical specific force on the car body (vehicle frame, m/s² on top of gravity).
-    vert = _bandnoise(rng, n, 2.0, 25.0) * (0.06 + 0.20 * speed_scale)   # running vibration
-    vert += _bandnoise(rng, n, 0.4, 1.4) * 0.25 * speed_scale             # body bounce (< high-pass)
+    vert = _bandnoise(rng, n, 2.0, 25.0) * (0.06 + 0.20 * speed_scale) * noise   # running vibration
+    vert += _bandnoise(rng, n, 0.4, 1.4) * 0.25 * speed_scale * noise             # body bounce (< high-pass)
     for s_b, amp, freq in world["bumps"]:                                 # injected defects
         tb = t_at(s_b)
         a = amp * hit_scale(tb)
@@ -295,23 +303,30 @@ def generate_ride(*, line: str = "17", seed: int = 1, night: bool = False, bumps
                 _add_pulse(vert, td, rng.uniform(2.0, 4.5), 6.0, 0.1)
 
     v_smooth = np.convolve(v_t, np.ones(FS // 2) / (FS // 2), mode="same")
-    a_long = np.gradient(v_smooth, 1.0 / FS) + 0.3 * _bandnoise(rng, n, 1.0, 20.0) * (0.06 + 0.2 * speed_scale)
-    a_lat = 0.4 * _bandnoise(rng, n, 0.5, 20.0) * (0.06 + 0.2 * speed_scale)
+    a_long = np.gradient(v_smooth, 1.0 / FS) + 0.3 * _bandnoise(rng, n, 1.0, 20.0) * (0.06 + 0.2 * speed_scale) * noise
+    a_lat = 0.4 * _bandnoise(rng, n, 0.5, 20.0) * (0.06 + 0.2 * speed_scale) * noise
     f_vehicle = np.column_stack([a_long, a_lat, G + vert])
 
     yaw, pitch, roll = rng.uniform(0, 2 * np.pi), rng.uniform(-1.0, 1.0), rng.uniform(-0.7, 0.7)
+    if cond["pose"] == "flat":        # screen up on a seat / dashboard
+        pitch, roll = 0.0, 0.0
+    elif cond["pose"] == "upright":   # standing in a holder or a shirt pocket: gravity along the phone's y
+        pitch, roll = 0.0, np.pi / 2
+    elif cond["pose"] != "random":
+        raise ValueError(f"unknown pose {cond['pose']!r}")
     rz = np.array([[np.cos(yaw), -np.sin(yaw), 0], [np.sin(yaw), np.cos(yaw), 0], [0, 0, 1]])
     ry = np.array([[np.cos(pitch), 0, np.sin(pitch)], [0, 1, 0], [-np.sin(pitch), 0, np.cos(pitch)]])
     rx = np.array([[1, 0, 0], [0, np.cos(roll), -np.sin(roll)], [0, np.sin(roll), np.cos(roll)]])
-    acc = f_vehicle @ (rz @ ry @ rx) + rng.normal(0, 0.015, size=(n, 3))  # arbitrary phone pose
+    acc = f_vehicle @ (rz @ ry @ rx) + rng.normal(0, 0.015 * noise, size=(n, 3))  # phone pose
 
-    # 1 Hz GPS with correlated (AR(1), sigma ~2.5 m) error, interpolated onto the 100 Hz timeline.
+    # 1 Hz GPS with correlated (AR(1), sigma gps_m, default 2.5 m) error, interpolated onto the 100 Hz timeline.
+    gps_m = float(cond["gps_m"])
     t_fix = np.arange(rng.uniform(0, 1), t[-1], 1.0)
     lon_f, lat_f = route.at(np.interp(t_fix, t, s_t))
     err = np.zeros((t_fix.size, 2))
-    err[0] = rng.normal(0, 2.5, size=2)
+    err[0] = rng.normal(0, gps_m, size=2)
     for k in range(1, t_fix.size):
-        err[k] = 0.85 * err[k - 1] + rng.normal(0, 2.5 * np.sqrt(1 - 0.85 ** 2), size=2)
+        err[k] = 0.85 * err[k - 1] + rng.normal(0, gps_m * np.sqrt(1 - 0.85 ** 2), size=2)
     lat_f = lat_f + err[:, 0] / 110_540
     lon_f = lon_f + err[:, 1] / (111_320 * np.cos(np.radians(52.23)))
     spd_f = np.abs(np.interp(t_fix, t, v_t) + rng.normal(0, 0.15, size=t_fix.size)) * 3.6

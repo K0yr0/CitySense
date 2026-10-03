@@ -149,3 +149,55 @@ def test_world_on_route_ignores_off_route_and_keeps_lamps_regular():
     k = w["broken"][0]
     assert w["lamps"][k] == pytest.approx(500.0, abs=0.5)
     assert np.all(np.diff(np.sort(w["lamps"])) > 15)  # the broken lamp replaced its neighbour, no doubling
+
+
+# --------------------------------------------------------------------------- S4: recording conditions + accuracy sweep
+
+def test_default_conditions_reproduce_the_demo_ride():
+    a, _ = synth.generate_ride(seed=4, bumps=2)
+    b, _ = synth.generate_ride(seed=4, bumps=2, conditions={"noise": 1.0, "speed": 1.0, "pose": "random", "gps_m": 2.5})
+    pd.testing.assert_frame_equal(a, b)
+
+
+def test_pose_conditions():
+    flat, _ = synth.generate_ride(seed=4, bumps=0, conditions={"pose": "flat"})
+    upright, _ = synth.generate_ride(seed=4, bumps=0, conditions={"pose": "upright"})
+    assert abs(flat["az"].mean()) == pytest.approx(9.81, abs=0.1)        # gravity on the screen normal
+    assert abs(upright["ay"].mean()) == pytest.approx(9.81, abs=0.1)     # gravity along the long side
+    assert abs(upright["az"].mean()) < 0.5
+    with pytest.raises(ValueError):
+        synth.generate_ride(seed=4, bumps=0, conditions={"pose": "sideways"})
+
+
+def test_noise_and_gps_conditions_change_the_signal():
+    base, _ = synth.generate_ride(seed=4, bumps=0)
+    noisy, _ = synth.generate_ride(seed=4, bumps=0, conditions={"noise": 3.0})
+    gps, _ = synth.generate_ride(seed=4, bumps=0, conditions={"gps_m": 10.0})
+    assert noisy["az"].std() > 1.5 * base["az"].std()
+    route = synth.Route("17")
+    off = lambda df: np.median([route.locate(lo, la)[1] for lo, la in zip(df["lon"][::500], df["lat"][::500])])
+    assert off(gps) > 2 * off(base)
+
+
+def test_match_counts():
+    truth = [{"lon": 21.0, "lat": 52.2}, {"lon": 21.01, "lat": 52.2}]
+    found = pd.DataFrame({"lon": [21.0, 21.0001, 21.02], "lat": [52.2, 52.2, 52.2]})  # two near truth[0], one far
+    assert sim.match_counts(found, truth, 20) == {"tp": 2, "fp": 1, "hit": 1, "miss": 1}
+    assert sim.match_counts(found.iloc[:0], truth, 20) == {"tp": 0, "fp": 0, "hit": 0, "miss": 2}
+    assert sim.match_counts(found, [], 20) == {"tp": 0, "fp": 3, "hit": 0, "miss": 0}
+
+
+def test_eval_ride_and_report(world, tmp_path):
+    row = sim.eval_ride(("baseline", {}, ("bus-SWI-01", "road", "SWI"), 0, 1000, world))
+    assert row["condition"] == "baseline" and row["mode"] == "road"
+    assert row["bump_hit"] + row["bump_miss"] == 3 and row["lamp_hit"] + row["lamp_miss"] == 1
+    rows = pd.DataFrame([row, {**row, "condition": "GPS error 10 m", "bump_hit": 1, "bump_miss": 2}])
+    text = sim.write_report(rows, tmp_path / "acc.md", seeds=1)
+    assert "MEASURED IN SIMULATION" in text and (tmp_path / "acc.md").read_text() == text
+    assert "| baseline | 1 | 3 | 100.0% |" in text and "| GPS error 10 m | 1 | 3 | 33.3% |" in text
+
+
+def test_committed_report_is_labelled_as_simulation():
+    text = sim.REPORT_FILE.read_text()
+    assert text.startswith("# Sensor detection accuracy: MEASURED IN SIMULATION")
+    assert all(label in text for label, _ in sim.EVAL_CONDITIONS)

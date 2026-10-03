@@ -16,6 +16,7 @@ Line labels (MAR, JER, SWI) are simulation corridors, not ZTM timetable lines.
   .venv/bin/python scripts/simulate_buses.py --api http://localhost:8000 --rides 2
   .venv/bin/python scripts/simulate_buses.py --make-world              # rewrite sim_world.json
   docker compose --profile sim up simulator
+  .venv/bin/python scripts/simulate_buses.py --eval                    # accuracy report (S4), no API
 
 Each run appends one JSON line per ride (device, trip, defects passed, API answer) to
 data/rides/sim_<UTC time>.jsonl for the accuracy report (S4).
@@ -45,6 +46,7 @@ import synth_ride as synth  # noqa: E402  (scripts/ is on sys.path when run as a
 
 GEOJSON = REPO_ROOT / "data" / "osm" / "segments_demo.geojson"
 WORLD_FILE = REPO_ROOT / "data" / "demo" / "sim_world.json"
+REPORT_FILE = REPO_ROOT / "data" / "demo" / "sim_accuracy.md"
 LOG_DIR = REPO_ROOT / "data" / "rides"
 WORLD_SEED = 2026
 OFF_STREET_PENALTY = 3.0   # path search: edges of other streets cost 3x, so buses stay on their corridor
@@ -256,6 +258,120 @@ def vehicle_world(route: synth.Route, defects: list[dict]) -> tuple[dict, list[d
     return world, passed
 
 
+# --------------------------------------------------------------------------- accuracy sweep (S4)
+
+# One factor at a time away from the baseline, plus one combined hard case.
+EVAL_CONDITIONS: list[tuple[str, dict]] = [
+    ("baseline", {}),
+    ("vibration noise x1.5", {"noise": 1.5}),
+    ("vibration noise x2", {"noise": 2.0}),
+    ("vibration noise x3", {"noise": 3.0}),
+    ("slow traffic (speed x0.6)", {"speed": 0.6}),
+    ("fast (speed x1.3)", {"speed": 1.3}),
+    ("phone lying flat", {"pose": "flat"}),
+    ("phone upright (holder/pocket)", {"pose": "upright"}),
+    ("GPS error 5 m", {"gps_m": 5.0}),
+    ("GPS error 10 m", {"gps_m": 10.0}),
+    ("hard: noise x2 + slow + GPS 5 m", {"noise": 2.0, "speed": 0.6, "gps_m": 5.0}),
+]
+EVAL_VEHICLES = [("bus-MAR-01", "road", "MAR"), ("bus-JER-01", "road", "JER"),
+                 ("bus-SWI-01", "road", "SWI"), ("tram-17-01", "tram", "17")]
+BUMP_RADIUS_M, LAMP_RADIUS_M = 20.0, 25.0
+
+
+def match_counts(found: pd.DataFrame, truth: list[dict], radius_m: float) -> dict:
+    """Counts for micro-averaging: detections near a truth point (tp) or not (fp); truth points hit or missed."""
+    nf, nt = len(found), len(truth)
+    if nf == 0 or nt == 0:
+        return {"tp": 0, "fp": nf, "hit": 0, "miss": nt}
+    t_lat = np.array([d["lat"] for d in truth])[None, :]
+    t_lon = np.array([d["lon"] for d in truth])[None, :]
+    d = synth._haversine_m(found["lat"].to_numpy(float)[:, None], found["lon"].to_numpy(float)[:, None], t_lat, t_lon)
+    near = d <= radius_m
+    tp = int(near.any(axis=1).sum())
+    hit = int(near.any(axis=0).sum())
+    return {"tp": tp, "fp": nf - tp, "hit": hit, "miss": nt - hit}
+
+
+def eval_ride(job: tuple) -> dict:
+    """One simulated night ride through the real detectors -> bump and dark-lamp counts."""
+    from backend.sensor.detect import detect_bumps
+    from backend.sensor.lights import find_dark_gaps
+
+    label, cond, (device_id, mode, line), trip, seed, defects = job
+    df, passed, _ = build_ride(device_id, mode, line, trip, seed=seed, night=True, defects=defects, conditions=cond)
+    bumps = match_counts(detect_bumps(df), [p for p in passed if p["kind"] == "bump"], BUMP_RADIUS_M)
+    lamps = match_counts(find_dark_gaps(df), [p for p in passed if p["kind"] == "dark_lamp"], LAMP_RADIUS_M)
+    return {"condition": label, "mode": mode, **{f"bump_{k}": v for k, v in bumps.items()},
+            **{f"lamp_{k}": v for k, v in lamps.items()}}
+
+
+def evaluate(defects: list[dict], *, seeds: int = 10, conditions=EVAL_CONDITIONS, workers: int | None = None) -> pd.DataFrame:
+    """Per-ride counts for every condition x vehicle x direction x seed (parallel processes)."""
+    from concurrent.futures import ProcessPoolExecutor
+
+    jobs = [(label, cond, veh, trip, 1000 + k, defects)
+            for label, cond in conditions for veh in EVAL_VEHICLES for trip in (0, 1) for k in range(seeds)]
+    with ProcessPoolExecutor(max_workers=workers) as pool:
+        return pd.DataFrame(list(pool.map(eval_ride, jobs, chunksize=2)))
+
+
+def _ratio(a: int, b: int) -> str:
+    return f"{100.0 * a / b:.1f}%" if b else "n/a"
+
+
+def summarize(rows: pd.DataFrame) -> pd.DataFrame:
+    order = {label: i for i, (label, _) in enumerate(EVAL_CONDITIONS)}
+    g = rows.groupby("condition", sort=False).sum(numeric_only=True)
+    g = g.loc[sorted(g.index, key=lambda c: order.get(c, len(order)))]
+    rides = rows.groupby("condition").size()
+    return pd.DataFrame({
+        "rides": rides.reindex(g.index),
+        "pothole/track defects passed": g["bump_hit"] + g["bump_miss"],
+        "defect recall": [_ratio(h, h + m) for h, m in zip(g["bump_hit"], g["bump_miss"])],
+        "defect precision": [_ratio(t, t + f) for t, f in zip(g["bump_tp"], g["bump_fp"])],
+        "broken lamps passed": g["lamp_hit"] + g["lamp_miss"],
+        "lamp recall": [_ratio(h, h + m) for h, m in zip(g["lamp_hit"], g["lamp_miss"])],
+        "lamp precision": [_ratio(t, t + f) for t, f in zip(g["lamp_tp"], g["lamp_fp"])],
+    })
+
+
+def write_report(rows: pd.DataFrame, path: Path, *, seeds: int) -> str:
+    table = summarize(rows)
+    header = "| condition | " + " | ".join(table.columns) + " |"
+    lines = [header, "|" + "---|" * (len(table.columns) + 1)]
+    lines += ["| " + " | ".join([str(idx), *map(str, row)]) + " |" for idx, row in table.iterrows()]
+    by_mode = rows[rows["condition"] == "baseline"].groupby("mode").sum(numeric_only=True)
+    mode_lines = [f"- **{'bus (road potholes)' if m == 'road' else 'tram (track defects)'}**: recall "
+                  f"{_ratio(r.bump_hit, r.bump_hit + r.bump_miss)}, precision {_ratio(r.bump_tp, r.bump_tp + r.bump_fp)}"
+                  for m, r in by_mode.iterrows()]
+    text = "\n".join([
+        "# Sensor detection accuracy: MEASURED IN SIMULATION",
+        "",
+        "> **All sensor data here is simulated** (scripts/simulate_buses.py, no real hardware). Present these",
+        "> numbers as *measured in simulation*, never as field results. Regenerate with",
+        "> `.venv/bin/python scripts/simulate_buses.py --eval`.",
+        "",
+        f"Setup: the real detectors (`backend/sensor/detect.py`, `backend/sensor/lights.py`) run on simulated night "
+        f"rides over the fixed ground truth `data/demo/sim_world.json`: {len(EVAL_VEHICLES)} lines "
+        f"(bus MAR, JER, SWI; tram 17) x 2 directions x {seeds} seeds per condition. A detection counts if it is "
+        f"within {BUMP_RADIUS_M:.0f} m (defects) / {LAMP_RADIUS_M:.0f} m (lamps) of a true defect the vehicle drove "
+        f"over. Recall = share of passed defects detected; precision = share of detections that are real. One "
+        f"factor is changed at a time from the baseline (noise x1, normal speed, phone in a random pose, GPS 2.5 m).",
+        "",
+        *lines,
+        "",
+        "Baseline by vehicle type:",
+        *mode_lines,
+        "",
+        "Not measured here: the fusion step (several rides -> one verified incident). In the end-to-end Docker run",
+        "of the fleet every ground-truth defect became exactly one incident; that is a single run, not a statistic.",
+        "",
+    ])
+    Path(path).write_text(text)
+    return text
+
+
 # --------------------------------------------------------------------------- fleet + streaming
 
 def parse_device(device_id: str) -> tuple[str, str] | None:
@@ -325,10 +441,11 @@ def stream_ride(api: str, key: str, line: str, mode: str, samples: list[dict], *
 
 
 def build_ride(device_id: str, mode: str, line: str, trip: int, *, seed: int, night: bool,
-               defects: list[dict]) -> tuple[pd.DataFrame, list[dict], synth.Route]:
+               defects: list[dict], conditions: dict | None = None) -> tuple[pd.DataFrame, list[dict], synth.Route]:
     route = route_for(mode, line, reverse=trip % 2 == 1)
     world, passed = vehicle_world(route, defects)
-    df, _ = synth.generate_ride(route=route, world=world, seed=ride_seed(seed, device_id, trip), night=night)
+    df, _ = synth.generate_ride(route=route, world=world, seed=ride_seed(seed, device_id, trip), night=night,
+                                conditions=conditions)
     if not night:
         passed = [p for p in passed if p["kind"] != "dark_lamp"]  # lamps are only visible at night
     return df, passed, route
@@ -387,7 +504,17 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--world", default=str(WORLD_FILE), help="ground-truth defects JSON")
     ap.add_argument("--make-world", action="store_true", help="(re)write the world file and exit")
     ap.add_argument("--dry-run", action="store_true", help="generate rides and log truth, send nothing")
+    ap.add_argument("--eval", action="store_true", help="accuracy sweep over recording conditions (S4), no API")
+    ap.add_argument("--eval-seeds", type=int, default=10, help="rides per line, direction and condition")
+    ap.add_argument("--report", default=str(REPORT_FILE), help="where --eval writes its markdown report")
     args = ap.parse_args(argv)
+
+    if args.eval:
+        t0 = time.monotonic()
+        rows = evaluate(load_world(Path(args.world))["defects"], seeds=args.eval_seeds)
+        print(write_report(rows, Path(args.report), seeds=args.eval_seeds))
+        print(f"{len(rows)} rides in {time.monotonic() - t0:.0f}s -> {args.report}")
+        return
 
     if args.make_world:
         world = make_world()
