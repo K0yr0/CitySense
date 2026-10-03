@@ -3,10 +3,12 @@
 import type { PickingInfo } from "@deck.gl/core";
 import { PathLayer, ScatterplotLayer } from "@deck.gl/layers";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Map, { NavigationControl, type MapRef, type ViewStateChangeEvent } from "react-map-gl/maplibre";
 import { getIncidents, getSegments, getVehicles } from "@/lib/api";
-import { fmtScore, freshness, FRESHNESS_ALPHA, healthRGBA, healthWord, sourceKind, sourceRGBA, statusLabel, timeAgo, typeLabel, workLabel } from "@/lib/format";
+import { type Filters, filtersQuery, hasFilters, matches } from "@/lib/filters";
+import { deptLabel, fmtScore, freshness, FRESHNESS_ALPHA, healthRGBA, healthWord, sourceKind, sourceRGBA, statusLabel, timeAgo, typeLabel, workLabel } from "@/lib/format";
 import { useApi, useNow, usePrefersDark } from "@/lib/hooks";
 import { MAP_STYLE, MAPLIBRE_WORKER_URL, WARSAW_VIEW } from "@/lib/map";
 import type { IncidentSummary, Segment, Vehicle } from "@/lib/types";
@@ -26,13 +28,27 @@ function padded(b: Box, f = 0.5): Box {
   return [b[0] - dx, b[1] - dy, b[2] + dx, b[3] + dy].map((v) => Math.round(v * 1e4) / 1e4) as Box;
 }
 
+/** "ZDM · Verified · To do · “plac”" for the layer panel. */
+function filterLabel(f: Filters): string {
+  return [f.department && deptLabel(f.department), f.status && statusLabel(f.status), f.work && workLabel(f.work), f.q && `“${f.q}”`]
+    .filter(Boolean)
+    .join(" · ");
+}
+
 const incidentRadius = (d: IncidentSummary) => 7 + 13 * Math.min(1, Math.max(0, (d.score ?? 0) / 1.5));
 
-/** `focusId` (from /?incident=ID): select that incident and fly to it once the incidents have loaded. */
-export default function CityMap({ focusId = null }: { focusId?: number | null }) {
+const NO_FILTERS: Filters = { department: "", status: "", work: "", q: "" };
+
+/**
+ * `focusId` (from /?incident=ID): select that incident and fly to it once the incidents have loaded.
+ * `filters` (from the queue's "Show on the map"): show only matching incidents and fit the camera to them.
+ */
+export default function CityMap({ focusId = null, filters = NO_FILTERS }: { focusId?: number | null; filters?: Filters }) {
   const dark = usePrefersDark();
+  const router = useRouter();
   const mapRef = useRef<MapRef>(null);
-  const flownTo = useRef<number | null>(null);
+  const positioned = useRef(false);
+  const filtered = hasFilters(filters);
   const [toggles, setToggles] = useState<LayerToggles>({ segments: true, incidents: true, vehicles: true, hideDone: true });
   // Re-evaluates segment freshness (fading) and tooltip ages once a minute.
   const now = useNow(60_000);
@@ -55,20 +71,37 @@ export default function CityMap({ focusId = null }: { focusId?: number | null })
   const incidents = useApi("incidents", () => getIncidents({ limit: 500 }), 15_000);
   const vehicles = useApi("vehicles", () => getVehicles(), 15_000);
   const shownIncidents = useMemo(
-    () => (incidents.data ?? []).filter((i) => !toggles.hideDone || i.work_status !== "done"),
-    [incidents.data, toggles.hideDone],
+    () =>
+      (incidents.data ?? []).filter(
+        // A work filter from the queue (e.g. "done") wins over the "hide finished work" toggle.
+        (i) => matches(i, filters) && (filters.work !== "" || !toggles.hideDone || i.work_status !== "done"),
+      ),
+    [incidents.data, toggles.hideDone, filters],
   );
   // From all incidents: a deep link to finished work still opens its panel even when done ones are hidden.
   const selected = incidents.data?.find((i) => i.id === selectedId) ?? null;
 
-  // Deep link: fly to the focused incident once, as soon as both the map and the incident are there.
+  // Deep link: once the map and the data are there, fly to the focused incident, or fit the filtered ones.
   const focused = focusId === null ? null : (incidents.data?.find((i) => i.id === focusId) ?? null);
-  const flyToFocus = () => {
-    if (!focused || flownTo.current === focused.id || !mapRef.current) return;
-    flownTo.current = focused.id;
-    mapRef.current.flyTo({ center: [focused.lon, focused.lat], zoom: 16.5, duration: 1200 });
+  const positionCamera = () => {
+    const map = mapRef.current;
+    if (positioned.current || !map || !incidents.data) return;
+    if (focused) {
+      map.flyTo({ center: [focused.lon, focused.lat], zoom: 16.5, duration: 1200 });
+    } else if (filtered && shownIncidents.length) {
+      const lons = shownIncidents.map((i) => i.lon);
+      const lats = shownIncidents.map((i) => i.lat);
+      map.fitBounds(
+        [
+          [Math.min(...lons), Math.min(...lats)],
+          [Math.max(...lons), Math.max(...lats)],
+        ],
+        { padding: { top: 80, bottom: 80, left: window.innerWidth >= 768 ? 360 : 40, right: 60 }, maxZoom: 16.5, duration: 1000 },
+      );
+    }
+    positioned.current = true;
   };
-  useEffect(flyToFocus);
+  useEffect(positionCamera);
   const latestMeasurement = useMemo(
     () => (segments.data ?? []).reduce<string | null>((best, s) => (s.updated_at && (!best || s.updated_at > best) ? s.updated_at : best), null),
     [segments.data],
@@ -205,7 +238,7 @@ export default function CityMap({ focusId = null }: { focusId?: number | null })
         cursor={hovering ? "pointer" : "grab"}
         onLoad={(e) => {
           onViewSettled(e);
-          flyToFocus();
+          positionCamera();
         }}
         onMoveEnd={onViewSettled}
         minZoom={10}
@@ -226,6 +259,11 @@ export default function CityMap({ focusId = null }: { focusId?: number | null })
         counts={{ segments: segments.data?.length, incidents: shownIncidents.length, vehicles: vehicles.data?.length }}
         vehiclesUpdatedAt={vehicles.updatedAt}
         latestMeasurement={latestMeasurement}
+        filter={
+          filtered
+            ? { label: filterLabel(filters), listHref: `/incidents?${filtersQuery(filters)}`, onClear: () => router.replace("/", { scroll: false }) }
+            : null
+        }
         open={layersOpen}
         setOpen={setLayersOpen}
       />

@@ -5,6 +5,7 @@ import { getAdminStats } from "@/lib/api";
 import { deptLabel, fmtDuration, fmtNumber } from "@/lib/format";
 import { useApi } from "@/lib/hooks";
 import type { AdminStats, DepartmentLoad } from "@/lib/types";
+import { LoadingLabel, Skeleton } from "../Skeleton";
 import { Card } from "../ui";
 
 // Work state colours = the WorkChip tokens (to do neutral, in progress accent, done good).
@@ -209,7 +210,21 @@ export default function StatsView() {
       <p className="mt-1 text-lg text-ink-2">From citizen report to repaired street, across all departments.</p>
 
       {loading || !s ? (
-        <p className="py-16 text-center text-lg text-muted">Loading statistics…</p>
+        <>
+          <LoadingLabel>Loading statistics…</LoadingLabel>
+          <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {Array.from({ length: 4 }, (_, n) => (
+              <div key={n} className="rounded-2xl border border-line bg-surface px-5 py-4">
+                <Skeleton className="h-8 w-20" />
+                <Skeleton className="mt-2 h-4 w-32" />
+              </div>
+            ))}
+          </div>
+          <div className="mt-5 grid gap-5 lg:grid-cols-2">
+            <Skeleton className="h-80 rounded-2xl" />
+            <Skeleton className="h-80 rounded-2xl" />
+          </div>
+        </>
       ) : (
         <>
           <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">

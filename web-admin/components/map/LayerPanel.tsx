@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { SOURCE_LABEL, SOURCE_VAR, timeAgo, type SourceKind } from "@/lib/format";
 import { useNow } from "@/lib/hooks";
@@ -31,6 +32,7 @@ export default function LayerPanel({
   counts,
   vehiclesUpdatedAt,
   latestMeasurement,
+  filter,
   open,
   setOpen,
 }: {
@@ -39,6 +41,8 @@ export default function LayerPanel({
   counts: { segments?: number; incidents?: number; vehicles?: number };
   vehiclesUpdatedAt: number;
   latestMeasurement: string | null;
+  /** Active queue filter ("Show on the map"), or null. */
+  filter: { label: string; listHref: string; onClear: () => void } | null;
   open: boolean;
   setOpen: (open: boolean) => void;
 }) {
@@ -54,6 +58,7 @@ export default function LayerPanel({
         className="absolute left-3 top-3 z-10 flex items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2 text-base font-semibold shadow-sm"
       >
         <IconLayers /> Layers
+        {filter && <span className="rounded-md bg-accent-soft px-1.5 py-0.5 text-xs font-semibold text-accent">filtered</span>}
       </button>
     );
   }
@@ -90,6 +95,20 @@ export default function LayerPanel({
       </Row>
 
       <Row checked={toggles.incidents} onToggle={() => flip("incidents")} title="Incidents" count={counts.incidents}>
+        {filter && (
+          <div className="mb-2.5 rounded-lg bg-accent-soft px-2.5 py-2 text-accent">
+            <div className="text-xs font-semibold uppercase tracking-wide">From the queue</div>
+            <div className="font-medium text-ink">{filter.label}</div>
+            <div className="mt-1 flex gap-3 text-sm font-semibold">
+              <Link href={filter.listHref} className="underline">
+                List
+              </Link>
+              <button type="button" onClick={filter.onClear} className="underline">
+                Clear
+              </button>
+            </div>
+          </div>
+        )}
         <ul className="space-y-1">
           {(["report", "sensor", "both"] as SourceKind[]).map((k) => (
             <li key={k} className="flex items-center gap-2">

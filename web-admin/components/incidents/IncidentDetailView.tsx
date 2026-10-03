@@ -7,6 +7,7 @@ import { deptLabel, formatDateTime, timeAgo, typeLabel, vehicleLabel } from "@/l
 import { useApi, useNow } from "@/lib/hooks";
 import type { IncidentDetail, VerifyResult } from "@/lib/types";
 import { IconAlert, IconCamera } from "../icons";
+import { LoadingLabel, Skeleton } from "../Skeleton";
 import { Card, IncidentBadges, ScoreBar, SourceTag, StatusChip, verificationText, WorkChip } from "../ui";
 import ConfidenceBreakdown from "./ConfidenceBreakdown";
 import CitizenAnswers from "./CitizenAnswers";
@@ -126,11 +127,45 @@ function VerificationCard({ incident, onDone }: { incident: IncidentDetail; onDo
   );
 }
 
+/** Same layout as the page, in grey, so nothing jumps when the incident arrives. */
+function DetailSkeleton() {
+  const card = (h: string) => (
+    <div className="rounded-2xl border border-line bg-surface p-5">
+      <Skeleton className="h-4 w-32" />
+      <Skeleton className={`mt-4 w-full ${h}`} />
+    </div>
+  );
+  return (
+    <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 lg:px-6 lg:py-8">
+      <LoadingLabel>Loading incident…</LoadingLabel>
+      <Skeleton className="h-5 w-40" />
+      <Skeleton className="mt-6 h-4 w-48" />
+      <Skeleton className="mt-3 h-10 w-80 max-w-full" />
+      <Skeleton className="mt-3 h-6 w-64 max-w-full" />
+      <div className="mt-4 flex gap-2">
+        <Skeleton className="h-7 w-28" />
+        <Skeleton className="h-7 w-24" />
+      </div>
+      <div className="mt-6 grid gap-5 lg:grid-cols-3">
+        <div className="flex flex-col gap-5 lg:col-span-2">
+          {card("h-16")}
+          {card("h-64")}
+          {card("h-48")}
+        </div>
+        <div className="flex flex-col gap-5">
+          {card("h-40")}
+          {card("h-32")}
+        </div>
+      </div>
+    </main>
+  );
+}
+
 export default function IncidentDetailView({ id }: { id: number }) {
   const now = useNow();
   const { data: inc, loading, reload } = useApi(`incident:${id}`, () => getIncident(id), 15_000);
 
-  if (loading) return <main className="flex-1 px-6 py-16 text-center text-lg text-muted">Loading incident…</main>;
+  if (loading) return <DetailSkeleton />;
   if (!inc) {
     return (
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center px-6 py-16 text-center">
