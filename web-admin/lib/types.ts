@@ -14,8 +14,10 @@ export type WorkStatus = "todo" | "in_progress" | "done";
 export interface Segment {
   id: number;
   mode: Mode;
+  name: string | null; // street name (OSM)
   health: number | null; // 0 (bad) .. 1 (good); null = not measured
   rides: number;
+  updated_at: string | null; // last health update by the sensor pipeline (owner C); null = never
   path: [number, number][]; // [lon, lat]
 }
 

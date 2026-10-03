@@ -125,6 +125,19 @@ export function healthRGBA(h: number | null | undefined, dark: boolean): RGBA {
   ];
 }
 
+/** How recent a health measurement is: fresh (< 1 h), today (< 24 h), older (< 7 d) or stale. */
+export type Freshness = "fresh" | "today" | "older" | "stale";
+
+export function freshness(iso: string | null | undefined, now: number): Freshness {
+  const t = iso ? Date.parse(iso) : NaN;
+  if (Number.isNaN(t)) return "stale";
+  const h = (now - t) / 3_600_000;
+  return h < 1 ? "fresh" : h < 24 ? "today" : h < 24 * 7 ? "older" : "stale";
+}
+
+/** Map opacity per freshness: old measurements fade so the live picture stands out. */
+export const FRESHNESS_ALPHA: Record<Freshness, number> = { fresh: 235, today: 190, older: 120, stale: 70 };
+
 export function healthWord(h: number | null | undefined): string {
   if (h === null || h === undefined) return "Not measured";
   if (h >= 0.75) return "Good";

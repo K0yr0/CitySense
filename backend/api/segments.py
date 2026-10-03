@@ -42,7 +42,9 @@ def list_segments(
         params["mode"] = mode.value
     if measured_only:
         where.append("s.health is not null")
-    sql = ("select s.id, s.mode, s.health, s.health_rides as rides, ST_AsGeoJSON(s.geom, 6) as geojson\n"
+    # health / health_rides / health_updated_at are written only by C's sensor code (migration 300).
+    sql = ("select s.id, s.mode, s.name, s.health, s.health_rides as rides, s.health_updated_at as updated_at,\n"
+           "       ST_AsGeoJSON(s.geom, 6) as geojson\n"
            "from segments s\n"
            + ("where " + " and ".join(where) + "\n" if where else "")
            + "order by (s.health is null), s.id\nlimit %(limit)s")

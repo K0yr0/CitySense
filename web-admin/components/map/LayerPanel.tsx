@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { SOURCE_LABEL, SOURCE_VAR, type SourceKind } from "@/lib/format";
+import { SOURCE_LABEL, SOURCE_VAR, timeAgo, type SourceKind } from "@/lib/format";
 import { useNow } from "@/lib/hooks";
 import { IconLayers, IconX } from "../icons";
 
@@ -9,6 +9,7 @@ export interface LayerToggles {
   segments: boolean;
   incidents: boolean;
   vehicles: boolean;
+  hideDone: boolean; // hide incidents the city already marked done
 }
 
 function Row({ checked, onToggle, title, count, children }: { checked: boolean; onToggle: () => void; title: string; count?: number; children: ReactNode }) {
@@ -29,6 +30,7 @@ export default function LayerPanel({
   onChange,
   counts,
   vehiclesUpdatedAt,
+  latestMeasurement,
   open,
   setOpen,
 }: {
@@ -36,6 +38,7 @@ export default function LayerPanel({
   onChange: (t: LayerToggles) => void;
   counts: { segments?: number; incidents?: number; vehicles?: number };
   vehiclesUpdatedAt: number;
+  latestMeasurement: string | null;
   open: boolean;
   setOpen: (open: boolean) => void;
 }) {
@@ -81,6 +84,9 @@ export default function LayerPanel({
             <span className="inline-block h-1 w-5 rounded-full bg-muted" /> Road
           </span>
         </div>
+        <p className="mt-1.5 text-xs text-muted">
+          Faded = measured long ago. Latest measurement {latestMeasurement ? timeAgo(latestMeasurement, now) : "—"}.
+        </p>
       </Row>
 
       <Row checked={toggles.incidents} onToggle={() => flip("incidents")} title="Incidents" count={counts.incidents}>
@@ -93,6 +99,10 @@ export default function LayerPanel({
           ))}
         </ul>
         <p className="mt-1.5 text-xs text-muted">Larger dot = higher priority score</p>
+        <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm">
+          <input type="checkbox" checked={toggles.hideDone} onChange={() => flip("hideDone")} className="h-4 w-4 accent-[var(--accent)]" />
+          Hide finished work
+        </label>
       </Row>
 
       <Row checked={toggles.vehicles} onToggle={() => flip("vehicles")} title="Live ZTM vehicles" count={counts.vehicles}>

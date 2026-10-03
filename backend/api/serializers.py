@@ -292,7 +292,8 @@ def report_status(report: dict, incident: dict | None, contributor_trust: float 
 # --- segments / vehicles -----------------------------------------------------
 
 def segment_json(row: dict) -> dict:
-    """Segment row with `geojson` (ST_AsGeoJSON) or `path` -> {"id", "mode", "health", "rides", "path"}."""
+    """Segment row with `geojson` (ST_AsGeoJSON) or `path` ->
+    {"id", "mode", "name", "health", "rides", "updated_at", "path"} (`updated_at` = last health update)."""
     path = row.get("path")
     if path is None:
         geo = _json(row.get("geojson"))
@@ -300,8 +301,10 @@ def segment_json(row: dict) -> dict:
     return {
         "id": int(row["id"]),
         "mode": row.get("mode"),
+        "name": row.get("name"),
         "health": num(row.get("health"), 3),
         "rides": _int(row.get("rides")),
+        "updated_at": iso(row.get("updated_at")),
         "path": [[float(x), float(y)] for x, y, *_ in path],
     }
 

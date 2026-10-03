@@ -593,9 +593,9 @@ const BAD_SPOTS = SEEDS.filter((s) => s.sensorRides > 0 && s.type !== "streetlig
 function buildSegments(): Segment[] {
   const rnd = mulberry32(2026);
   const out: Segment[] = [];
-  const streets: { line: LonLat[]; mode: Mode; unmeasuredHead: number; phase: number }[] = [
-    { line: MARSZALKOWSKA, mode: "tram", unmeasuredHead: 9, phase: 0.3 },
-    { line: JEROZOLIMSKIE, mode: "road", unmeasuredHead: 11, phase: 1.7 },
+  const streets: { line: LonLat[]; mode: Mode; name: string; unmeasuredHead: number; phase: number }[] = [
+    { line: MARSZALKOWSKA, mode: "tram", name: "Marszałkowska", unmeasuredHead: 9, phase: 0.3 },
+    { line: JEROZOLIMSKIE, mode: "road", name: "Aleje Jerozolimskie", unmeasuredHead: 11, phase: 1.7 },
   ];
   let id = 1;
   for (const st of streets) {
@@ -608,11 +608,15 @@ function buildSegments(): Segment[] {
         h -= b.depth * Math.exp(-((d / 110) ** 2));
       }
       const unmeasured = i < st.unmeasuredHead || rnd() < 0.04;
+      // Freshness: most of the street was measured recently by the simulated fleet, some parts days ago.
+      const ageMin = Math.round(i % 17 < 12 ? 2 + rnd() * 50 : i % 17 < 15 ? 90 + rnd() * 600 : 2 * 24 * 60 + rnd() * 3 * 24 * 60);
       out.push({
         id: id++,
         mode: st.mode,
+        name: st.name,
         health: unmeasured ? null : Math.round(Math.min(0.98, Math.max(0.04, h)) * 100) / 100,
         rides: unmeasured ? 0 : 1 + Math.floor(rnd() * 9),
+        updated_at: unmeasured ? null : minutesAgo(ageMin),
         path: [pts[i], pts[i + 1]],
       });
     }

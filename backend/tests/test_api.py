@@ -201,7 +201,7 @@ def test_cors_and_json_errors(env):
 
 def test_segments_shape_and_filters(env):
     env.db.on("from segments s", [
-        {"id": 1, "mode": "tram", "health": 0.8234, "rides": 3,
+        {"id": 1, "mode": "tram", "name": "Marszałkowska", "health": 0.8234, "rides": 3, "updated_at": T0,
          "geojson": '{"type":"LineString","coordinates":[[21.01,52.23],[21.0103,52.2302]]}'},
         {"id": 2, "mode": "tram", "health": None, "rides": 0,
          "geojson": '{"type":"LineString","coordinates":[[21.02,52.24],[21.0203,52.2402]]}'},
@@ -210,12 +210,13 @@ def test_segments_shape_and_filters(env):
     assert r.status_code == 200
     segs = r.json()["segments"]
     assert set(r.json()) == {"segments"}
-    assert all(set(s) == {"id", "mode", "health", "rides", "path"} for s in segs)
-    assert segs[0] == {"id": 1, "mode": "tram", "health": 0.823, "rides": 3,
-                       "path": [[21.01, 52.23], [21.0103, 52.2302]]}
-    assert segs[1]["health"] is None
+    assert all(set(s) == {"id", "mode", "name", "health", "rides", "updated_at", "path"} for s in segs)
+    assert segs[0] == {"id": 1, "mode": "tram", "name": "Marszałkowska", "health": 0.823, "rides": 3,
+                       "updated_at": "2026-10-01T08:00:00+00:00", "path": [[21.01, 52.23], [21.0103, 52.2302]]}
+    assert segs[1]["health"] is None and segs[1]["updated_at"] is None and segs[1]["name"] is None
     sql, params = env.db.sql_with("from segments s")[-1]
     assert "ST_MakeEnvelope" in sql and "s.mode = %(mode)s" in sql and "s.health is not null" in sql
+    assert "s.health_updated_at as updated_at" in sql
     assert params == {"limit": 20000, "min_lon": 20.9, "min_lat": 52.1, "max_lon": 21.2, "max_lat": 52.4,
                       "mode": "tram"}
 

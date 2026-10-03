@@ -6,8 +6,8 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { useMemo, useState } from "react";
 import Map, { NavigationControl, type ViewStateChangeEvent } from "react-map-gl/maplibre";
 import { getIncidents, getSegments, getVehicles } from "@/lib/api";
-import { fmtScore, healthRGBA, healthWord, sourceKind, sourceRGBA, typeLabel } from "@/lib/format";
-import { useApi, usePrefersDark } from "@/lib/hooks";
+import { fmtScore, freshness, FRESHNESS_ALPHA, healthRGBA, healthWord, sourceKind, sourceRGBA, statusLabel, timeAgo, typeLabel, workLabel } from "@/lib/format";
+import { useApi, useNow, usePrefersDark } from "@/lib/hooks";
 import { MAP_STYLE, MAPLIBRE_WORKER_URL, WARSAW_VIEW } from "@/lib/map";
 import type { IncidentSummary, Segment, Vehicle } from "@/lib/types";
 import DeckOverlay from "./DeckOverlay";
@@ -30,7 +30,9 @@ const incidentRadius = (d: IncidentSummary) => 7 + 13 * Math.min(1, Math.max(0, 
 
 export default function CityMap() {
   const dark = usePrefersDark();
-  const [toggles, setToggles] = useState<LayerToggles>({ segments: true, incidents: true, vehicles: true });
+  const [toggles, setToggles] = useState<LayerToggles>({ segments: true, incidents: true, vehicles: true, hideDone: true });
+  // Re-evaluates segment freshness (fading) and tooltip ages once a minute.
+  const now = useNow(60_000);
   const [box, setBox] = useState<Box>(INITIAL_BOX);
   const [zoomedOut, setZoomedOut] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -45,10 +47,19 @@ export default function CityMap() {
   };
 
   const bbox = box.join(",");
-  const segments = useApi(`segments:${bbox}:${zoomedOut}`, () => getSegments({ bbox, measuredOnly: zoomedOut }), 60_000);
+  // Health is recomputed live as the simulated fleet drives (owner C), so segments refresh every 30 s.
+  const segments = useApi(`segments:${bbox}:${zoomedOut}`, () => getSegments({ bbox, measuredOnly: zoomedOut }), 30_000);
   const incidents = useApi("incidents", () => getIncidents({ limit: 500 }), 15_000);
   const vehicles = useApi("vehicles", () => getVehicles(), 15_000);
-  const selected = incidents.data?.find((i) => i.id === selectedId) ?? null;
+  const shownIncidents = useMemo(
+    () => (incidents.data ?? []).filter((i) => !toggles.hideDone || i.work_status !== "done"),
+    [incidents.data, toggles.hideDone],
+  );
+  const selected = shownIncidents.find((i) => i.id === selectedId) ?? null;
+  const latestMeasurement = useMemo(
+    () => (segments.data ?? []).reduce<string | null>((best, s) => (s.updated_at && (!best || s.updated_at > best) ? s.updated_at : best), null),
+    [segments.data],
+  );
 
   // Refetch segments only when the view leaves the area we already loaded.
   const onViewSettled = (e: ViewStateChangeEvent | { target: ViewStateChangeEvent["target"] }) => {
@@ -71,7 +82,10 @@ export default function CityMap() {
           id: "segments",
           data: segments.data ?? [],
           getPath: (d) => d.path,
-          getColor: (d) => healthRGBA(d.health, dark),
+          getColor: (d) => {
+            const c = healthRGBA(d.health, dark);
+            return d.health == null ? c : [c[0], c[1], c[2], FRESHNESS_ALPHA[freshness(d.updated_at, now)]];
+          },
           getWidth: (d) => (d.mode === "tram" ? 7 : 4.5),
           widthUnits: "pixels",
           widthMinPixels: 2,
@@ -80,7 +94,7 @@ export default function CityMap() {
           pickable: true,
           autoHighlight: true,
           highlightColor: [255, 255, 255, 110],
-          updateTriggers: { getColor: [dark] },
+          updateTriggers: { getColor: [dark, now] },
         }),
       toggles.vehicles &&
         new ScatterplotLayer<Vehicle>({
@@ -101,7 +115,7 @@ export default function CityMap() {
       toggles.incidents &&
         new ScatterplotLayer<IncidentSummary>({
           id: "incidents",
-          data: incidents.data ?? [],
+          data: shownIncidents,
           getPosition: (d) => [d.lon, d.lat],
           getRadius: incidentRadius,
           radiusUnits: "pixels",
@@ -131,20 +145,24 @@ export default function CityMap() {
           updateTriggers: { getLineColor: [dark] },
         }),
     ];
-  }, [toggles, segments.data, vehicles.data, incidents.data, selected, dark]);
+  }, [toggles, segments.data, vehicles.data, shownIncidents, selected, dark, now]);
 
   const getTooltip = ({ object, layer }: PickingInfo) => {
     if (!object || !layer) return null;
     let text = "";
     if (layer.id === "segments") {
       const s = object as Segment;
-      text = s.health == null ? `Not measured yet · ${s.mode}` : `${healthWord(s.health)} · health ${Math.round(s.health * 100)}%\n${s.rides} ride${s.rides === 1 ? "" : "s"} · ${s.mode}`;
+      const where = `${s.name ? `${s.name} · ` : ""}${s.mode === "tram" ? "tram track" : "road"}`;
+      text =
+        s.health == null
+          ? `${where}\nNot measured yet`
+          : `${where}\n${healthWord(s.health)} · health ${Math.round(s.health * 100)}%\n${s.rides} ride${s.rides === 1 ? "" : "s"} · measured ${timeAgo(s.updated_at, Date.now())}`;
     } else if (layer.id === "vehicles") {
       const v = object as Vehicle;
-      text = `${v.kind === "tram" ? "Tram" : "Bus"} ${v.line}`;
+      text = `${v.kind === "tram" ? "Tram" : "Bus"} ${v.line}\nposition ${timeAgo(v.ts, Date.now())}`;
     } else if (layer.id === "incidents") {
       const i = object as IncidentSummary;
-      text = `${typeLabel(i.type)} · score ${fmtScore(i.score)}\n${i.address ?? ""}`;
+      text = `${typeLabel(i.type)} · score ${fmtScore(i.score)}\n${i.address ?? ""}\n${statusLabel(i.status)} · work: ${workLabel(i.work_status).toLowerCase()}`;
     } else return null;
     return {
       text,
@@ -187,8 +205,9 @@ export default function CityMap() {
       <LayerPanel
         toggles={toggles}
         onChange={setToggles}
-        counts={{ segments: segments.data?.length, incidents: incidents.data?.length, vehicles: vehicles.data?.length }}
+        counts={{ segments: segments.data?.length, incidents: shownIncidents.length, vehicles: vehicles.data?.length }}
         vehiclesUpdatedAt={vehicles.updatedAt}
+        latestMeasurement={latestMeasurement}
         open={layersOpen}
         setOpen={setLayersOpen}
       />
