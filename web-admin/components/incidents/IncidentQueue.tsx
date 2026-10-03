@@ -112,7 +112,14 @@ export default function IncidentQueue() {
   const pathname = usePathname();
   const params = useSearchParams();
   // The search box is typed into, so it is local state (mirrored to the URL) to stay responsive.
-  const [q, setQ] = useState(() => params.get("q") ?? "");
+  // When the URL changes from outside (back / forward), the box follows it.
+  const urlQ = params.get("q") ?? "";
+  const [q, setQ] = useState(urlQ);
+  const [seenUrlQ, setSeenUrlQ] = useState(urlQ);
+  if (urlQ !== seenUrlQ) {
+    setSeenUrlQ(urlQ);
+    if (urlQ !== q.trim()) setQ(urlQ);
+  }
   const filters: Filters = {
     department: params.get("department") ?? "",
     status: params.get("status") ?? "",

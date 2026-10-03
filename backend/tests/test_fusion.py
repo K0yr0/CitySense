@@ -264,6 +264,12 @@ def test_refresh_after_repair_never_settles_trust(fake_db):
     assert db.executed(trust.SQL_SETTLE) == []
     assert "i.work_status" in incidents.SQL_INCIDENT_CONTEXT
 
+    # Reopened after a repair (work_status back to in_progress, but done once): still never settles.
+    reopened = {**context, "work_status": "in_progress", "repaired": True}
+    db, row = _refresh(fake_db, reopened, aggregate, votes=[(True, 0.6), (False, 0.9)])
+    assert row["status"] == "dismissed" and db.executed(trust.SQL_SETTLE) == []
+    assert """@> '[{"to_status": "done"}]'::jsonb) as repaired""" in incidents.SQL_INCIDENT_CONTEXT
+
 
 def test_refresh_terminal_status_is_sticky(fake_db):
     context = {"id": 7, "type": "road_damage", "status": "verified", "address": None, "sensor_misses": 9,

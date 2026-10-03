@@ -27,7 +27,12 @@ left join users u on u.id = i.work_status_by
 where i.id = %(id)s
 """
 
-SQL_WORK_LOCK = "select id, work_status from incidents where id = %(id)s for update"
+# ever_done: trust is settled only the first time an incident is marked done; after a reopen the
+# answers given about the repaired spot must never be scored (CLAUDE.md).
+SQL_WORK_LOCK = """
+select id, work_status, coalesce(work_log, '[]'::jsonb) @> '[{"to_status": "done"}]'::jsonb as ever_done
+from incidents where id = %(id)s for update
+"""
 
 # One statement: new status + who/when + a history entry (`work_status` on the right is the old value).
 # A note-only change keeps "since when / by whom". The token's user id may be stale (e.g. after a
@@ -176,8 +181,9 @@ def get_work(incident_id: int, conn: DB) -> dict:
 def set_work(incident_id: int, body: WorkStatusIn, conn: DB, user: AdminUser) -> dict:
     """Move an incident to todo / in_progress / done (any direction, so a mistake can be undone).
 
-    Reaching `done` settles contributor trust once (`trust.settle(real=True)`); answers given later
-    are never scored against anyone (see fusion.incidents.refresh_incident).
+    The first time an incident reaches `done` contributor trust is settled (`trust.settle(real=True)`);
+    a reopen + done again settles nothing, and answers given later are never scored against anyone
+    (see fusion.incidents.refresh_incident).
     """
     from backend import db
     from backend.fusion import trust
@@ -192,6 +198,6 @@ def set_work(incident_id: int, body: WorkStatusIn, conn: DB, user: AdminUser) ->
     if status != previous or note:
         db.fetch_one(conn, SQL_WORK_UPDATE, {"id": incident_id, "status": status, "user_id": user.get("id"),
                                              "email": user.get("email"), "name": user.get("name"), "note": note})
-        if status == WorkStatus.DONE and previous != WorkStatus.DONE:
+        if status == WorkStatus.DONE and previous != WorkStatus.DONE and not row.get("ever_done"):
             settled = trust.settle(conn, incident_id, real=True)
     return {**work_json(conn, incident_id), "settled_contributors": len(settled)}

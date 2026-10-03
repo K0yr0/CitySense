@@ -84,7 +84,8 @@ export default function CityMap() {
           getPath: (d) => d.path,
           getColor: (d) => {
             const c = healthRGBA(d.health, dark);
-            return d.health == null ? c : [c[0], c[1], c[2], FRESHNESS_ALPHA[freshness(d.updated_at, now)]];
+            // No timestamp = age unknown (the pipeline may not write health_updated_at yet): do not fade.
+            return d.health == null || !d.updated_at ? c : [c[0], c[1], c[2], FRESHNESS_ALPHA[freshness(d.updated_at, now)]];
           },
           getWidth: (d) => (d.mode === "tram" ? 7 : 4.5),
           widthUnits: "pixels",
@@ -156,7 +157,7 @@ export default function CityMap() {
       text =
         s.health == null
           ? `${where}\nNot measured yet`
-          : `${where}\n${healthWord(s.health)} · health ${Math.round(s.health * 100)}%\n${s.rides} ride${s.rides === 1 ? "" : "s"} · measured ${timeAgo(s.updated_at, Date.now())}`;
+          : `${where}\n${healthWord(s.health)} · health ${Math.round(s.health * 100)}%\n${s.rides} ride${s.rides === 1 ? "" : "s"}${s.updated_at ? ` · measured ${timeAgo(s.updated_at, Date.now())}` : ""}`;
     } else if (layer.id === "vehicles") {
       const v = object as Vehicle;
       text = `${v.kind === "tram" ? "Tram" : "Bus"} ${v.line}\nposition ${timeAgo(v.ts, Date.now())}`;

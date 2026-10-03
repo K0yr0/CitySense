@@ -60,7 +60,8 @@ async function send<T>(path: string, init: RequestInit | undefined, timeoutMs: n
   try {
     const res = await fetch(`${API_URL}${path}`, { ...init, headers, signal: ctrl.signal, cache: "no-store" });
     if (!res.ok) {
-      if (res.status === 401 && token) signOut();
+      // Only if it is still the same session (a slow request must not sign out a newer login).
+      if (res.status === 401 && token && getSession()?.token === token) signOut();
       throw new ApiError(res.status, await errorMessage(res));
     }
     return (await res.json()) as T;
@@ -165,7 +166,9 @@ export async function getAdminStats(): Promise<AdminStats> {
 
 /** W3: the city work status of an incident and who changed it (admin only). */
 export async function getWork(id: number): Promise<WorkInfo | null> {
-  return request(`work`, `/admin/incidents/${id}/work`, undefined, () => mock.mockGetWork(id));
+  // No demo fallback: fixture history next to a real incident would be misleading. Errors reach the card.
+  if (USE_MOCK) return mock.mockGetWork(id);
+  return send<WorkInfo>(`/admin/incidents/${id}/work`, undefined, 8000);
 }
 
 /**

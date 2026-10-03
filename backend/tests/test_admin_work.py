@@ -6,6 +6,7 @@ incident becomes done, and that a no-op change writes nothing.
 from __future__ import annotations
 
 import importlib
+import json
 import sys
 import types
 from dataclasses import replace
@@ -40,7 +41,10 @@ class FakeDB:
             if p["id"] != self.incident["id"]:
                 return None
             by = ADMIN if self.incident["work_status_by"] == ADMIN["id"] else None
-            return {**self.incident, "by_id": by and by["id"], "by_email": by and by["email"], "by_name": by and by["name"]}
+            log = self.incident["work_log"]
+            ever_done = any(e["to_status"] == "done" for e in (json.loads(log) if isinstance(log, str) else log))
+            return {**self.incident, "ever_done": ever_done,
+                    "by_id": by and by["id"], "by_email": by and by["email"], "by_name": by and by["name"]}
         if sql is admin.SQL_WORK_UPDATE:  # mirrors the SQL: note-only keeps since-when / by-whom
             inc = self.incident
             inc["work_log"] = inc["work_log"] + [{"from_status": inc["work_status"], "to_status": p["status"],
@@ -135,6 +139,11 @@ def test_flow_logs_who_and_when_and_settles_trust_once(env):
     assert reopened["work_status"] == "todo" and env.settled == [(7, True)]
     assert reopened["history"][0]["from_status"] == "done"
 
+    # Done again after a reopen: answers given about the repaired spot are never scored.
+    redone = env.client.post("/admin/incidents/7/work", json={"status": "done"}, headers=env.headers).json()
+    assert redone["work_status"] == "done" and redone["settled_contributors"] == 0
+    assert env.settled == [(7, True)]
+
 
 def test_bad_status_is_rejected(env):
     r = env.client.post("/admin/incidents/7/work", json={"status": "fixed"}, headers=env.headers)
@@ -148,6 +157,7 @@ def test_sql_shape():
     assert "when work_status = %(status)s then work_status_changed_at" in sql  # note-only keeps "since"
     assert "work_log = coalesce(work_log, '[]'::jsonb) || jsonb_build_array(" in sql
     assert "for update" in admin.SQL_WORK_LOCK
+    assert """@> '[{"to_status": "done"}]'::jsonb as ever_done""" in admin.SQL_WORK_LOCK
 
 
 def test_history_is_newest_first_and_tolerates_a_json_string(env):

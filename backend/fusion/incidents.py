@@ -79,7 +79,9 @@ where id = %(incident_id)s
 """
 
 SQL_INCIDENT_CONTEXT = """
-select i.id, i.type, i.status, i.address, i.sensor_misses, i.work_status, s.name as segment_name,
+select i.id, i.type, i.status, i.address, i.sensor_misses, i.work_status,
+       (i.work_status = 'done' or coalesce(i.work_log, '[]'::jsonb) @> '[{"to_status": "done"}]'::jsonb) as repaired,
+       s.name as segment_name,
        coalesce(s.vulnerability, 0) as vulnerability
 from incidents i
 left join segments s on s.id = i.segment_id
@@ -265,9 +267,10 @@ def refresh_incident(conn, incident_id: int) -> dict:
         "no_count": sum(1 for yes, _ in votes if not yes),
     }
     row = fetch_one(conn, SQL_UPDATE, params)
-    # Once the city marked it done, trust was already settled (admin W3); NO answers about the
-    # repaired spot must not count against anyone, so a later status change settles nothing.
-    repaired = inc.get("work_status") == WorkStatus.DONE
+    # Once the city marked it done (even if reopened since), trust was already settled (admin W3);
+    # NO answers about the repaired spot must not count against anyone, so a later status change
+    # settles nothing.
+    repaired = bool(inc.get("repaired")) or inc.get("work_status") == WorkStatus.DONE
     if status != inc["status"] and status in (IncidentStatus.VERIFIED, IncidentStatus.DISMISSED) and not repaired:
         trust.settle(conn, incident_id, real=status == IncidentStatus.VERIFIED)
     return dict(row) if row else {}

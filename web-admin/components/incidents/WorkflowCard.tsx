@@ -41,15 +41,17 @@ function who(h: { by_name: string | null; by_email: string | null }): string {
  * Done stops the "is it still there?" question in the mobile app and settles contributor trust.
  */
 export default function WorkflowCard({ incident, onChanged, now }: { incident: IncidentSummary; onChanged: () => void; now: number }) {
-  const { data, reload } = useApi(`work:${incident.id}`, () => getWork(incident.id));
+  // The incident row is polled by the page; when someone else changes the work status, the key
+  // changes and the card refetches its history.
+  const { data, error, reload } = useApi(`work:${incident.id}:${incident.work_status}:${incident.work_status_changed_at}`, () => getWork(incident.id));
   const [saved, setSaved] = useState<WorkInfo | null>(null);
   const [note, setNote] = useState("");
   const [confirmDone, setConfirmDone] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
-  // The freshest of: the last save, the work endpoint, the incident row.
-  const info = saved ?? data;
+  // Our last save shows at once; the fetched state wins as soon as it is at least as new (history only grows).
+  const info = saved && (!data || saved.history.length > data.history.length) ? saved : data;
   const current: WorkStatus = info?.work_status ?? incident.work_status;
   const next = NEXT[current];
 
@@ -83,6 +85,11 @@ export default function WorkflowCard({ incident, onChanged, now }: { incident: I
   return (
     <Card title="City work" action={<span className="text-sm text-muted">separate from confidence</span>}>
       <Stepper current={current} />
+      {error && !info && (
+        <p className="mt-3 rounded-xl bg-crit-soft px-3.5 py-2.5 text-sm font-medium text-crit-ink" role="alert">
+          Could not load the work history ({error.message || "backend unreachable"}). Showing the status from the incident list.
+        </p>
+      )}
       {info?.changed_at && (
         <p className="mt-3 text-sm text-ink-2">
           {workLabel(current)} since {formatDateTime(info.changed_at)}
