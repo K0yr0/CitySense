@@ -9,13 +9,13 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { TypeIcon } from '@/components/icon';
 import { questionFor } from '@/components/question/question-text';
 import { useNearbyQuestion, type NearbyQuestionState } from '@/hooks/use-nearby-question';
 import { useTheme } from '@/hooks/use-theme';
 import { commonText } from '@/i18n/common';
 import { questionText } from '@/i18n/question';
 import { useText } from '@/lib/i18n';
-import { TYPE_ICONS } from '@/lib/labels';
 import { useSession } from '@/lib/session';
 
 /** Room left for the bottom tab bar (plus the safe-area inset). */
@@ -75,7 +75,7 @@ function QuestionCard({ question }: { question: NearbyQuestionState }) {
         ) : (
           <>
             <View style={styles.header}>
-              <Text style={styles.icon}>{TYPE_ICONS[incident.type] ?? TYPE_ICONS.other}</Text>
+              <TypeIcon type={incident.type} size={28} color={theme.tint} />
               <View style={styles.headerText}>
                 <Text style={[styles.question, { color: theme.text }]}>{questionFor(incident.type, s)}</Text>
                 {incident.address ? (
@@ -148,7 +148,6 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  icon: { fontSize: 28, lineHeight: 34 },
   headerText: { flex: 1, gap: 2 },
   question: { fontSize: 17, lineHeight: 23, fontWeight: '700' },
   address: { fontSize: 14, lineHeight: 20 },

@@ -3,6 +3,7 @@
  * which warnings are still ahead, and the colour proportions of the summary bar.
  * Only colour classes are used; no raw health numbers ever reach the UI.
  */
+import type { IconName } from '@/components/icon';
 import type { FavoriteRoute, HealthClass, LonLat, Mode, RouteQuality, RouteWarning } from '@/lib/api';
 import { routesText } from '@/i18n/routes';
 import type { LatLng } from '@/lib/geo';
@@ -133,7 +134,13 @@ export function describeRoute(route: FavoriteRoute): string {
   return t.startToEnd;
 }
 
-/** Region (react-native-maps) that contains every point, with a margin. */
+/** Icon for a route: tram / bus for a line, a pin for start → end. */
+export function routeIcon(route: FavoriteRoute): IconName {
+  if (route.kind === 'line') return route.mode === 'tram' ? 'tram' : 'bus';
+  return 'pin';
+}
+
+/** Region that contains every point, with a margin. */
 export function regionFor(points: LonLat[]): {
   latitude: number;
   longitude: number;

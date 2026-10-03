@@ -1,11 +1,12 @@
 /**
  * M5 · Favourite routes: the list. Each card shows the route's overall road colour and its
- * number of warnings; tap opens /route/[id], long-press or 🗑️ deletes, "Add route" → /route/new.
+ * number of warnings; tap opens /route/[id], long-press or the trash icon deletes, "Add route" → /route/new.
  */
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 
+import { Icon } from '@/components/icon';
 import { confirmAction, showMessage } from '@/components/routes/confirm';
 import { invalidateRouteQuality } from '@/components/routes/quality-cache';
 import { RouteCard } from '@/components/routes/route-card';
@@ -129,7 +130,7 @@ export default function RoutesScreen() {
             )
           ) : (
             <View style={styles.empty}>
-              <ThemedText style={styles.emptyIcon}>🛣️</ThemedText>
+              <Icon name="route" size={48} color={theme.tint} />
               <ThemedText type="smallBold" style={styles.emptyTitle}>
                 {s.emptyTitle}
               </ThemedText>
@@ -182,7 +183,6 @@ const styles = StyleSheet.create({
   addText: { color: '#ffffff', fontSize: 16 },
   pressed: { opacity: 0.7 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.three, paddingVertical: Spacing.five },
-  emptyIcon: { fontSize: 44, lineHeight: 52 },
   emptyTitle: { fontSize: 18 },
   center: { textAlign: 'center' },
   hint: { marginTop: Spacing.four },

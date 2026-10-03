@@ -1,12 +1,13 @@
 import { StyleSheet, View } from 'react-native';
 
+import { TypeIcon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { commonText } from '@/i18n/common';
 import type { IssueType } from '@/lib/api';
 import { useText } from '@/lib/i18n';
-import { TYPE_ICONS, typeLabel } from '@/lib/labels';
+import { typeLabel } from '@/lib/labels';
 
 type Props = {
   type: IssueType;
@@ -21,7 +22,7 @@ export function IncidentHeader({ type, address, department }: Props) {
   return (
     <View style={styles.row}>
       <View style={[styles.icon, { backgroundColor: theme.backgroundElement }]}>
-        <ThemedText style={styles.emoji}>{TYPE_ICONS[type] ?? TYPE_ICONS.other}</ThemedText>
+        <TypeIcon type={type} size={32} color={theme.tint} />
       </View>
       <View style={styles.text}>
         <ThemedText style={styles.title} accessibilityRole="header">
@@ -52,10 +53,6 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  emoji: {
-    fontSize: 32,
-    lineHeight: 40,
   },
   text: {
     flex: 1,

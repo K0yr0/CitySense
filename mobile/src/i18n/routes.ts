@@ -18,18 +18,18 @@ const en = {
   deleteA11y: (name: string) => `Delete route ${name}`,
 
   // list
-  addRoute: '＋ Add route',
+  addRoute: '+ Add route',
   emptyTitle: "You haven't saved any routes yet",
   emptyText:
     'Add a trip you make often (e.g. Home → Work) or a bus or tram line you ride. You see the road ' +
     "quality along it in colours and get a warning when there's bad road or a reported problem ahead.",
-  deleteHint: 'Press and hold a route or tap 🗑️ to delete it.',
+  deleteHint: 'Press and hold a route or tap the trash icon to delete it.',
 
   // card
   cardHint: 'Opens the route. Press and hold to delete it.',
   computingShort: 'Checking road quality…',
   qualityFailed: "Couldn't get road quality",
-  warningCount: (n: number) => plural(n, { one: '⚠️ {n} warning', other: '⚠️ {n} warnings' }),
+  warningCount: (n: number) => plural(n, { one: '{n} warning', other: '{n} warnings' }),
   noWarningsShort: 'No warnings',
 
   // describing a route
@@ -55,8 +55,8 @@ const en = {
   startAndEnd: 'Start and end',
   tooClose: 'Start and end are too close to each other.',
   vehicle: 'Vehicle',
-  modeTram: '🚋 Tram',
-  modeBus: '🚌 Bus',
+  modeTram: 'Tram',
+  modeBus: 'Bus',
   line: 'Line',
   linesFailed: "Couldn't load the list of lines. You can type the line number below.",
   noTramLines: 'No tram lines have been measured yet. You can type the line number below.',
@@ -71,7 +71,7 @@ const en = {
   tapForStart: 'Tap the map to set the start point.',
   tapForEnd: 'Tap the map to set the end point.',
   dragHint: 'You can drag the pins to adjust them.',
-  useMyLocation: '📍 Start from my location',
+  useMyLocation: 'Start from my location',
   reset: 'Reset',
   locationFailed: "Couldn't get your location. Check the location permission.",
   locationFailedWeb: "Couldn't get your location. Check the browser's location permission.",
@@ -79,7 +79,7 @@ const en = {
 
   // route detail
   computing: 'Checking road quality along the route…',
-  badRoadAhead: '⚠️ Bad road ahead',
+  badRoadAhead: 'Bad road ahead',
   inDistance: (dist: string, message: string) => `In ${dist}: ${message}`,
   onRouteClear: (dist: string) => `✓ You're on the route. No warnings in the next ${dist}.`,
   overall: (label: string) => `Overall: ${label}`,
@@ -87,16 +87,16 @@ const en = {
   offRoute: (dist: string) =>
     `You're not on the route (more than ${dist} away), so distances are measured from the start of the route.`,
   noWarnings: '✓ No known problems or bad road along this route.',
-  warningAhead: (dist: string, message: string) => `⚠️ ${dist} ahead: ${message}`,
-  warningPassed: (message: string) => `⚠️ Behind you: ${message}`,
-  warningAtStart: (message: string) => `⚠️ At the start: ${message}`,
+  warningAhead: (dist: string, message: string) => `${dist} ahead: ${message}`,
+  warningPassed: (message: string) => `Behind you: ${message}`,
+  warningAtStart: (message: string) => `At the start: ${message}`,
   mapMobileOnly: 'The route map is only shown in the mobile app.',
 
   // quality bar and map
   qualityBarA11y: 'Road quality along the route',
   noMeasurements: 'No measurements along this route yet.',
-  reportedProblem: '⚠️ Reported problem',
-  badRoad: '⚠️ Bad road',
+  reportedProblem: 'Reported problem',
+  badRoad: 'Bad road',
   tapForDetails: (message: string) => `${message} · Tap for details`,
 };
 
@@ -114,23 +114,23 @@ const pl: typeof en = {
   deleteConfirmUnnamed: 'Usunąć tę trasę?',
   deleteA11y: (name: string) => `Usuń trasę ${name}`,
 
-  addRoute: '＋ Dodaj trasę',
+  addRoute: '+ Dodaj trasę',
   emptyTitle: 'Nie masz jeszcze zapisanych tras',
   emptyText:
     'Dodaj trasę, którą często jeździsz (np. Dom → Praca), albo linię autobusową lub tramwajową. ' +
     'Zobaczysz stan drogi na trasie w kolorach i dostaniesz ostrzeżenie, gdy przed tobą będzie zła ' +
     'nawierzchnia lub zgłoszony problem.',
-  deleteHint: 'Aby usunąć trasę, przytrzymaj ją lub dotknij 🗑️.',
+  deleteHint: 'Aby usunąć trasę, przytrzymaj ją lub dotknij ikony kosza.',
 
   cardHint: 'Otwiera trasę. Przytrzymaj, aby usunąć.',
   computingShort: 'Sprawdzanie stanu drogi…',
   qualityFailed: 'Nie udało się pobrać stanu drogi',
   warningCount: (n: number) =>
     plural(n, {
-      one: '⚠️ {n} ostrzeżenie',
-      few: '⚠️ {n} ostrzeżenia',
-      many: '⚠️ {n} ostrzeżeń',
-      other: '⚠️ {n} ostrzeżenia',
+      one: '{n} ostrzeżenie',
+      few: '{n} ostrzeżenia',
+      many: '{n} ostrzeżeń',
+      other: '{n} ostrzeżenia',
     }),
   noWarningsShort: 'Brak ostrzeżeń',
 
@@ -154,8 +154,8 @@ const pl: typeof en = {
   startAndEnd: 'Początek i koniec',
   tooClose: 'Początek i koniec są zbyt blisko siebie.',
   vehicle: 'Pojazd',
-  modeTram: '🚋 Tramwaj',
-  modeBus: '🚌 Autobus',
+  modeTram: 'Tramwaj',
+  modeBus: 'Autobus',
   line: 'Linia',
   linesFailed: 'Nie udało się pobrać listy linii. Możesz wpisać numer linii poniżej.',
   noTramLines: 'Nie zmierzono jeszcze żadnej linii tramwajowej. Możesz wpisać numer linii poniżej.',
@@ -169,7 +169,7 @@ const pl: typeof en = {
   tapForStart: 'Dotknij mapy, aby ustawić punkt początkowy.',
   tapForEnd: 'Dotknij mapy, aby ustawić punkt końcowy.',
   dragHint: 'Możesz przeciągać pinezki, aby je poprawić.',
-  useMyLocation: '📍 Zacznij od mojej lokalizacji',
+  useMyLocation: 'Zacznij od mojej lokalizacji',
   reset: 'Wyczyść',
   locationFailed: 'Nie udało się ustalić lokalizacji. Sprawdź uprawnienia do lokalizacji.',
   locationFailedWeb: 'Nie udało się ustalić lokalizacji. Sprawdź uprawnienia przeglądarki do lokalizacji.',
@@ -177,7 +177,7 @@ const pl: typeof en = {
     'Mapa nie jest dostępna w przeglądarce. Wpisz punkty jako „szerokość, długość” (np. 52.22970, 21.01220).',
 
   computing: 'Sprawdzanie stanu drogi na trasie…',
-  badRoadAhead: '⚠️ Zła droga przed tobą',
+  badRoadAhead: 'Zła droga przed tobą',
   inDistance: (dist: string, message: string) => `Za ${dist}: ${message}`,
   onRouteClear: (dist: string) => `✓ Jesteś na trasie. Na najbliższych ${dist} brak ostrzeżeń.`,
   overall: (label: string) => `Ogólna ocena: ${label}`,
@@ -185,15 +185,15 @@ const pl: typeof en = {
   offRoute: (dist: string) =>
     `Nie jesteś na trasie (ponad ${dist} od niej), więc odległości są liczone od początku trasy.`,
   noWarnings: '✓ Na tej trasie nie ma znanych problemów ani złej nawierzchni.',
-  warningAhead: (dist: string, message: string) => `⚠️ Za ${dist}: ${message}`,
-  warningPassed: (message: string) => `⚠️ Już za tobą: ${message}`,
-  warningAtStart: (message: string) => `⚠️ Na początku trasy: ${message}`,
+  warningAhead: (dist: string, message: string) => `Za ${dist}: ${message}`,
+  warningPassed: (message: string) => `Już za tobą: ${message}`,
+  warningAtStart: (message: string) => `Na początku trasy: ${message}`,
   mapMobileOnly: 'Mapa trasy jest dostępna tylko w aplikacji mobilnej.',
 
   qualityBarA11y: 'Stan drogi na trasie',
   noMeasurements: 'Na tej trasie nie ma jeszcze pomiarów.',
-  reportedProblem: '⚠️ Zgłoszony problem',
-  badRoad: '⚠️ Zła nawierzchnia',
+  reportedProblem: 'Zgłoszony problem',
+  badRoad: 'Zła nawierzchnia',
   tapForDetails: (message: string) => `${message} · Dotknij, aby zobaczyć szczegóły`,
 };
 
@@ -211,23 +211,23 @@ const uk: typeof en = {
   deleteConfirmUnnamed: 'Видалити цей маршрут?',
   deleteA11y: (name: string) => `Видалити маршрут ${name}`,
 
-  addRoute: '＋ Додати маршрут',
+  addRoute: '+ Додати маршрут',
   emptyTitle: 'У вас ще немає збережених маршрутів',
   emptyText:
     'Додайте шлях, яким ви часто їздите (напр. Дім → Робота), або автобусну чи трамвайну лінію. ' +
     'Ви бачитимете стан дороги на маршруті кольорами й отримаєте попередження, якщо попереду ' +
     'погана дорога або повідомлена проблема.',
-  deleteHint: 'Щоб видалити маршрут, утримуйте його або торкніться 🗑️.',
+  deleteHint: 'Щоб видалити маршрут, утримуйте його або торкніться значка кошика.',
 
   cardHint: 'Відкриває маршрут. Утримуйте, щоб видалити.',
   computingShort: 'Перевіряємо стан дороги…',
   qualityFailed: 'Не вдалося отримати стан дороги',
   warningCount: (n: number) =>
     plural(n, {
-      one: '⚠️ {n} попередження',
-      few: '⚠️ {n} попередження',
-      many: '⚠️ {n} попереджень',
-      other: '⚠️ {n} попередження',
+      one: '{n} попередження',
+      few: '{n} попередження',
+      many: '{n} попереджень',
+      other: '{n} попередження',
     }),
   noWarningsShort: 'Попереджень немає',
 
@@ -251,8 +251,8 @@ const uk: typeof en = {
   startAndEnd: 'Початок і кінець',
   tooClose: 'Початок і кінець розташовані надто близько.',
   vehicle: 'Транспорт',
-  modeTram: '🚋 Трамвай',
-  modeBus: '🚌 Автобус',
+  modeTram: 'Трамвай',
+  modeBus: 'Автобус',
   line: 'Лінія',
   linesFailed: 'Не вдалося отримати список ліній. Ви можете ввести номер лінії нижче.',
   noTramLines: 'Ще немає виміряних трамвайних ліній. Ви можете ввести номер лінії нижче.',
@@ -266,7 +266,7 @@ const uk: typeof en = {
   tapForStart: 'Торкніться мапи, щоб вибрати початкову точку.',
   tapForEnd: 'Торкніться мапи, щоб вибрати кінцеву точку.',
   dragHint: 'Мітки можна перетягувати, щоб уточнити їхнє розташування.',
-  useMyLocation: '📍 Почати з мого місцезнаходження',
+  useMyLocation: 'Почати з мого місцезнаходження',
   reset: 'Скинути',
   locationFailed: 'Не вдалося визначити ваше місцезнаходження. Перевірте дозвіл на геолокацію.',
   locationFailedWeb: 'Не вдалося визначити ваше місцезнаходження. Перевірте дозвіл браузера на геолокацію.',
@@ -274,7 +274,7 @@ const uk: typeof en = {
     'Мапа недоступна у вебверсії. Введіть точки у форматі «широта, довгота» (напр. 52.22970, 21.01220).',
 
   computing: 'Перевіряємо стан дороги на маршруті…',
-  badRoadAhead: '⚠️ Попереду погана дорога',
+  badRoadAhead: 'Попереду погана дорога',
   inDistance: (dist: string, message: string) => `Через ${dist}: ${message}`,
   onRouteClear: (dist: string) => `✓ Ви на маршруті. На найближчих ${dist} попереджень немає.`,
   overall: (label: string) => `Загальний стан: ${label}`,
@@ -282,15 +282,15 @@ const uk: typeof en = {
   offRoute: (dist: string) =>
     `Ви не на маршруті (далі ніж ${dist} від нього), тому відстані відраховуються від початку маршруту.`,
   noWarnings: '✓ На цьому маршруті немає відомих проблем чи поганої дороги.',
-  warningAhead: (dist: string, message: string) => `⚠️ Через ${dist}: ${message}`,
-  warningPassed: (message: string) => `⚠️ Уже позаду: ${message}`,
-  warningAtStart: (message: string) => `⚠️ На початку маршруту: ${message}`,
+  warningAhead: (dist: string, message: string) => `Через ${dist}: ${message}`,
+  warningPassed: (message: string) => `Уже позаду: ${message}`,
+  warningAtStart: (message: string) => `На початку маршруту: ${message}`,
   mapMobileOnly: 'Мапа маршруту доступна лише в мобільному застосунку.',
 
   qualityBarA11y: 'Стан дороги на маршруті',
   noMeasurements: 'На цьому маршруті ще немає вимірювань.',
-  reportedProblem: '⚠️ Повідомлена проблема',
-  badRoad: '⚠️ Погана дорога',
+  reportedProblem: 'Повідомлена проблема',
+  badRoad: 'Погана дорога',
   tapForDetails: (message: string) => `${message} · Торкніться, щоб побачити деталі`,
 };
 

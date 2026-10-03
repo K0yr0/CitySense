@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
+import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
@@ -25,7 +26,7 @@ export function RoutesSignInGate({ status }: { status: SessionStatus }) {
   return (
     <ThemedView style={styles.center}>
       <View style={styles.box}>
-        <ThemedText style={styles.icon}>🛣️</ThemedText>
+        <Icon name="route" size={44} color={theme.tint} />
         <ThemedText type="smallBold" style={styles.title}>
           {s.gateTitle}
         </ThemedText>
@@ -51,7 +52,6 @@ export function RoutesSignInGate({ status }: { status: SessionStatus }) {
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.four },
   box: { maxWidth: 420, width: '100%', alignItems: 'center', gap: Spacing.three },
-  icon: { fontSize: 40, lineHeight: 48 },
   title: { fontSize: 18 },
   text: { textAlign: 'center' },
   button: { paddingVertical: Spacing.two + 2, paddingHorizontal: Spacing.five, borderRadius: Spacing.five },

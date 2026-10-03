@@ -2,15 +2,16 @@
 import { router, type Href } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { TypeIcon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { PublicIncident } from '@/lib/api';
 import {
   confidencePct,
+  incidentColor,
   STATUS_COLORS,
   statusLabel,
-  TYPE_ICONS,
   typeLabel,
   WORK_STATUS_COLORS,
   workStatusLabel,
@@ -27,7 +28,7 @@ export function IncidentCard({ incident, onClose }: { incident: PublicIncident; 
   return (
     <View style={[styles.card, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
-        <ThemedText style={styles.icon}>{TYPE_ICONS[incident.type] ?? TYPE_ICONS.other}</ThemedText>
+        <TypeIcon type={incident.type} size={26} color={incidentColor(incident)} />
         <View style={styles.headerText}>
           <ThemedText type="smallBold">{typeLabel(incident.type)}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
@@ -58,7 +59,7 @@ export function IncidentCard({ incident, onClose }: { incident: PublicIncident; 
           <ThemedText type="small">{s.card.repair(workStatusLabel(incident.work_status))}</ThemedText>
         </View>
         <ThemedText type="small" themeColor="textSecondary">
-          {s.card.reportedBy(incident.report_count)}
+          {incident.report_count > 0 ? s.card.reportedBy(incident.report_count) : s.card.noReports}
         </ThemedText>
       </View>
 
@@ -90,10 +91,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: Spacing.two,
-  },
-  icon: {
-    fontSize: 26,
-    lineHeight: 32,
   },
   headerText: {
     flex: 1,

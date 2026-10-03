@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
+import { TypeIcon } from '@/components/icon';
 import { ActionButton } from '@/components/report/action-button';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
@@ -14,7 +15,6 @@ import {
   confidencePct,
   STATUS_COLORS,
   statusLabel,
-  TYPE_ICONS,
   typeLabel,
   WORK_STATUS_COLORS,
   workStatusLabel,
@@ -49,7 +49,7 @@ export function ReportResult({ report, onNew }: Props) {
 
       <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
         <View style={styles.categoryRow}>
-          <ThemedText style={styles.icon}>{TYPE_ICONS[category ?? 'other']}</ThemedText>
+          <TypeIcon type={category} size={28} color={theme.tint} />
           <View style={styles.flex}>
             <ThemedText type="smallBold">{typeLabel(category)}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
@@ -136,10 +136,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
-  },
-  icon: {
-    fontSize: 28,
-    lineHeight: 34,
   },
   thumbnail: {
     width: 56,

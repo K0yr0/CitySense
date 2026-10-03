@@ -8,10 +8,11 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Icon } from '@/components/icon';
 import { confirmAction, showMessage } from '@/components/routes/confirm';
 import { HealthDot, QualityBar } from '@/components/routes/quality-bar';
 import { invalidateRouteQuality, loadRouteQuality } from '@/components/routes/quality-cache';
-import { aheadOfUser, AHEAD_ALERT_M, describeRoute, ON_ROUTE_M } from '@/components/routes/route-geometry';
+import { aheadOfUser, AHEAD_ALERT_M, describeRoute, ON_ROUTE_M, routeIcon } from '@/components/routes/route-geometry';
 import { ROUTE_MAP_SUPPORTED, RouteQualityMap } from '@/components/routes/route-quality-map';
 import { RoutesSignInGate } from '@/components/routes/sign-in-prompt';
 import { ThemedText } from '@/components/themed-text';
@@ -156,9 +157,12 @@ export default function RouteScreen() {
             accessibilityRole={alert.warning.kind === 'incident' ? 'button' : undefined}
             onPress={() => openWarning(alert.warning)}
             style={[styles.banner, { backgroundColor: theme.danger }]}>
-            <ThemedText type="smallBold" style={styles.bannerTitle}>
-              {s.badRoadAhead}
-            </ThemedText>
+            <View style={styles.kind}>
+              <Icon name="warning" size={18} color="#ffffff" />
+              <ThemedText type="smallBold" style={styles.bannerTitle}>
+                {s.badRoadAhead}
+              </ThemedText>
+            </View>
             <ThemedText type="small" style={styles.bannerText}>
               {s.inDistance(formatDistance(alert.inM), alert.warning.message)}
             </ThemedText>
@@ -172,7 +176,7 @@ export default function RouteScreen() {
           </ThemedView>
         )}
 
-        {ROUTE_MAP_SUPPORTED && <RouteQualityMap quality={quality} highlighted={alert?.warning} onWarningPress={openWarning} />}
+        {ROUTE_MAP_SUPPORTED && <RouteQualityMap quality={quality} highlighted={alert?.warning} onWarningPress={openWarning} user={coords} />}
 
         <ThemedView type="backgroundElement" style={styles.card}>
           <View style={styles.overall}>
@@ -181,10 +185,12 @@ export default function RouteScreen() {
               {s.overall(healthLabel(summary.overall))}
             </ThemedText>
           </View>
-          <ThemedText type="small" themeColor="textSecondary">
-            {route.kind === 'line' ? (route.mode === 'tram' ? '🚋 ' : '🚌 ') : '📍 '}
-            {describeRoute(route)}
-          </ThemedText>
+          <View style={styles.kind}>
+            <Icon name={routeIcon(route)} size={14} color={theme.textSecondary} />
+            <ThemedText type="small" themeColor="textSecondary">
+              {describeRoute(route)}
+            </ThemedText>
+          </View>
           <QualityBar summary={summary} />
         </ThemedView>
 
@@ -263,9 +269,12 @@ export default function RouteScreen() {
           {deleting ? (
             <ActivityIndicator color={theme.danger} />
           ) : (
-            <ThemedText type="smallBold" style={{ color: theme.danger }}>
-              🗑️ {s.deleteRoute}
-            </ThemedText>
+            <View style={styles.kind}>
+              <Icon name="trash" size={16} color={theme.danger} />
+              <ThemedText type="smallBold" style={{ color: theme.danger }}>
+                {s.deleteRoute}
+              </ThemedText>
+            </View>
           )}
         </Pressable>
       </ScrollView>
@@ -285,6 +294,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   banner: { padding: Spacing.three, borderRadius: Spacing.three, gap: Spacing.half },
+  kind: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   bannerTitle: { color: '#ffffff', fontSize: 16 },
   bannerText: { color: '#ffffff' },
   note: { padding: Spacing.three, borderRadius: Spacing.three },

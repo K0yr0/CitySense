@@ -17,6 +17,7 @@ const en = {
   card: {
     status: (label: string, pct: string) => `Status: ${label} (${pct})`,
     repair: (label: string) => `Repair: ${label}`,
+    noReports: 'No reports yet',
     reportedBy: (n: number) =>
       plural(n, { one: 'Reported by {n} person', other: 'Reported by {n} people' }),
     openDetails: 'Open problem details',
@@ -41,6 +42,7 @@ const pl: typeof en = {
   card: {
     status: (label: string, pct: string) => `Status: ${label} (${pct})`,
     repair: (label: string) => `Naprawa: ${label}`,
+    noReports: 'Brak zgłoszeń',
     reportedBy: (n: number) =>
       plural(n, {
         one: 'Zgłosiła {n} osoba',
@@ -70,6 +72,7 @@ const uk: typeof en = {
   card: {
     status: (label: string, pct: string) => `Статус: ${label} (${pct})`,
     repair: (label: string) => `Ремонт: ${label}`,
+    noReports: 'Ще немає повідомлень',
     reportedBy: (n: number) =>
       plural(n, {
         one: 'Повідомила {n} людина',

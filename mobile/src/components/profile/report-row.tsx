@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { TypeIcon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -7,7 +8,7 @@ import { commonText } from '@/i18n/common';
 import { profileText } from '@/i18n/profile';
 import type { MobileReport } from '@/lib/api';
 import { useText } from '@/lib/i18n';
-import { TYPE_ICONS, timeAgo, typeLabel, WORK_STATUS_COLORS, workStatusLabel } from '@/lib/labels';
+import { timeAgo, typeLabel, WORK_STATUS_COLORS, workStatusLabel } from '@/lib/labels';
 
 function Chip({ label, color }: { label: string; color: string }) {
   return (
@@ -38,9 +39,12 @@ export function ReportRow({ report, onPress }: { report: MobileReport; onPress?:
         pressed && styles.pressed,
       ]}>
       <View style={styles.top}>
-        <ThemedText type="smallBold" style={styles.category} numberOfLines={1}>
-          {TYPE_ICONS[category] ?? TYPE_ICONS.other} {typeLabel(category)}
-        </ThemedText>
+        <View style={styles.categoryRow}>
+          <TypeIcon type={category} size={16} color={theme.tint} />
+          <ThemedText type="smallBold" style={styles.category} numberOfLines={1}>
+            {typeLabel(category)}
+          </ThemedText>
+        </View>
         <ThemedText type="small" themeColor="textSecondary">
           {timeAgo(report.created_at)}
         </ThemedText>
@@ -85,6 +89,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: Spacing.two,
+  },
+  categoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+    flexShrink: 1,
   },
   category: {
     flexShrink: 1,

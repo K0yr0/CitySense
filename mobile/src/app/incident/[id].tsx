@@ -17,6 +17,7 @@ import {
   SectionCard,
   WorkStatusSteps,
 } from '@/components/incident';
+import { Icon, type IconName } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
@@ -107,7 +108,7 @@ export default function IncidentScreen() {
   if (id === null || notFound) {
     return (
       <CenteredMessage
-        icon="🔍"
+        icon="search"
         title={s.notFoundTitle}
         body={s.notFoundBody}
         action={{ label: c.back, onPress: goBack }}
@@ -121,7 +122,7 @@ export default function IncidentScreen() {
     }
     return (
       <CenteredMessage
-        icon="📡"
+        icon="sensors"
         title={s.loadFailedTitle}
         body={error ?? s.unknownError}
         action={{ label: c.retry, onPress: retry }}
@@ -176,16 +177,16 @@ function IncidentBody({
 
         <View style={styles.facts}>
           {incident.report_count > 0 ? (
-            <Fact icon="👥">{s.reportedBy(incident.report_count)}</Fact>
+            <Fact icon="people">{s.reportedBy(incident.report_count)}</Fact>
           ) : null}
           {firstSeen || lastSeen ? (
-            <Fact icon="🕒">
+            <Fact icon="clock">
               {[firstSeen && s.firstSeen(firstSeen), lastSeen && s.lastSeen(lastSeen)]
                 .filter(Boolean)
                 .join(' · ')}
             </Fact>
           ) : null}
-          {incident.message ? <Fact icon="ℹ️">{incident.message}</Fact> : null}
+          {incident.message ? <Fact icon="info">{incident.message}</Fact> : null}
         </View>
 
         {incident.i_reported || incident.my_answer ? (
@@ -219,12 +220,11 @@ function IncidentBody({
   );
 }
 
-function Fact({ icon, children }: { icon: string; children: ReactNode }) {
+function Fact({ icon, children }: { icon: IconName; children: ReactNode }) {
+  const theme = useTheme();
   return (
     <View style={styles.fact}>
-      <ThemedText type="small" style={styles.factIcon}>
-        {icon}
-      </ThemedText>
+      <Icon name={icon} size={16} color={theme.textSecondary} style={styles.factIcon} />
       <ThemedText type="small" themeColor="textSecondary" style={styles.factText}>
         {children}
       </ThemedText>
@@ -256,7 +256,7 @@ function CenteredMessage({
   body,
   action,
 }: {
-  icon: string;
+  icon: IconName;
   title: string;
   body: string;
   action: { label: string; onPress: () => void };
@@ -264,7 +264,7 @@ function CenteredMessage({
   const theme = useTheme();
   return (
     <ThemedView style={[styles.fill, styles.center]}>
-      <ThemedText style={styles.bigIcon}>{icon}</ThemedText>
+      <Icon name={icon} size={44} color={theme.textSecondary} />
       <ThemedText type="smallBold" style={styles.centerTitle}>
         {title}
       </ThemedText>
@@ -309,8 +309,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   factIcon: {
-    width: 22,
-    textAlign: 'center',
+    marginHorizontal: 3,
+    marginTop: 2,
   },
   factText: {
     flex: 1,
@@ -334,10 +334,6 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.6,
-  },
-  bigIcon: {
-    fontSize: 40,
-    lineHeight: 48,
   },
   centerTitle: {
     fontSize: 18,

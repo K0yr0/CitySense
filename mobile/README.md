@@ -66,6 +66,16 @@ stored on the device.
   (`backend/api/mobile.py` → `TEXTS`).
 - iOS permission texts: `app.json` (English) + `locales/pl.json`, `locales/uk.json`.
 
+## Maps and icons
+
+- **Android uses Leaflet, not Google Maps.** In Expo Go, Google rejects Expo Go's built-in Maps key
+  ("Authorization failure" in logcat) and the Google map then draws nothing, not even our lines and pins.
+  `src/components/map-canvas/` gives every screen one declarative map API (polylines, circles, pins, events):
+  `map-canvas.tsx` = react-native-maps / Apple Maps (iOS), `map-canvas.android.tsx` = Leaflet in a WebView with
+  OpenStreetMap tiles (no key; attribution shown). A development build with its own Google Maps key could switch back.
+- **No emoji as icons.** Emoji depend on the device's emoji font (the iOS 26 simulator draws them as "?" boxes).
+  Use `<Icon name=... />` / `<TypeIcon type=... />` from `src/components/icon.tsx`.
+
 ## Sign-in (M2)
 
 - **Demo sign-in** (works everywhere, Expo Go included): the backend `.env` needs `AUTH_DEV_LOGIN=1`.
@@ -93,6 +103,8 @@ src/app/incident/[id].tsx         Short incident view (M6): type, address, confi
 src/app/route/new.tsx, [id].tsx   Add route / road quality along the route and "bad road ahead" warnings (M5)
 src/components/<screen>/          screen-specific components (map, report, routes, incident, profile, question)
 src/components/question/          25 m question card (M4)
+src/components/map-canvas/        every map: Apple Maps on iOS, Leaflet + OpenStreetMap in a WebView on Android
+src/components/icon.tsx           vector icons (SF Symbols / Material); use these instead of emoji
 src/hooks/use-location.ts         location (expo-location); no location history is kept
 src/hooks/use-nearby-question.ts  25 m question logic (accuracy ≤ 25 m, once per incident, never when fixed)
 src/lib/api.ts                    backend client (all /mobile endpoints); add new endpoints here

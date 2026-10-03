@@ -7,15 +7,6 @@ import { commonText } from '@/i18n/common';
 import { labelsText } from '@/i18n/labels';
 import { text } from '@/lib/i18n';
 
-export const TYPE_ICONS: Record<IssueType, string> = {
-  road_damage: '🕳️',
-  tram_track: '🚋',
-  streetlight: '💡',
-  flooding: '🌊',
-  waste: '🗑️',
-  other: '❔',
-};
-
 export function typeLabel(type: IssueType | null | undefined): string {
   const t = text(labelsText).type;
   return type ? (t[type] ?? t.other) : t.other;

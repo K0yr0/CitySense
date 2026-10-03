@@ -1,13 +1,14 @@
 /**
- * Native start/end picker: tap the map to place the start, then the end; both pins are draggable.
+ * Native start/end picker (MapCanvas): tap the map to place the start, then the end; both pins are draggable.
  * Web uses point-picker.web.tsx (coordinate fields instead of a map).
  */
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
-import MapView, { Marker, Polyline, type MapPressEvent, type MarkerDragStartEndEvent } from 'react-native-maps';
 
+import { MapCanvas, type CanvasMarker, type CanvasPolyline, type MapCanvasHandle } from '@/components/map-canvas';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
 import { routesText } from '@/i18n/routes';
 import type { LonLat } from '@/lib/api';
@@ -27,7 +28,8 @@ type Which = 'start' | 'end';
 export function PointPicker({ start, end, onChange, locate }: PointPickerProps) {
   const theme = useTheme();
   const s = useText(routesText);
-  const ref = useRef<MapView>(null);
+  const dark = useColorScheme() === 'dark';
+  const ref = useRef<MapCanvasHandle>(null);
   const [which, setWhich] = useState<Which>(start ? 'end' : 'start');
   const [locating, setLocating] = useState(false);
   const [locError, setLocError] = useState<string | null>(null);
@@ -41,10 +43,24 @@ export function PointPicker({ start, end, onChange, locate }: PointPickerProps) 
     }
   };
 
-  const onMapPress = (e: MapPressEvent) => place(toLonLat(e.nativeEvent.coordinate), which);
+  const onMapPress = (coord: LatLng) => place(toLonLat(coord), which);
 
-  const onDragEnd = (target: Which) => (e: MarkerDragStartEndEvent) =>
-    target === 'start' ? onChange(toLonLat(e.nativeEvent.coordinate), end) : onChange(start, toLonLat(e.nativeEvent.coordinate));
+  const onDragEnd = (id: string, coord: LatLng) =>
+    id === 'start' ? onChange(toLonLat(coord), end) : onChange(start, toLonLat(coord));
+
+  const polylines = useMemo<CanvasPolyline[]>(
+    () =>
+      start && end
+        ? [{ id: 'line', coords: [toLatLng(start), toLatLng(end)], color: 'rgba(128,128,128,0.8)', width: 2, dash: [6, 6] }]
+        : [],
+    [start, end],
+  );
+  const markers = useMemo<CanvasMarker[]>(() => {
+    const out: CanvasMarker[] = [];
+    if (start) out.push({ id: 'start', coord: toLatLng(start), title: s.start, color: '#1A73E8', draggable: true });
+    if (end) out.push({ id: 'end', coord: toLatLng(end), title: s.end, color: '#202124', draggable: true });
+    return out;
+  }, [start, end, s]);
 
   const startFromMyLocation = async () => {
     setLocating(true);
@@ -56,7 +72,7 @@ export function PointPicker({ start, end, onChange, locate }: PointPickerProps) 
         return;
       }
       place(toLonLat(here), 'start');
-      ref.current?.animateToRegion({ ...here, latitudeDelta: 0.02, longitudeDelta: 0.02 }, 400);
+      ref.current?.animateTo({ ...here, latitudeDelta: 0.02, longitudeDelta: 0.02 });
     } finally {
       setLocating(false);
     }
@@ -83,10 +99,13 @@ export function PointPicker({ start, end, onChange, locate }: PointPickerProps) 
                 { borderColor: active ? theme.tint : theme.backgroundSelected },
                 active && { backgroundColor: theme.backgroundSelected },
               ]}>
-              <ThemedText type="small" style={active ? { color: theme.tint } : undefined}>
-                {w === 'start' ? `🔵 ${s.start}` : `⚫ ${s.end}`}
-                {set ? ' ✓' : ''}
-              </ThemedText>
+              <View style={styles.chipInner}>
+                <View style={[styles.chipDot, { backgroundColor: w === 'start' ? '#1A73E8' : '#202124' }]} />
+                <ThemedText type="small" style={active ? { color: theme.tint } : undefined}>
+                  {w === 'start' ? s.start : s.end}
+                  {set ? ' ✓' : ''}
+                </ThemedText>
+              </View>
             </Pressable>
           );
         })}
@@ -95,36 +114,16 @@ export function PointPicker({ start, end, onChange, locate }: PointPickerProps) 
         {which === 'start' ? s.tapForStart : s.tapForEnd} {s.dragHint}
       </ThemedText>
 
-      <MapView
+      <MapCanvas
         ref={ref}
         style={styles.map}
         initialRegion={initial}
+        dark={dark}
+        polylines={polylines}
+        markers={markers}
         onPress={onMapPress}
-        showsUserLocation
-        showsMyLocationButton={false}
-        toolbarEnabled={false}
-        pitchEnabled={false}>
-        {start && end && (
-          <Polyline
-            coordinates={[toLatLng(start), toLatLng(end)]}
-            strokeColor="rgba(128,128,128,0.8)"
-            strokeWidth={2}
-            lineDashPattern={[6, 6]}
-          />
-        )}
-        {start && (
-          <Marker
-            coordinate={toLatLng(start)}
-            title={s.start}
-            pinColor="#1A73E8"
-            draggable
-            onDragEnd={onDragEnd('start')}
-          />
-        )}
-        {end && (
-          <Marker coordinate={toLatLng(end)} title={s.end} pinColor="#202124" draggable onDragEnd={onDragEnd('end')} />
-        )}
-      </MapView>
+        onMarkerDragEnd={onDragEnd}
+      />
 
       <View style={styles.row}>
         <Pressable
@@ -166,6 +165,8 @@ export function PointPicker({ start, end, onChange, locate }: PointPickerProps) 
 const styles = StyleSheet.create({
   wrap: { gap: Spacing.two },
   chips: { flexDirection: 'row', gap: Spacing.two },
+  chipInner: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  chipDot: { width: 10, height: 10, borderRadius: 5, borderWidth: 1, borderColor: '#ffffff' },
   chip: { borderWidth: 1, borderRadius: Spacing.four, paddingVertical: Spacing.one, paddingHorizontal: Spacing.three },
   map: { width: '100%', height: 320, borderRadius: 16, overflow: 'hidden' },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },

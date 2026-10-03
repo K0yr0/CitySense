@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
+import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -11,7 +12,7 @@ import { healthLabel } from '@/lib/labels';
 
 import { HealthDot } from './quality-bar';
 import { loadRouteQuality } from './quality-cache';
-import { describeRoute } from './route-geometry';
+import { describeRoute, routeIcon } from './route-geometry';
 
 type Loaded = { key: string; quality: RouteQuality | null; failed: boolean };
 
@@ -60,10 +61,12 @@ export function RouteCard({ route, refreshToken, onPress, onDelete }: Props) {
         <ThemedText type="smallBold" numberOfLines={1} style={styles.name}>
           {route.name}
         </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-          {route.kind === 'line' ? (route.mode === 'tram' ? '🚋 ' : '🚌 ') : '📍 '}
-          {describeRoute(route)}
-        </ThemedText>
+        <View style={styles.kind}>
+          <Icon name={routeIcon(route)} size={14} color={theme.textSecondary} />
+          <ThemedText type="small" themeColor="textSecondary" numberOfLines={1} style={styles.kindText}>
+            {describeRoute(route)}
+          </ThemedText>
+        </View>
         <View style={styles.quality}>
           {!current ? (
             <>
@@ -83,6 +86,7 @@ export function RouteCard({ route, refreshToken, onPress, onDelete }: Props) {
               <ThemedText type="small" themeColor="textSecondary">
                 ·
               </ThemedText>
+              {warnings > 0 && <Icon name="warning" size={14} color={theme.danger} />}
               <ThemedText type="small" style={warnings > 0 ? { color: theme.danger } : undefined} themeColor="textSecondary">
                 {warnings > 0 ? s.warningCount(warnings) : s.noWarningsShort}
               </ThemedText>
@@ -96,7 +100,7 @@ export function RouteCard({ route, refreshToken, onPress, onDelete }: Props) {
         hitSlop={10}
         onPress={onDelete}
         style={({ pressed }) => [styles.trash, pressed && styles.pressed]}>
-        <ThemedText style={styles.trashIcon}>🗑️</ThemedText>
+        <Icon name="trash" size={20} color={theme.danger} />
       </Pressable>
     </Pressable>
   );
@@ -114,6 +118,7 @@ const styles = StyleSheet.create({
   name: { fontSize: 16 },
   quality: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, marginTop: Spacing.one },
   trash: { padding: Spacing.two },
-  trashIcon: { fontSize: 20, lineHeight: 26 },
+  kind: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  kindText: { flexShrink: 1 },
   pressed: { opacity: 0.6 },
 });

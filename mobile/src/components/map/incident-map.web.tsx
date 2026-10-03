@@ -12,7 +12,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useText } from '@/lib/i18n';
 import { commonText } from '@/i18n/common';
 import { mapText } from '@/i18n/map';
-import { confidencePct, incidentColor, statusLabel, TYPE_ICONS, typeLabel } from '@/lib/labels';
+import { confidencePct, incidentColor, statusLabel, typeLabel } from '@/lib/labels';
 
 import type { IncidentMapProps } from './types';
 
@@ -47,7 +47,7 @@ export function IncidentMap({ ref, incidents, selectedId, topInset, bottomInset,
             <View style={[styles.dot, { backgroundColor: incidentColor(i) }]} />
             <View style={styles.rowText}>
               <ThemedText type="smallBold">
-                {TYPE_ICONS[i.type] ?? TYPE_ICONS.other} {typeLabel(i.type)}
+                {typeLabel(i.type)}
               </ThemedText>
               <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
                 {i.address ?? c.unknownAddress} · {statusLabel(i.status)} {confidencePct(i.confidence)}
