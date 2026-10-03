@@ -8,17 +8,17 @@ Setup: the real detectors (`backend/sensor/detect.py`, `backend/sensor/lights.py
 
 | condition | rides | pothole/track defects passed | defect recall | defect precision | broken lamps passed | lamp recall | lamp precision |
 |---|---|---|---|---|---|---|---|
-| baseline | 80 | 380 | 100.0% | 100.0% | 180 | 98.3% | 100.0% |
-| vibration noise x1.5 | 80 | 380 | 100.0% | 100.0% | 180 | 98.3% | 100.0% |
-| vibration noise x2 | 80 | 380 | 100.0% | 90.7% | 180 | 98.3% | 100.0% |
-| vibration noise x3 | 80 | 380 | 100.0% | 14.1% | 180 | 98.3% | 100.0% |
-| slow traffic (speed x0.6) | 80 | 380 | 94.2% | 100.0% | 180 | 96.1% | 100.0% |
-| fast (speed x1.3) | 80 | 380 | 100.0% | 100.0% | 180 | 98.9% | 100.0% |
-| phone lying flat | 80 | 380 | 100.0% | 100.0% | 180 | 98.3% | 100.0% |
-| phone upright (holder/pocket) | 80 | 380 | 100.0% | 100.0% | 180 | 98.3% | 100.0% |
-| GPS error 5 m | 80 | 380 | 100.0% | 100.0% | 180 | 83.9% | 96.3% |
-| GPS error 10 m | 80 | 380 | 88.4% | 88.4% | 180 | 60.6% | 50.8% |
-| hard: noise x2 + slow + GPS 5 m | 80 | 380 | 92.6% | 100.0% | 180 | 76.1% | 93.4% |
+| baseline | 80 | 440 | 100.0% | 100.0% | 180 | 96.1% | 100.0% |
+| vibration noise x1.5 | 80 | 440 | 100.0% | 100.0% | 180 | 96.1% | 100.0% |
+| vibration noise x2 | 80 | 440 | 100.0% | 92.3% | 180 | 96.1% | 100.0% |
+| vibration noise x3 | 80 | 440 | 100.0% | 16.1% | 180 | 96.1% | 100.0% |
+| slow traffic (speed x0.6) | 80 | 440 | 93.9% | 100.0% | 180 | 96.1% | 100.0% |
+| fast (speed x1.3) | 80 | 440 | 100.0% | 100.0% | 180 | 98.9% | 100.0% |
+| phone lying flat | 80 | 440 | 100.0% | 100.0% | 180 | 96.1% | 100.0% |
+| phone upright (holder/pocket) | 80 | 440 | 100.0% | 100.0% | 180 | 96.1% | 100.0% |
+| GPS error 5 m | 80 | 440 | 100.0% | 100.0% | 180 | 82.2% | 94.4% |
+| GPS error 10 m | 80 | 440 | 88.4% | 88.4% | 180 | 62.2% | 50.4% |
+| hard: noise x2 + slow + GPS 5 m | 80 | 440 | 92.7% | 100.0% | 180 | 73.3% | 93.8% |
 
 Baseline by vehicle type:
 - **bus (road potholes)**: recall 100.0%, precision 100.0%

@@ -4,6 +4,42 @@
  "defects": [
   {
    "kind": "bump",
+   "mode": "tram",
+   "line": "17",
+   "street": "Marszałkowska",
+   "lon": 21.008526,
+   "lat": 52.235159,
+   "amp": 8.0,
+   "freq": 9.0,
+   "anchor": "complaints issue 2: tram track, Marszałkowska x Świętokrzyska (40 reports)",
+   "id": "D001"
+  },
+  {
+   "kind": "bump",
+   "mode": "tram",
+   "line": "17",
+   "street": "Marszałkowska",
+   "lon": 21.005973,
+   "lat": 52.238853,
+   "amp": 8.5,
+   "freq": 8.5,
+   "anchor": "complaints issue 1: tram track, Marszałkowska x Królewska (12 reports)",
+   "id": "D002"
+  },
+  {
+   "kind": "bump",
+   "mode": "road",
+   "line": "MAR",
+   "street": "Marszałkowska",
+   "lon": 21.011257,
+   "lat": 52.230832,
+   "amp": 7.5,
+   "freq": 8.0,
+   "anchor": "complaints issue 3: pothole, Marszałkowska near Centrum (22 reports)",
+   "id": "D003"
+  },
+  {
+   "kind": "bump",
    "mode": "road",
    "street": "Marszałkowska",
    "line": "MAR",
@@ -11,7 +47,7 @@
    "lat": 52.224546,
    "amp": 8.16,
    "freq": 8.35,
-   "id": "D001"
+   "id": "D004"
   },
   {
    "kind": "bump",
@@ -22,7 +58,7 @@
    "lat": 52.222833,
    "amp": 9.09,
    "freq": 6.52,
-   "id": "D002"
+   "id": "D005"
   },
   {
    "kind": "bump",
@@ -33,7 +69,7 @@
    "lat": 52.21674,
    "amp": 8.35,
    "freq": 7.65,
-   "id": "D003"
+   "id": "D006"
   },
   {
    "kind": "bump",
@@ -44,18 +80,27 @@
    "lat": 52.233698,
    "amp": 5.3,
    "freq": 7.11,
-   "id": "D004"
+   "id": "D007"
   },
   {
    "kind": "bump",
    "mode": "road",
    "street": "Marszałkowska",
    "line": "MAR",
-   "lon": 21.0113,
-   "lat": 52.230763,
-   "amp": 5.19,
-   "freq": 6.02,
-   "id": "D005"
+   "lon": 21.004774,
+   "lat": 52.240677,
+   "amp": 5.02,
+   "freq": 7.04,
+   "id": "D008"
+  },
+  {
+   "kind": "dark_lamp",
+   "mode": "road",
+   "street": "Marszałkowska",
+   "line": "MAR",
+   "lon": 21.012348,
+   "lat": 52.229155,
+   "id": "D009"
   },
   {
    "kind": "dark_lamp",
@@ -64,16 +109,7 @@
    "line": "MAR",
    "lon": 21.00583,
    "lat": 52.238832,
-   "id": "D006"
-  },
-  {
-   "kind": "dark_lamp",
-   "mode": "road",
-   "street": "Marszałkowska",
-   "line": "MAR",
-   "lon": 21.012976,
-   "lat": 52.227992,
-   "id": "D007"
+   "id": "D010"
   },
   {
    "kind": "bump",
@@ -84,7 +120,7 @@
    "lat": 52.226119,
    "amp": 8.83,
    "freq": 6.1,
-   "id": "D008"
+   "id": "D011"
   },
   {
    "kind": "bump",
@@ -95,7 +131,7 @@
    "lat": 52.228808,
    "amp": 5.01,
    "freq": 7.07,
-   "id": "D009"
+   "id": "D012"
   },
   {
    "kind": "bump",
@@ -106,7 +142,7 @@
    "lat": 52.22735,
    "amp": 5.52,
    "freq": 6.52,
-   "id": "D010"
+   "id": "D013"
   },
   {
    "kind": "bump",
@@ -117,7 +153,7 @@
    "lat": 52.232614,
    "amp": 7.45,
    "freq": 6.03,
-   "id": "D011"
+   "id": "D014"
   },
   {
    "kind": "bump",
@@ -128,7 +164,7 @@
    "lat": 52.227967,
    "amp": 9.06,
    "freq": 8.91,
-   "id": "D012"
+   "id": "D015"
   },
   {
    "kind": "dark_lamp",
@@ -137,7 +173,7 @@
    "line": "JER",
    "lon": 21.029407,
    "lat": 52.233483,
-   "id": "D013"
+   "id": "D016"
   },
   {
    "kind": "dark_lamp",
@@ -146,7 +182,7 @@
    "line": "JER",
    "lon": 20.988538,
    "lat": 52.22498,
-   "id": "D014"
+   "id": "D017"
   },
   {
    "kind": "bump",
@@ -157,7 +193,7 @@
    "lat": 52.234647,
    "amp": 8.24,
    "freq": 9.45,
-   "id": "D015"
+   "id": "D018"
   },
   {
    "kind": "bump",
@@ -168,7 +204,7 @@
    "lat": 52.233839,
    "amp": 5.05,
    "freq": 7.46,
-   "id": "D016"
+   "id": "D019"
   },
   {
    "kind": "bump",
@@ -179,7 +215,7 @@
    "lat": 52.235653,
    "amp": 8.15,
    "freq": 8.47,
-   "id": "D017"
+   "id": "D020"
   },
   {
    "kind": "dark_lamp",
@@ -188,7 +224,7 @@
    "line": "SWI",
    "lon": 21.013715,
    "lat": 52.236217,
-   "id": "D018"
+   "id": "D021"
   },
   {
    "kind": "bump",
@@ -200,7 +236,7 @@
    "lat": 52.234232,
    "amp": 9.18,
    "freq": 7.92,
-   "id": "D019"
+   "id": "D022"
   },
   {
    "kind": "bump",
@@ -212,7 +248,7 @@
    "lat": 52.214141,
    "amp": 5.89,
    "freq": 10.26,
-   "id": "D020"
+   "id": "D023"
   },
   {
    "kind": "bump",
@@ -224,7 +260,7 @@
    "lat": 52.242679,
    "amp": 9.4,
    "freq": 9.14,
-   "id": "D021"
+   "id": "D024"
   },
   {
    "kind": "bump",
@@ -236,7 +272,7 @@
    "lat": 52.2188,
    "amp": 4.93,
    "freq": 10.56,
-   "id": "D022"
+   "id": "D025"
   },
   {
    "kind": "bump",
@@ -248,7 +284,7 @@
    "lat": 52.223655,
    "amp": 8.88,
    "freq": 9.88,
-   "id": "D023"
+   "id": "D026"
   },
   {
    "kind": "bump",
@@ -260,7 +296,7 @@
    "lat": 52.22649,
    "amp": 5.13,
    "freq": 8.21,
-   "id": "D024"
+   "id": "D027"
   },
   {
    "kind": "dark_lamp",
@@ -270,7 +306,7 @@
    "builtin": true,
    "lon": 21.004858,
    "lat": 52.240891,
-   "id": "D025"
+   "id": "D028"
   },
   {
    "kind": "dark_lamp",
@@ -280,7 +316,7 @@
    "builtin": true,
    "lon": 21.011016,
    "lat": 52.230995,
-   "id": "D026"
+   "id": "D029"
   },
   {
    "kind": "dark_lamp",
@@ -290,7 +326,7 @@
    "builtin": true,
    "lon": 21.016336,
    "lat": 52.222389,
-   "id": "D027"
+   "id": "D030"
   },
   {
    "kind": "dark_lamp",
@@ -300,7 +336,7 @@
    "builtin": true,
    "lon": 21.017477,
    "lat": 52.220456,
-   "id": "D028"
+   "id": "D031"
   }
  ]
 }

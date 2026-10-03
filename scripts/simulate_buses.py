@@ -17,6 +17,7 @@ Line labels (MAR, JER, SWI) are simulation corridors, not ZTM timetable lines.
   .venv/bin/python scripts/simulate_buses.py --make-world              # rewrite sim_world.json
   docker compose --profile sim up simulator
   .venv/bin/python scripts/simulate_buses.py --eval                    # accuracy report (S4), no API
+  .venv/bin/python scripts/simulate_buses.py --scenario all            # stage demo scenarios (S5)
 
 Each run appends one JSON line per ride (device, trip, defects passed, API answer) to
 data/rides/sim_<UTC time>.jsonl for the accuracy report (S4).
@@ -27,6 +28,7 @@ import argparse
 import hashlib
 import json
 import math
+import os
 import sys
 import threading
 import time
@@ -68,6 +70,20 @@ BUS_LINES = {
         ("Nowy Świat", 21.0187, 52.2371)]},
 }
 TRAM_LINES = {"17": {"defects": 6}}  # built-in synth_ride routes; their defects come from synth._world
+
+# Defects placed where the synthetic citizen complaints (data/complaints_synth.json, owner A) cluster on a
+# simulated line, so sensors and citizens describe the same world (S5). Without issue 2, 40 "tram track"
+# complaints at Świętokrzyska met only clean tram passes and their confidence sank to ~45 %.
+# Coordinates: the cluster's median point projected onto the line (fusion merges within 40 m).
+ANCHORS = [
+    {"kind": "bump", "mode": "tram", "line": "17", "street": "Marszałkowska", "lon": 21.008526, "lat": 52.235159,
+     "amp": 8.0, "freq": 9.0, "anchor": "complaints issue 2: tram track, Marszałkowska x Świętokrzyska (40 reports)"},
+    {"kind": "bump", "mode": "tram", "line": "17", "street": "Marszałkowska", "lon": 21.005973, "lat": 52.238853,
+     "amp": 8.5, "freq": 8.5, "anchor": "complaints issue 1: tram track, Marszałkowska x Królewska (12 reports)"},
+    {"kind": "bump", "mode": "road", "line": "MAR", "street": "Marszałkowska", "lon": 21.011257, "lat": 52.230832,
+     "amp": 7.5, "freq": 8.0, "anchor": "complaints issue 3: pothole, Marszałkowska near Centrum (22 reports)"},
+]
+DEMO_RIDES = [("tram17_day_01", 1, False), ("tram17_night_01", 2, True)]  # (name, seed, night) for seed_demo.py
 
 
 # --------------------------------------------------------------------------- routes over the OSM road graph
@@ -189,16 +205,17 @@ def _mirror(world: dict, length: float) -> dict:
 
 def make_world(seed: int = WORLD_SEED) -> dict:
     """Defects at fixed coordinates: potholes + dark lamps on the bus corridors, the tram lines' track defects."""
-    defects = []
+    defects = [dict(a) for a in ANCHORS]
     for line, spec in BUS_LINES.items():
         route = route_for("road", line)
         rng = np.random.default_rng([seed, sum(map(ord, line))])
+        anchored = [route.locate(a["lon"], a["lat"])[0] for a in ANCHORS if a["mode"] == "road" and a["line"] == line]
         placed: list[float] = []
         for _ in range(20000):
             if len(placed) >= spec["potholes"]:
                 break
             s = float(rng.uniform(60, route.length - 60))
-            if np.min(np.abs(route.stop_s - s)) > 50 and all(abs(s - p) > 120 for p in placed):
+            if np.min(np.abs(route.stop_s - s)) > 50 and all(abs(s - p) > 120 for p in placed + anchored):
                 placed.append(s)
                 lon, lat = route.at(s)
                 defects.append({"kind": "bump", "mode": "road", "street": spec["street"], "line": line,
@@ -211,7 +228,7 @@ def make_world(seed: int = WORLD_SEED) -> dict:
             if len(lamps) >= spec["dark_lamps"]:
                 break
             s = float(rng.uniform(200, route.length - 200))
-            if np.min(np.abs(route.stop_s - s)) > 60 and all(abs(s - x) > 200 for x in lamps + placed):
+            if np.min(np.abs(route.stop_s - s)) > 60 and all(abs(s - x) > 200 for x in lamps + placed + anchored):
                 lamps.append(s)
         for s in lamps:
             lon, lat = route.at(s)
@@ -231,6 +248,16 @@ def make_world(seed: int = WORLD_SEED) -> dict:
     for i, d in enumerate(defects, 1):
         d["id"] = f"D{i:03d}"
     return {"seed": seed, "note": "SIMULATED ground truth for scripts/simulate_buses.py", "defects": defects}
+
+
+def write_demo_rides(defects: list[dict], out_dir: Path = synth.DEMO_DIR) -> list[Path]:
+    """Rewrite the tram 17 demo rides (seed_demo.py uploads them) over the full world, anchors included."""
+    route = route_for("tram", "17")
+    world, _ = vehicle_world(route, defects)
+    out = []
+    for name, seed, night in DEMO_RIDES:
+        out += synth.write_ride(name, out_dir, route=route, world=world, seed=seed, night=night)
+    return out
 
 
 def load_world(path: Path = WORLD_FILE) -> dict:
@@ -492,6 +519,149 @@ def fleet(device_keys: dict[str, str], only: list[str] | None) -> list[tuple[str
     return out
 
 
+# --------------------------------------------------------------------------- stage scenarios (S5)
+
+# Fixed spots with no defect and no complaint within 80 m, away from stops (seeded, repeatable).
+NEW_POTHOLE = {"id": "S5-NEW", "kind": "bump", "mode": "road", "line": "JER", "street": "Aleje Jerozolimskie",
+               "lon": 21.015902, "lat": 52.230809, "amp": 8.0, "freq": 8.0}
+HIDDEN_POTHOLE = {"id": "S5-REPORTED", "kind": "bump", "mode": "road", "line": "SWI", "street": "Świętokrzyska",
+                  "lon": 21.016533, "lat": 52.236764, "amp": 7.5, "freq": 8.5}
+SCENARIO_SEED = 5000
+CITIZEN_TEXTS = [
+    "Duża dziura w jezdni na Świętokrzyskiej przy Nowym Świecie, autobusy podskakują.",
+    "Świętokrzyska koło Nowego Światu: wyrwa w asfalcie, niebezpiecznie dla rowerzystów.",
+]
+
+
+class Api:
+    """Tiny JSON client for the scenarios (stdlib only, like the devices)."""
+
+    def __init__(self, base: str, token: str | None = None):
+        self.base, self.token = base.rstrip("/"), token
+
+    def _req(self, method: str, path: str, data: bytes | None = None, ctype: str | None = None) -> dict:
+        headers = {"Authorization": f"Bearer {self.token}"} if self.token else {}
+        if ctype:
+            headers["Content-Type"] = ctype
+        req = urllib.request.Request(self.base + path, data, headers, method=method)
+        try:
+            with urllib.request.urlopen(req, timeout=600) as r:
+                return json.loads(r.read())
+        except urllib.error.HTTPError as e:
+            raise RuntimeError(f"{method} {path} -> {e.code}: {e.read().decode(errors='replace')[:300]}") from e
+
+    def get(self, path: str) -> dict:
+        return self._req("GET", path)
+
+    def post_json(self, path: str, body: dict) -> dict:
+        return self._req("POST", path, json.dumps(body).encode(), "application/json")
+
+    def post_form(self, path: str, fields: dict) -> dict:
+        from urllib.parse import urlencode
+        return self._req("POST", path, urlencode(fields).encode(), "application/x-www-form-urlencoded")
+
+
+def find_incident(api: Api, spot: dict, issue_type: str = "road_damage", radius_m: float = 40.0) -> dict | None:
+    """The incident of `issue_type` nearest to the spot (within radius_m), as a full detail."""
+    rows = api.get(f"/incidents?type={issue_type}&limit=5000")["incidents"]
+    best = min(((float(synth._haversine_m(spot["lat"], spot["lon"], r["lat"], r["lon"])), r) for r in rows),
+               key=lambda x: x[0], default=None)
+    return api.get(f"/incidents/{best[1]['id']}") if best and best[0] <= radius_m else None
+
+
+def describe(inc: dict | None) -> str:
+    if inc is None:
+        return "no incident yet"
+    return (f"incident #{inc['id']}: {inc['status'].upper()} (confidence {inc['confidence']:.0%}), "
+            f"{inc['report_count']} citizen reports, {inc['sensor_rides']} sensor rides, "
+            f"{inc['sensor_misses']} clean passes, found before any report: {'yes' if inc['found_before_report'] else 'no'}")
+
+
+def segment_health(api: Api, spot: dict, half_m: float = 15.0) -> str:
+    dlon, dlat = half_m / (111_320 * math.cos(math.radians(spot["lat"]))), half_m / 110_540
+    bbox = f"{spot['lon'] - dlon},{spot['lat'] - dlat},{spot['lon'] + dlon},{spot['lat'] + dlat}"
+    segs = [x for x in api.get(f"/segments?bbox={bbox}&mode=road&measured_only=true")["segments"]
+            if x.get("health") is not None]
+    return f"{min(x['health'] for x in segs):.2f}" if segs else "not measured"
+
+
+class Scenario:
+    def __init__(self, args, keys: dict[str, str], defects: list[dict]):
+        self.args, self.keys, self.defects = args, keys, defects
+        self.api = Api(args.api, args.token)
+        self.trip = 0  # alternate directions across the whole show
+
+    def say(self, text: str) -> None:
+        print(f"\n>>> {text}", flush=True)
+
+    def drive(self, device_id: str, *, extra: list[dict] = (), removed: set[str] = frozenset(),
+              before_send=None) -> dict:
+        """One ride with the world changed by the scenario. The API dates a streamed ride so that it
+        ends 'now'; `before_send(duration_s)` runs first, e.g. to date reports before the ride started."""
+        if device_id not in self.keys:
+            sys.exit(f"scenario needs {device_id} in DEVICE_KEYS")
+        mode, line = parse_device(device_id)
+        world = [d for d in self.defects if d["id"] not in removed] + list(extra)
+        trip, self.trip = self.trip, self.trip + 1
+        df, passed, _ = build_ride(device_id, mode, line, trip, seed=SCENARIO_SEED, night=False, defects=world)
+        if before_send:
+            before_send(float(df["t"].iloc[-1]))
+        res = stream_ride(self.args.api, f"{device_id}:{self.keys[device_id]}", line, mode, to_samples(df),
+                          chunk_s=self.args.chunk_s, speed=self.args.speed, stop=threading.Event())
+        print(f"    {device_id} drove line {line} ({'return' if trip % 2 else 'outbound'}): "
+              f"{res['bumps']} bumps felt, ride #{res['ride_id']}", flush=True)
+        return res
+
+    def new_pothole(self) -> None:
+        self.say("Scenario 1: a NEW pothole opens on Aleje Jerozolimskie. Nobody has reported it.")
+        print(f"    before: {describe(find_incident(self.api, NEW_POTHOLE))}")
+        self.drive("bus-JER-01", extra=[NEW_POTHOLE])
+        print(f"    after the first bus: {describe(find_incident(self.api, NEW_POTHOLE))}")
+        self.drive("bus-JER-02", extra=[NEW_POTHOLE])
+        print(f"    after a second bus:  {describe(find_incident(self.api, NEW_POTHOLE))}")
+        r = self.api.post_form("/reports", {"text": "Nowa dziura na Alejach Jerozolimskich, uważajcie!",
+                                            "lon": NEW_POTHOLE["lon"], "lat": NEW_POTHOLE["lat"],
+                                            "contributor": "scenario-citizen-1"})
+        print(f"    a citizen reports it later -> report joins incident #{r.get('incident_id')}")
+        print(f"    now: {describe(find_incident(self.api, NEW_POTHOLE))}")
+
+    def report_then_verify(self) -> None:
+        self.say("Scenario 2: citizens report a pothole on Świętokrzyska; the next bus checks it.")
+
+        def report_first(ride_s: float) -> None:  # the reports come in before the bus sets off
+            t0 = datetime.now(timezone.utc).timestamp() - ride_s - 120
+            self.api.post_json("/reports/bulk", {"reports": [
+                {"text": text, "lon": HIDDEN_POTHOLE["lon"], "lat": HIDDEN_POTHOLE["lat"], "source": "web",
+                 "created_at": datetime.fromtimestamp(t0 + 30 * k, timezone.utc).isoformat()}
+                for k, text in enumerate(CITIZEN_TEXTS)]})
+            print(f"    after {len(CITIZEN_TEXTS)} reports: {describe(find_incident(self.api, HIDDEN_POTHOLE))}")
+
+        self.drive("bus-SWI-01", extra=[HIDDEN_POTHOLE], before_send=report_first)
+        print(f"    after the next bus:  {describe(find_incident(self.api, HIDDEN_POTHOLE))}")
+        self.drive("bus-SWI-02", extra=[HIDDEN_POTHOLE])
+        print(f"    after another bus:   {describe(find_incident(self.api, HIDDEN_POTHOLE))}")
+
+    def repair(self) -> None:
+        self.say("Scenario 3: the Jerozolimskie pothole is REPAIRED; buses keep driving over the spot.")
+        if find_incident(self.api, NEW_POTHOLE) is None:
+            print("    (scenario 1 has not run on this database yet: running it first)")
+            self.new_pothole()
+        before = find_incident(self.api, NEW_POTHOLE)
+        print(f"    before: {describe(before)}; road health there {segment_health(self.api, NEW_POTHOLE)}")
+        for dev in ("bus-JER-01", "bus-JER-02", "bus-JER-01"):
+            self.drive(dev, removed={NEW_POTHOLE["id"]})
+        after = find_incident(self.api, NEW_POTHOLE)
+        felt = after["sensor_rides"] - before["sensor_rides"]
+        print(f"    after 3 passes: the buses felt {'nothing' if felt == 0 else f'{felt} bumps'} at the spot; road health "
+              f"there {segment_health(self.api, NEW_POTHOLE)} (the 5 newest passes count, 1 = smooth)")
+        print(f"    {describe(after)}")
+        print("    a verified incident stays open until the city marks the job done in the web admin "
+              "(work_status = done, owner B); the sensors now back that decision")
+
+
+SCENARIOS = {"new-pothole": "new_pothole", "report-verify": "report_then_verify", "repair": "repair"}
+
+
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--api", default="http://localhost:8000")
@@ -502,11 +672,15 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--speed", type=float, default=0.0, help="1 = real time, 10 = 10x, 0 = as fast as possible")
     ap.add_argument("--devices", nargs="*", help="only these device ids (default: all DEVICE_KEYS)")
     ap.add_argument("--world", default=str(WORLD_FILE), help="ground-truth defects JSON")
-    ap.add_argument("--make-world", action="store_true", help="(re)write the world file and exit")
+    ap.add_argument("--make-world", action="store_true",
+                    help="(re)write the world file and the tram 17 demo rides over it, then exit")
     ap.add_argument("--dry-run", action="store_true", help="generate rides and log truth, send nothing")
     ap.add_argument("--eval", action="store_true", help="accuracy sweep over recording conditions (S4), no API")
     ap.add_argument("--eval-seeds", type=int, default=10, help="rides per line, direction and condition")
     ap.add_argument("--report", default=str(REPORT_FILE), help="where --eval writes its markdown report")
+    ap.add_argument("--scenario", choices=[*SCENARIOS, "all"], help="run a stage demo scenario (S5) against --api")
+    ap.add_argument("--token", default=os.getenv("CITYECHO_API_TOKEN"),
+                    help="Bearer token for the scenario's API reads, if they need a login")
     args = ap.parse_args(argv)
 
     if args.eval:
@@ -520,9 +694,17 @@ def main(argv: list[str] | None = None) -> None:
         world = make_world()
         Path(args.world).write_text(json.dumps(world, ensure_ascii=False, indent=1) + "\n")
         print(f"wrote {args.world}: {len(world['defects'])} defects")
+        for path in write_demo_rides(world["defects"]):
+            print(f"wrote {path.relative_to(REPO_ROOT)}")
         return
 
     from backend.config import settings
+
+    if args.scenario:
+        show = Scenario(args, settings.device_keys, load_world(Path(args.world))["defects"])
+        for name in (SCENARIOS if args.scenario == "all" else [args.scenario]):
+            getattr(show, SCENARIOS[name])()
+        return
 
     vehicles = fleet(settings.device_keys, args.devices)
     if not vehicles:

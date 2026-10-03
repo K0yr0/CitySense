@@ -201,3 +201,79 @@ def test_committed_report_is_labelled_as_simulation():
     text = sim.REPORT_FILE.read_text()
     assert text.startswith("# Sensor detection accuracy: MEASURED IN SIMULATION")
     assert all(label in text for label, _ in sim.EVAL_CONDITIONS)
+
+
+# --------------------------------------------------------------------------- S5: complaint anchors, demo rides, scenarios
+
+def test_complaint_anchors_are_in_the_world_and_on_their_line(world):
+    by_anchor = {d.get("anchor"): d for d in world if d.get("anchor")}
+    assert len(by_anchor) == len(sim.ANCHORS)
+    for a in sim.ANCHORS:
+        route = sim.route_for(a["mode"], a["line"])
+        assert route.locate(a["lon"], a["lat"])[1] < 1.0
+        _, passed = sim.vehicle_world(route, world)
+        assert by_anchor[a["anchor"]]["id"] in {p["id"] for p in passed}
+
+
+def test_demo_rides_are_current(world, tmp_path):
+    """data/demo/tram17_*.csv (uploaded by seed_demo.py) are the world's rides: rerun --make-world after changes."""
+    for path in sim.write_demo_rides(world, tmp_path):
+        assert path.read_bytes() == (synth.DEMO_DIR / path.name).read_bytes(), path.name
+    truth = pd.read_csv(synth.DEMO_DIR / "tram17_day_01_truth.csv")
+    for a in (a for a in sim.ANCHORS if a["mode"] == "tram"):
+        d = synth._haversine_m(truth["lat"], truth["lon"], a["lat"], a["lon"])
+        assert d.min() < 1.0  # every tram anchor is a defect of the demo rides
+
+
+def test_scenario_spots_are_clean_and_on_their_line(world):
+    for spot in (sim.NEW_POTHOLE, sim.HIDDEN_POTHOLE):
+        route = sim.route_for("road", spot["line"])
+        assert route.locate(spot["lon"], spot["lat"])[1] < 1.0
+        near = [d for d in world if synth._haversine_m(d["lat"], d["lon"], spot["lat"], spot["lon"]) < 150]
+        assert near == []
+
+
+class FakeApi:
+    def __init__(self, incidents):
+        self.incidents, self.posts = incidents, []
+
+    def get(self, path):
+        if path.startswith("/incidents?"):
+            return {"incidents": self.incidents}
+        return next(i for i in self.incidents if path == f"/incidents/{i['id']}")
+
+    def post_json(self, path, body):
+        self.posts.append((path, body))
+        return {}
+
+
+def test_find_incident_nearest_within_radius():
+    spot = {"lon": 21.0, "lat": 52.2}
+    api = FakeApi([{"id": 1, "lon": 21.0003, "lat": 52.2}, {"id": 2, "lon": 21.0001, "lat": 52.2},
+                   {"id": 3, "lon": 21.01, "lat": 52.2}])
+    assert sim.find_incident(api, spot)["id"] == 2
+    assert sim.find_incident(FakeApi([{"id": 3, "lon": 21.01, "lat": 52.2}]), spot) is None
+    assert sim.describe(None) == "no incident yet"
+
+
+def test_scenario_reports_are_dated_before_the_ride(monkeypatch, world):
+    from datetime import datetime, timezone
+
+    sent = []
+    monkeypatch.setattr(sim, "stream_ride", lambda *a, **k: sent.append(a) or {"bumps": 4, "ride_id": 9})
+    monkeypatch.setattr(sim, "find_incident", lambda api, spot, *a, **k: None)
+    args = types_ns(api="http://x", token=None, chunk_s=10, speed=0)
+    show = sim.Scenario(args, {"bus-SWI-01": "k1", "bus-SWI-02": "k2"}, world)
+    show.api = FakeApi([])
+    show.report_then_verify()
+    (path, body), = show.api.posts
+    assert path == "/reports/bulk" and len(body["reports"]) == len(sim.CITIZEN_TEXTS)
+    ride_s = sent[0][4][-1]["t"]  # samples of the first ride, relative seconds
+    newest = max(datetime.fromisoformat(r["created_at"]) for r in body["reports"])
+    assert (datetime.now(timezone.utc) - newest).total_seconds() > ride_s  # before the ride started
+    assert [a[1] for a in sent] == ["bus-SWI-01:k1", "bus-SWI-02:k2"]
+
+
+def types_ns(**kw):
+    from types import SimpleNamespace
+    return SimpleNamespace(**kw)
