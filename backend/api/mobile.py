@@ -72,8 +72,8 @@ TEXTS: dict[str, dict[str, Any]] = {
         "closed": "Closed",
         "sent_to": "Sent to {department}",
         "sent_to_other": "Sent to the relevant office",
-        "poor_road": "Bad road ahead (~{m} m)",
-        "incident_ahead": "Ahead: {label}",
+        "poor_road": "Bad road (~{m} m)",
+        "incident": "{label}",
     },
     "pl": {
         "type": {"road_damage": "uszkodzona jezdnia", "tram_track": "usterka torowiska",
@@ -96,8 +96,8 @@ TEXTS: dict[str, dict[str, Any]] = {
         "closed": "Zamknięte",
         "sent_to": "Przekazano do: {department}",
         "sent_to_other": "Przekazano do właściwej jednostki",
-        "poor_road": "Przed tobą zła nawierzchnia (~{m} m)",
-        "incident_ahead": "Przed tobą: {label}",
+        "poor_road": "Zła nawierzchnia (~{m} m)",
+        "incident": "{label}",
     },
     "uk": {
         "type": {"road_damage": "пошкоджена дорога", "tram_track": "дефект трамвайної колії",
@@ -120,8 +120,8 @@ TEXTS: dict[str, dict[str, Any]] = {
         "closed": "Закрито",
         "sent_to": "Передано до: {department}",
         "sent_to_other": "Передано до відповідної служби",
-        "poor_road": "Попереду погана дорога (~{m} м)",
-        "incident_ahead": "Попереду: {label}",
+        "poor_road": "Погана дорога (~{m} м)",
+        "incident": "{label}",
     },
 }
 
@@ -504,7 +504,8 @@ def incident_warning(row: dict, lang: str = DEFAULT_LANG) -> dict:
     address = row.get("address")
     return {"kind": "incident", "incident_id": int(row["id"]), "lon": ser.num(row.get("lon"), 7),
             "lat": ser.num(row.get("lat"), 7), "distance_along_m": round(float(row.get("along_m") or 0), 1),
-            "message": t["incident_ahead"].format(label=label) + (f" · {address}" if address else "")}
+            # The app adds where it is ("2 km ahead: ..."), so the message is just what and where.
+            "message": t["incident"].format(label=label[:1].upper() + label[1:]) + (f" · {address}" if address else "")}
 
 
 def route_json(row: dict) -> dict:

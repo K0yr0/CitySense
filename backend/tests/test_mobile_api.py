@@ -162,7 +162,7 @@ def test_messages_in_polish_and_ukrainian_with_plurals():
     assert uk(3).startswith("3 людини") and uk(5).startswith("5 людей")
     assert mobile.report_message(incident_row(report_count=1), lang="uk").startswith("Ви перші повідомили про це.")
     assert mobile.poor_road_warnings([{"health": 0.1, "length_m": 25, "along_m": 0}], lang="pl")[0]["message"] == \
-        "Przed tobą zła nawierzchnia (~25 m)"
+        "Zła nawierzchnia (~25 m)"
 
 
 def test_request_lang_from_accept_language():
@@ -201,7 +201,7 @@ def test_route_summary_and_poor_runs():
     assert halved["poor_m"] == 35.0 and halved["good_m"] == 12.5
     warns = mobile.poor_road_warnings(segs)
     assert [(w["distance_along_m"], w["message"]) for w in warns] == [
-        (35.0, "Bad road ahead (~45 m)"), (135.0, "Bad road ahead (~25 m)")]
+        (35.0, "Bad road (~45 m)"), (135.0, "Bad road (~25 m)")]
     assert mobile.route_summary([])["overall"] == "unknown"
     assert not mobile.runs_along({"length_m": 25, "covered_m": 3})  # a cross street
     assert round(mobile.path_length_m([[21.0, 52.0], [21.0, 52.001]])) == 111
@@ -456,7 +456,7 @@ def test_route_quality_points_falls_back_to_straight_line(env, monkeypatch):
     assert [s["id"] for s in body["segments"]] == [1] and body["segments"][0]["health_class"] == "poor"
     assert body["summary"]["poor_m"] == 25.0 and body["summary"]["overall"] == "poor"
     assert [(w["kind"], w["distance_along_m"]) for w in body["warnings"]] == [("incident", 50.0), ("poor_road", 100.0)]
-    assert body["warnings"][0]["message"] == "Ahead: road damage · Marszałkowska"
+    assert body["warnings"][0]["message"] == "Road damage · Marszałkowska"
     params = env.db.sql_with("ST_DWithin(s.geom::geography")[-1][1]
     assert params["mode"] == "road" and params["corridor"] == 30 and '"LineString"' in params["route"]
     inc_params = env.db.sql_with("from incidents i, r")[-1][1]
