@@ -10,6 +10,7 @@ import importlib
 import sys
 import types
 from contextlib import contextmanager
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from types import SimpleNamespace
@@ -18,12 +19,15 @@ from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
 
+from backend import config
 from backend.api import deps, serializers as ser
 from backend.api import rides as rides_api
+from backend.auth import require_admin, tokens
 from backend.fusion import trust as trust_mod
 from backend.main import PHOTOS_DIR, app
 
 T0 = datetime(2026, 10, 1, 8, 0, tzinfo=timezone.utc)
+ADMIN_USER = {"id": 1, "email": "boss@city.pl", "name": "Boss", "role": "admin"}
 
 SUMMARY_KEYS = {
     "id", "type", "status", "score", "department", "lon", "lat", "address",
@@ -131,6 +135,9 @@ def env(monkeypatch, tmp_path):
         yield conn
 
     app.dependency_overrides[deps.get_db] = fake_get_db
+    # The incident routes are admin only; these tests act as a signed-in admin
+    # (test_incident_routes_need_an_admin checks the real token check).
+    app.dependency_overrides[require_admin] = lambda: ADMIN_USER
     monkeypatch.setattr(rides_api, "RIDES_DIR", tmp_path / "rides")
     rides_api._streams.clear()
     yield SimpleNamespace(conn=conn, db=fdb, client=TestClient(app), mp=monkeypatch,
@@ -233,6 +240,27 @@ def test_segments_without_filters_and_bad_input(env):
 
 
 # --------------------------------------------------------------------------- incidents
+
+def test_incident_routes_need_an_admin(env):
+    """Raw complaint texts, photos and sensor data are admin only (GDPR); /verify calls the ZTM API."""
+    env.mp.setattr(config, "settings", replace(config.settings, auth_secret="test-secret-" + "x" * 32,
+                                               admin_emails=[ADMIN_USER["email"]]))
+    del app.dependency_overrides[require_admin]  # the real check from here on
+    env.db.on("from incidents i", [incident_row()])                      # the queue
+    env.db.on("where i.id = %(id)s", lambda p: incident_row(id=p["id"]))  # one incident (newest rule wins)
+    env.db.on("join reports r", [])
+    env.db.on("left join rides rd", [])
+    routes = [("get", "/incidents"), ("get", "/incidents/7"), ("post", "/incidents/7/verify")]
+    citizen = {"Authorization": f"Bearer {tokens.issue_token({**ADMIN_USER, 'id': 2, 'email': 'ala@example.com', 'role': 'citizen'})}"}
+    for method, path in routes:
+        assert getattr(env.client, method)(path).status_code == 401, path
+        assert getattr(env.client, method)(path, headers=citizen).status_code == 403, path
+    admin = {"Authorization": f"Bearer {tokens.issue_token(ADMIN_USER)}"}
+    assert env.client.get("/incidents", headers=admin).status_code == 200
+    assert env.client.get("/incidents/7", headers=admin).status_code == 200
+    # Aggregate numbers stay public (the web stats bar, no personal data).
+    assert env.client.get("/stats").status_code != 401
+
 
 def test_incident_list(env):
     env.db.on("from incidents i", [incident_row(), incident_row(id=8, report_count=0, sensor_count=3,

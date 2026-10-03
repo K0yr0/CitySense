@@ -6,13 +6,17 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from backend.api import serializers as ser
 from backend.api.deps import DB, savepoint
+from backend.auth import require_admin
 
 log = logging.getLogger(__name__)
-router = APIRouter(prefix="/incidents", tags=["incidents"])
+# Admin only: the queue and the detail carry raw complaint texts (personal data), photos, sensor signals and
+# the evidence timeline, which citizens must not see; /verify calls the Warsaw vehicle API. The mobile app
+# uses its own public /mobile/incidents. (Answers, POST /incidents/{id}/responses, live in responses.py.)
+router = APIRouter(prefix="/incidents", tags=["incidents"], dependencies=[Depends(require_admin)])
 
 MAX_SUMMARY_TEXTS = 20
 
