@@ -137,17 +137,39 @@ def test_health_class_thresholds():
         ["unknown", "unknown", "poor", "poor", "fair", "fair", "good", "good"]
 
 
-def test_messages_are_turkish_and_separate_the_two_states():
+def test_messages_default_to_english_and_separate_the_two_states():
     assert mobile.report_message(incident_row(report_count=1, status="candidate")) == \
-        "İlk bildiren sensin. Değerlendiriliyor. Departmana iletildi: ZDM."
+        "You're the first to report this. Under review. Sent to ZDM."
     assert mobile.report_message(incident_row(work_status="in_progress")) == \
-        "23 kişi daha bildirdi. Belediye ilgileniyor. Departmana iletildi: ZDM."
+        "23 other people reported this. The city is working on it. Sent to ZDM."
     assert mobile.report_message(incident_row(work_status="done", status="verified")) == \
-        "23 kişi daha bildirdi. Yapıldı: belediye onardı."
-    assert mobile.report_message(None, "ZDM").startswith("Bildirimin alındı.")
+        "23 other people reported this. Fixed by the city."
+    assert mobile.report_message(None, "ZDM").startswith("Report received.")
     assert mobile.detail_message(incident_row(status="verified"), reporter=False) == \
-        "24 kişi bildirdi · Doğrulandı · Departmana iletildi: ZDM"
-    assert "ilgili birim" in mobile.report_message(incident_row(department="inne"))
+        "24 people reported this · Verified · Sent to ZDM"
+    assert "relevant office" in mobile.report_message(incident_row(department="inne"))
+    assert mobile.report_message(incident_row(report_count=2)).startswith("1 other person reported this.")
+
+
+def test_messages_in_polish_and_ukrainian_with_plurals():
+    pl = lambda n, **kw: mobile.detail_message(incident_row(report_count=n, **kw), reporter=False, lang="pl")
+    assert pl(1).startswith("1 osoba to zgłosiła")
+    assert pl(3).startswith("3 osoby to zgłosiły") and pl(22).startswith("22 osoby to zgłosiły")
+    assert pl(5).startswith("5 osób to zgłosiło") and pl(12).startswith("12 osób to zgłosiło")
+    assert pl(24, work_status="in_progress") == "24 osoby to zgłosiły · Miasto się tym zajmuje · Przekazano do: ZDM"
+    uk = lambda n: mobile.detail_message(incident_row(report_count=n), reporter=False, lang="uk")
+    assert uk(1).startswith("1 людина") and uk(21).startswith("21 людина") and uk(11).startswith("11 людей")
+    assert uk(3).startswith("3 людини") and uk(5).startswith("5 людей")
+    assert mobile.report_message(incident_row(report_count=1), lang="uk").startswith("Ви перші повідомили про це.")
+    assert mobile.poor_road_warnings([{"health": 0.1, "length_m": 25, "along_m": 0}], lang="pl")[0]["message"] == \
+        "Przed tobą zła nawierzchnia (~25 m)"
+
+
+def test_request_lang_from_accept_language():
+    assert mobile.request_lang(None) == "en" and mobile.request_lang("tr-TR,tr;q=0.9") == "en"
+    assert mobile.request_lang("pl-PL,pl;q=0.9,en;q=0.8") == "pl"
+    assert mobile.request_lang("de;q=1, uk-UA;q=0.8") == "uk"
+    assert mobile.request_lang("EN") == "en"
 
 
 def test_parse_ids_and_natural_sort():
@@ -179,7 +201,7 @@ def test_route_summary_and_poor_runs():
     assert halved["poor_m"] == 35.0 and halved["good_m"] == 12.5
     warns = mobile.poor_road_warnings(segs)
     assert [(w["distance_along_m"], w["message"]) for w in warns] == [
-        (35.0, "İleride kötü yol (~45 m)"), (135.0, "İleride kötü yol (~25 m)")]
+        (35.0, "Bad road ahead (~45 m)"), (135.0, "Bad road ahead (~25 m)")]
     assert mobile.route_summary([])["overall"] == "unknown"
     assert not mobile.runs_along({"length_m": 25, "covered_m": 3})  # a cross street
     assert round(mobile.path_length_m([[21.0, 52.0], [21.0, 52.001]])) == 111
@@ -206,13 +228,15 @@ def test_incident_detail_anonymous_and_signed_in(env):
     anon = env.client.get("/mobile/incidents/7").json()
     assert set(anon) == PUBLIC_KEYS | {"my_answer", "i_reported", "message"}
     assert anon["my_answer"] is None and anon["i_reported"] is False
-    assert anon["message"] == "24 kişi bildirdi · Muhtemelen gerçek bir sorun · Departmana iletildi: ZDM"
+    assert anon["message"] == "24 people reported this · Likely a real problem · Sent to ZDM"
     assert not env.db.sql_with("as my_answer")  # no per-user lookup without a token
 
     env.db.on("as my_answer", {"my_answer": False, "i_reported": True})
     mine = env.client.get("/mobile/incidents/7", headers=env.auth).json()
     assert mine["my_answer"] == "no" and mine["i_reported"] is True
-    assert mine["message"].startswith("23 kişi daha bildirdi")
+    assert mine["message"].startswith("23 other people reported this")
+    pl = env.client.get("/mobile/incidents/7", headers={"Accept-Language": "pl-PL,pl;q=0.9"}).json()
+    assert pl["message"] == "24 osoby to zgłosiły · Prawdopodobnie prawdziwy problem · Przekazano do: ZDM"
     assert env.db.sql_with("as my_answer")[-1][1] == {"id": 7, "user_id": 1}
     stale = env.client.get("/mobile/incidents/7", headers={"Authorization": "Bearer not.a.jwt"})
     assert stale.status_code == 200 and stale.json()["my_answer"] is None
@@ -331,7 +355,7 @@ def test_create_report_joins_incident(env):
     assert set(body) == REPORT_KEYS and set(body["incident"]) == PUBLIC_KEYS
     assert body["report_id"] == 500 and body["text"] == "Duża dziura" and body["photo_url"] == "/photos/x.jpg"
     assert body["others_count"] == 23
-    assert body["message"] == "23 kişi daha bildirdi. Belediye ilgileniyor. Departmana iletildi: ZDM."
+    assert body["message"] == "23 other people reported this. The city is working on it. Sent to ZDM."
     assert seen["contributor_id"] == 42 and seen["source"] == "web" and seen["pin"] == (21.0122, 52.2297)
     assert seen["photo_bytes"] == b"\xff\xd8jpeg"
     assert ("ingest", [99]) in env.calls and ("request_verification", 7) in env.calls
@@ -341,7 +365,7 @@ def test_create_report_without_location(env):
     fake_pipeline(env, evidence_id=None, category="streetlight")
     body = env.client.post("/mobile/reports", data={"text": "lampa"}, headers=env.auth).json()
     assert body["incident"] is None and body["others_count"] == 0
-    assert body["message"].startswith("Bildirimin alındı.") and body["message"].endswith("Departmana iletildi: ZDM.")
+    assert body["message"].startswith("Report received.") and body["message"].endswith("Sent to ZDM.")
 
 
 def test_my_reports(env):
@@ -355,7 +379,7 @@ def test_my_reports(env):
     reports = env.client.get("/mobile/reports", headers=env.auth).json()["reports"]
     assert [r["report_id"] for r in reports] == [2, 1] and all(set(r) == REPORT_KEYS for r in reports)
     assert reports[0]["incident"]["work_status"] == "done"
-    assert reports[0]["message"] == "İlk bildiren sensin. Yapıldı: belediye onardı."
+    assert reports[0]["message"] == "You're the first to report this. Fixed by the city."
     assert reports[1]["incident"] is None
     assert env.db.sql_with("where i.id = any")[-1][1] == {"ids": [7]}
 
@@ -375,7 +399,7 @@ def test_me(env):
 # --------------------------------------------------------------------------- favourite routes
 
 def route_row(**kw):
-    row = dict(id=3, name="Ev → İş", kind="points", start_lon=21.0, start_lat=52.23, end_lon=21.01, end_lat=52.229,
+    row = dict(id=3, name="Home → Work", kind="points", start_lon=21.0, start_lat=52.23, end_lon=21.01, end_lat=52.229,
                line=None, mode=None, created_at=T0)
     row.update(kw)
     return row
@@ -432,7 +456,7 @@ def test_route_quality_points_falls_back_to_straight_line(env, monkeypatch):
     assert [s["id"] for s in body["segments"]] == [1] and body["segments"][0]["health_class"] == "poor"
     assert body["summary"]["poor_m"] == 25.0 and body["summary"]["overall"] == "poor"
     assert [(w["kind"], w["distance_along_m"]) for w in body["warnings"]] == [("incident", 50.0), ("poor_road", 100.0)]
-    assert body["warnings"][0]["message"] == "İleride yol hasarı: Marszałkowska"
+    assert body["warnings"][0]["message"] == "Ahead: road damage · Marszałkowska"
     params = env.db.sql_with("ST_DWithin(s.geom::geography")[-1][1]
     assert params["mode"] == "road" and params["corridor"] == 30 and '"LineString"' in params["route"]
     inc_params = env.db.sql_with("from incidents i, r")[-1][1]

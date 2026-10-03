@@ -8,6 +8,9 @@ Looking at the map is public; reporting, answering and routes need `Authorizatio
 Two separate states, never mixed: the confidence `status` (fusion engine) and the city's
 `work_status` (todo / in_progress / done, written by the web admin). Once `work_status` is
 done the "is it still there?" question stops, so later NO answers can't count against anyone.
+
+Short status lines (`message`) are written in the app's language from `Accept-Language`
+(en / pl / uk, default en); everything else is language-neutral data.
 """
 from __future__ import annotations
 
@@ -15,9 +18,9 @@ import logging
 import math
 import re
 from datetime import datetime, timezone
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, UploadFile
 from pydantic import BaseModel, Field, model_validator
 
 from backend.api import incidents as incidents_api
@@ -39,21 +42,118 @@ OPEN_STATUSES = ser.OPEN_STATUSES  # candidate, likely: the question is only ask
 HIDDEN_STATUSES = ("dismissed", "closed")  # not on the map (detail still opens for old links)
 ALONG_MIN_RATIO = 0.3         # a corridor segment must run along the route, not across it
 MAX_ROUTES_PER_USER = 50
-MAX_EXCLUDE_IDS = 200         # /question?exclude=: incidents skipped with "Şimdi değil"
+MAX_EXCLUDE_IDS = 200         # /question?exclude=: incidents skipped with "Not now"
 MAX_TEXT_LEN = 4000
 OSRM_URL = "https://router.project-osrm.org/route/v1/driving/{lon1},{lat1};{lon2},{lat2}"
 OSRM_TIMEOUT_S = 5.0
 # Index prefilter for metric checks, in degrees (>= 30 m at Warsaw's latitude); exact check follows.
 BOX_DEG = 0.001
 
-TYPE_LABELS = {
-    "road_damage": "Yol hasarı",
-    "tram_track": "Ray kusuru",
-    "streetlight": "Sokak lambası arızası",
-    "flooding": "Su baskını",
-    "waste": "Çöp sorunu",
-    "other": "Sorun",
+LANGS = ("en", "pl", "uk")
+DEFAULT_LANG = "en"
+
+# Citizen-facing texts. Plurals: {"one", "few", "many", "other"} picked by plural_form ({n} = the number).
+TEXTS: dict[str, dict[str, Any]] = {
+    "en": {
+        "type": {"road_damage": "road damage", "tram_track": "tram track defect", "streetlight": "streetlight out",
+                 "flooding": "flooding", "waste": "litter", "other": "problem"},
+        "received": "Report received",
+        "no_location": "We couldn't place it on the map; marking the spot helps",
+        "first": "You're the first to report this",
+        "others": {"one": "{n} other person reported this", "other": "{n} other people reported this"},
+        "nobody": "No reports yet",
+        "count": {"one": "{n} person reported this", "other": "{n} people reported this"},
+        "done": "Fixed by the city",
+        "in_progress": "The city is working on it",
+        "verified": "Verified",
+        "likely": "Likely a real problem",
+        "candidate": "Under review",
+        "dismissed": "Checks found no problem here",
+        "closed": "Closed",
+        "sent_to": "Sent to {department}",
+        "sent_to_other": "Sent to the relevant office",
+        "poor_road": "Bad road ahead (~{m} m)",
+        "incident_ahead": "Ahead: {label}",
+    },
+    "pl": {
+        "type": {"road_damage": "uszkodzona jezdnia", "tram_track": "usterka torowiska",
+                 "streetlight": "niedziałająca latarnia", "flooding": "podtopienie", "waste": "śmieci",
+                 "other": "problem"},
+        "received": "Zgłoszenie przyjęte",
+        "no_location": "Nie udało się ustalić miejsca; zaznaczenie go na mapie pomoże",
+        "first": "To pierwsze zgłoszenie tego problemu",
+        "others": {"one": "{n} inna osoba też to zgłosiła", "few": "{n} inne osoby też to zgłosiły",
+                   "many": "{n} innych osób też to zgłosiło", "other": "{n} innej osoby też to zgłosiło"},
+        "nobody": "Brak zgłoszeń",
+        "count": {"one": "{n} osoba to zgłosiła", "few": "{n} osoby to zgłosiły", "many": "{n} osób to zgłosiło",
+                  "other": "{n} osoby to zgłosiło"},
+        "done": "Naprawione przez miasto",
+        "in_progress": "Miasto się tym zajmuje",
+        "verified": "Potwierdzone",
+        "likely": "Prawdopodobnie prawdziwy problem",
+        "candidate": "W trakcie weryfikacji",
+        "dismissed": "Kontrole nie wykazały tu problemu",
+        "closed": "Zamknięte",
+        "sent_to": "Przekazano do: {department}",
+        "sent_to_other": "Przekazano do właściwej jednostki",
+        "poor_road": "Przed tobą zła nawierzchnia (~{m} m)",
+        "incident_ahead": "Przed tobą: {label}",
+    },
+    "uk": {
+        "type": {"road_damage": "пошкоджена дорога", "tram_track": "дефект трамвайної колії",
+                 "streetlight": "не працює ліхтар", "flooding": "підтоплення", "waste": "сміття",
+                 "other": "проблема"},
+        "received": "Повідомлення отримано",
+        "no_location": "Не вдалося визначити місце; позначка на мапі допоможе",
+        "first": "Ви перші повідомили про це",
+        "others": {"one": "Ще {n} людина повідомила про це", "few": "Ще {n} людини повідомили про це",
+                   "many": "Ще {n} людей повідомили про це", "other": "Ще {n} людини повідомили про це"},
+        "nobody": "Ще немає повідомлень",
+        "count": {"one": "{n} людина повідомила про це", "few": "{n} людини повідомили про це",
+                  "many": "{n} людей повідомили про це", "other": "{n} людини повідомили про це"},
+        "done": "Виправлено містом",
+        "in_progress": "Місто працює над цим",
+        "verified": "Підтверджено",
+        "likely": "Ймовірно, справжня проблема",
+        "candidate": "На перевірці",
+        "dismissed": "Перевірки не виявили тут проблеми",
+        "closed": "Закрито",
+        "sent_to": "Передано до: {department}",
+        "sent_to_other": "Передано до відповідної служби",
+        "poor_road": "Попереду погана дорога (~{m} м)",
+        "incident_ahead": "Попереду: {label}",
+    },
 }
+
+
+def request_lang(accept_language: str | None = Header(None)) -> str:
+    """First supported language in Accept-Language ("pl-PL,pl;q=0.9,en;q=0.8" -> "pl"); default en."""
+    for part in (accept_language or "").split(","):
+        code = part.split(";", 1)[0].strip().lower().split("-", 1)[0]
+        if code in LANGS:
+            return code
+    return DEFAULT_LANG
+
+
+Lang = Annotated[str, Depends(request_lang)]
+
+
+def plural_form(n: int, forms: dict[str, str], lang: str) -> str:
+    """CLDR plural category for whole numbers (pl/uk: one/few/many, en: one/other), {n} filled in."""
+    mod10, mod100 = n % 10, n % 100
+    if lang == "pl":
+        cat = "one" if n == 1 else "few" if 2 <= mod10 <= 4 and not 12 <= mod100 <= 14 else "many"
+    elif lang == "uk":
+        cat = ("one" if mod10 == 1 and mod100 != 11
+               else "few" if 2 <= mod10 <= 4 and not 12 <= mod100 <= 14 else "many")
+    else:
+        cat = "one" if n == 1 else "other"
+    return forms.get(cat, forms["other"]).replace("{n}", str(n))
+
+
+def _texts(lang: str) -> dict[str, Any]:
+    return TEXTS.get(lang, TEXTS[DEFAULT_LANG])
+
 
 # --------------------------------------------------------------------------- SQL
 
@@ -252,56 +352,48 @@ def public_segment(row: dict) -> dict:
             "path": seg["path"]}
 
 
-def _department_name(department: str | None) -> str | None:
-    return "ilgili birim" if department == "inne" else department
+def _sent_to(department: str | None, t: dict[str, Any]) -> str:
+    return t["sent_to_other"] if department == "inne" else t["sent_to"].format(department=department)
 
 
-def status_parts(incident: dict | None, *, reporter: bool, department: str | None = None) -> list[str]:
-    """Short Turkish status pieces: who reported, what the city / the engine says, where it went."""
+def status_parts(incident: dict | None, *, reporter: bool, department: str | None = None,
+                 lang: str = DEFAULT_LANG) -> list[str]:
+    """Short status pieces: who reported, what the city / the engine says, where it went."""
+    t = _texts(lang)
     if incident is None:
-        parts = ["Bildirimin alındı", "Konum bulunamadı; haritada işaretlemek yardımcı olur"]
+        parts = [t["received"], t["no_location"]]
         if department:
-            parts.append(f"Departmana iletildi: {_department_name(department)}")
+            parts.append(_sent_to(department, t))
         return parts
 
     count = int(incident.get("report_count") or 0)
     parts: list[str] = []
     if reporter:
         others = max(count - 1, 0)
-        parts.append("İlk bildiren sensin" if others == 0 else f"{others} kişi daha bildirdi")
+        parts.append(t["first"] if others == 0 else plural_form(others, t["others"], lang))
     else:
-        parts.append("Henüz kimse bildirmedi" if count == 0 else f"{count} kişi bildirdi")
+        parts.append(t["nobody"] if count == 0 else plural_form(count, t["count"], lang))
 
     work, status = incident.get("work_status") or "todo", incident.get("status")
-    if work == "done":
-        parts.append("Yapıldı: belediye onardı")
-    elif work == "in_progress":
-        parts.append("Belediye ilgileniyor")
-    elif status == "verified":
-        parts.append("Doğrulandı")
-    elif status == "likely":
-        parts.append("Muhtemelen gerçek bir sorun")
-    elif status == "candidate":
-        parts.append("Değerlendiriliyor")
-    elif status == "dismissed":
-        parts.append("Kontrollerde sorun bulunamadı")
-    elif status == "closed":
-        parts.append("Kapatıldı")
+    if work in ("done", "in_progress"):
+        parts.append(t[work])
+    elif status in ("verified", "likely", "candidate", "dismissed", "closed"):
+        parts.append(t[status])
 
     department = incident.get("department") or department
     if department and work != "done":
-        parts.append(f"Departmana iletildi: {_department_name(department)}")
+        parts.append(_sent_to(department, t))
     return parts
 
 
-def report_message(incident: dict | None, department: str | None = None) -> str:
-    """For the reporter: "23 kişi daha bildirdi. Belediye ilgileniyor. Departmana iletildi: ZDM."."""
-    return ". ".join(status_parts(incident, reporter=True, department=department)) + "."
+def report_message(incident: dict | None, department: str | None = None, lang: str = DEFAULT_LANG) -> str:
+    """For the reporter: "23 other people reported this. The city is working on it. Sent to ZDM."."""
+    return ". ".join(status_parts(incident, reporter=True, department=department, lang=lang)) + "."
 
 
-def detail_message(incident: dict, *, reporter: bool) -> str:
-    """One line for the incident sheet: "23 kişi bildirdi · Belediye ilgileniyor · ..."."""
-    return " · ".join(status_parts(incident, reporter=reporter))
+def detail_message(incident: dict, *, reporter: bool, lang: str = DEFAULT_LANG) -> str:
+    """One line for the incident sheet: "24 people reported this · Verified · Sent to ZDM"."""
+    return " · ".join(status_parts(incident, reporter=reporter, lang=lang))
 
 
 def parse_ids(raw: str | None, limit: int = MAX_EXCLUDE_IDS) -> list[int]:
@@ -382,7 +474,7 @@ def route_summary(segments: list[dict], route_length_m: float | None = None) -> 
     return out
 
 
-def poor_road_warnings(segments: list[dict]) -> list[dict]:
+def poor_road_warnings(segments: list[dict], lang: str = DEFAULT_LANG) -> list[dict]:
     """One warning per run of poor segments along the route (good/fair segments end a run)."""
     warnings: list[dict] = []
     run: dict | None = None
@@ -391,7 +483,7 @@ def poor_road_warnings(segments: list[dict]) -> list[dict]:
         if run:
             warnings.append({"kind": "poor_road", "incident_id": None, "lon": ser.num(run["lon"], 7),
                              "lat": ser.num(run["lat"], 7), "distance_along_m": round(run["along"], 1),
-                             "message": f"İleride kötü yol (~{max(round(run['length']), 1)} m)"})
+                             "message": _texts(lang)["poor_road"].format(m=max(round(run["length"]), 1))})
 
     for s in sorted(segments, key=lambda s: float(s.get("along_m") or 0)):
         cls = health_class(s.get("health"))
@@ -406,12 +498,13 @@ def poor_road_warnings(segments: list[dict]) -> list[dict]:
     return warnings
 
 
-def incident_warning(row: dict) -> dict:
-    label = TYPE_LABELS.get(row.get("type") or "", "Sorun")
+def incident_warning(row: dict, lang: str = DEFAULT_LANG) -> dict:
+    t = _texts(lang)
+    label = t["type"].get(row.get("type") or "", t["type"]["other"])
     address = row.get("address")
     return {"kind": "incident", "incident_id": int(row["id"]), "lon": ser.num(row.get("lon"), 7),
             "lat": ser.num(row.get("lat"), 7), "distance_along_m": round(float(row.get("along_m") or 0), 1),
-            "message": f"İleride {label.lower()}" + (f": {address}" if address else "")}
+            "message": t["incident_ahead"].format(label=label) + (f" · {address}" if address else "")}
 
 
 def route_json(row: dict) -> dict:
@@ -560,8 +653,8 @@ def list_incidents(
 
 
 @router.get("/incidents/{incident_id}")
-def get_incident(incident_id: int, conn: DB, user: OptionalUser) -> dict:
-    """Short incident sheet: PublicIncident + my_answer, i_reported and a Turkish status line."""
+def get_incident(incident_id: int, conn: DB, user: OptionalUser, lang: Lang) -> dict:
+    """Short incident sheet: PublicIncident + my_answer, i_reported and a status line."""
     from backend import db
 
     row = _load_public(conn, incident_id)
@@ -572,7 +665,7 @@ def get_incident(incident_id: int, conn: DB, user: OptionalUser) -> dict:
     reported = bool(mine.get("i_reported"))
     out = public_incident(row)
     out.update(my_answer=None if answer is None else ("yes" if answer else "no"), i_reported=reported,
-               message=detail_message(row, reporter=reported))
+               message=detail_message(row, reporter=reported, lang=lang))
     return out
 
 
@@ -607,7 +700,7 @@ def question(
     lon: float = Query(..., ge=-180, le=180),
     lat: float = Query(..., ge=-90, le=90),
     accuracy_m: float = Query(..., ge=0),
-    exclude: str | None = Query(None, description="comma-separated incident ids the user skipped (\"Şimdi değil\")"),
+    exclude: str | None = Query(None, description="comma-separated incident ids the user skipped (\"Not now\")"),
 ) -> dict:
     """The incident to ask "is it still there?" about, or null (bad GPS / nothing within 25 m)."""
     from backend import db
@@ -656,6 +749,7 @@ def answer(incident_id: int, body: AnswerIn, conn: DB, user: CurrentUser) -> dic
 def create_report(
     conn: DB,
     user: CurrentUser,
+    lang: Lang,
     text: str = Form(...),
     lon: float | None = Form(None),
     lat: float | None = Form(None),
@@ -690,10 +784,10 @@ def create_report(
     structured = result.get("structured") or {}
     return _mobile_report({"id": result["report_id"], "raw_text": text, "created_at": created_at,
                            "category": structured.get("category"), "department": structured.get("department"),
-                           "photo_url": result.get("photo_url")}, public)
+                           "photo_url": result.get("photo_url")}, public, lang)
 
 
-def _mobile_report(report: dict, incident: dict | None) -> dict:
+def _mobile_report(report: dict, incident: dict | None, lang: str = DEFAULT_LANG) -> dict:
     """MobileReport from a reports row (+ public incident row or None)."""
     department = (incident or {}).get("department") or report.get("department")
     return {
@@ -705,12 +799,12 @@ def _mobile_report(report: dict, incident: dict | None) -> dict:
         "photo_url": report.get("photo_url"),
         "incident": public_incident(incident) if incident else None,
         "others_count": max(int(incident.get("report_count") or 0) - 1, 0) if incident else 0,
-        "message": report_message(incident, department),
+        "message": report_message(incident, department, lang),
     }
 
 
 @router.get("/reports")
-def my_reports(conn: DB, user: CurrentUser, limit: int = Query(100, ge=1, le=500)) -> dict:
+def my_reports(conn: DB, user: CurrentUser, lang: Lang, limit: int = Query(100, ge=1, le=500)) -> dict:
     """The signed-in user's own reports, newest first, each with its incident's public view."""
     from backend import db
 
@@ -718,7 +812,7 @@ def my_reports(conn: DB, user: CurrentUser, limit: int = Query(100, ge=1, le=500
     ids = sorted({int(r["incident_id"]) for r in rows if r.get("incident_id") is not None})
     incidents = {int(i["id"]): i for i in db.fetch_all(conn, PUBLIC_SELECT + "where i.id = any(%(ids)s)",
                                                        {"ids": ids})} if ids else {}
-    return {"reports": [_mobile_report(r, incidents.get(int(r["incident_id"])) if r.get("incident_id") else None)
+    return {"reports": [_mobile_report(r, incidents.get(int(r["incident_id"])) if r.get("incident_id") else None, lang)
                         for r in rows]}
 
 
@@ -777,7 +871,7 @@ def delete_route(route_id: int, conn: DB, user: CurrentUser) -> dict:
 
 
 @router.get("/routes/{route_id}/quality")
-def route_quality(route_id: int, conn: DB, user: CurrentUser) -> dict:
+def route_quality(route_id: int, conn: DB, user: CurrentUser, lang: Lang) -> dict:
     """Road quality along a favourite route: coloured segments, metres per class, warnings ahead."""
     from backend import db
 
@@ -805,7 +899,7 @@ def route_quality(route_id: int, conn: DB, user: CurrentUser) -> dict:
         incidents = db.fetch_all(conn, ROUTE_INCIDENTS_SQL, {
             "route": geojson, "corridor": ROUTE_CORRIDOR_M,
             "statuses": [*OPEN_STATUSES, "verified"]})
-        warnings = [incident_warning(r) for r in incidents] + poor_road_warnings(segments)
+        warnings = [incident_warning(r, lang) for r in incidents] + poor_road_warnings(segments, lang)
         warnings.sort(key=lambda w: (w["distance_along_m"], w["kind"]))
 
     return {
