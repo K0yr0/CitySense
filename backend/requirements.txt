@@ -1,0 +1,17 @@
+# Core runtime (enough to run the API, sensor pipeline, triage with keyword/hash fallbacks, and tests)
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9
+pydantic>=2.7
+python-dotenv>=1.0
+psycopg[binary,pool]>=3.2
+numpy>=1.26
+scipy>=1.13
+pandas>=2.2
+shapely>=2.0
+httpx>=0.27
+anthropic>=0.40
+pillow>=10.0
+opencv-python-headless>=4.9,<5  # 5.x dropped CascadeClassifier (face/plate blur)
+scikit-learn>=1.5
+pytest>=8.0

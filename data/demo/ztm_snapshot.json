@@ -1,0 +1,422 @@
+{
+ "_comment": "SAMPLE DATA, NOT LIVE. Hand-made offline fallback for CityEcho demos: positions of real Warsaw tram/bus lines near the city centre (Marszałkowska, Al. Jerozolimskie, Trakt Królewski) in the raw ZTM busestrams_get format, one payload per kind. 'previous' is the same fleet one 30 s frame earlier, used to estimate heading. Time is Europe/Warsaw local time, as in the real API.",
+ "captured_at": "2026-10-02T12:01:00+02:00",
+ "tram": {
+  "result": [
+   {
+    "Lines": "17",
+    "Lon": 21.007462,
+    "VehicleNumber": "3112",
+    "Time": "2026-10-02 12:01:00",
+    "Lat": 52.238067,
+    "Brigade": "4"
+   },
+   {
+    "Lines": "17",
+    "Lon": 21.018167,
+    "VehicleNumber": "3207",
+    "Time": "2026-10-02 12:00:59",
+    "Lat": 52.218894,
+    "Brigade": "11"
+   },
+   {
+    "Lines": "4",
+    "Lon": 21.00313,
+    "VehicleNumber": "3018",
+    "Time": "2026-10-02 12:00:58",
+    "Lat": 52.242103,
+    "Brigade": "2"
+   },
+   {
+    "Lines": "4",
+    "Lon": 21.014604,
+    "VehicleNumber": "3165",
+    "Time": "2026-10-02 12:00:57",
+    "Lat": 52.224792,
+    "Brigade": "7"
+   },
+   {
+    "Lines": "15",
+    "Lon": 21.010984,
+    "VehicleNumber": "3241",
+    "Time": "2026-10-02 12:00:56",
+    "Lat": 52.231792,
+    "Brigade": "3"
+   },
+   {
+    "Lines": "15",
+    "Lon": 21.021178,
+    "VehicleNumber": "3089",
+    "Time": "2026-10-02 12:00:55",
+    "Lat": 52.214738,
+    "Brigade": "9"
+   },
+   {
+    "Lines": "18",
+    "Lon": 21.013433,
+    "VehicleNumber": "3304",
+    "Time": "2026-10-02 12:00:54",
+    "Lat": 52.227133,
+    "Brigade": "5"
+   },
+   {
+    "Lines": "18",
+    "Lon": 21.008669,
+    "VehicleNumber": "3122",
+    "Time": "2026-10-02 12:01:00",
+    "Lat": 52.235369,
+    "Brigade": "12"
+   },
+   {
+    "Lines": "35",
+    "Lon": 21.015983,
+    "VehicleNumber": "3046",
+    "Time": "2026-10-02 12:00:59",
+    "Lat": 52.222126,
+    "Brigade": "6"
+   },
+   {
+    "Lines": "35",
+    "Lon": 21.012096,
+    "VehicleNumber": "3271",
+    "Time": "2026-10-02 12:00:58",
+    "Lat": 52.229809,
+    "Brigade": "1"
+   },
+   {
+    "Lines": "35",
+    "Lon": 21.001008,
+    "VehicleNumber": "3190",
+    "Time": "2026-10-02 12:00:57",
+    "Lat": 52.243751,
+    "Brigade": "8"
+   },
+   {
+    "Lines": "7",
+    "Lon": 20.997938,
+    "VehicleNumber": "1421",
+    "Time": "2026-10-02 12:00:56",
+    "Lat": 52.227577,
+    "Brigade": "2"
+   },
+   {
+    "Lines": "9",
+    "Lon": 21.011527,
+    "VehicleNumber": "1455",
+    "Time": "2026-10-02 12:00:55",
+    "Lat": 52.231235,
+    "Brigade": "6"
+   },
+   {
+    "Lines": "22",
+    "Lon": 21.004085,
+    "VehicleNumber": "1318",
+    "Time": "2026-10-02 12:00:54",
+    "Lat": 52.229298,
+    "Brigade": "4"
+   },
+   {
+    "Lines": "24",
+    "Lon": 21.02354,
+    "VehicleNumber": "1502",
+    "Time": "2026-10-02 12:01:00",
+    "Lat": 52.232284,
+    "Brigade": "3"
+   },
+   {
+    "Lines": "25",
+    "Lon": 20.991795,
+    "VehicleNumber": "1377",
+    "Time": "2026-10-02 12:00:59",
+    "Lat": 52.225851,
+    "Brigade": "10"
+   }
+  ]
+ },
+ "bus": {
+  "result": [
+   {
+    "Lines": "116",
+    "Lon": 21.014988,
+    "VehicleNumber": "8702",
+    "Time": "2026-10-02 12:00:58",
+    "Lat": 52.243892,
+    "Brigade": "1"
+   },
+   {
+    "Lines": "116",
+    "Lon": 21.019796,
+    "VehicleNumber": "8715",
+    "Time": "2026-10-02 12:00:57",
+    "Lat": 52.235833,
+    "Brigade": "4"
+   },
+   {
+    "Lines": "180",
+    "Lon": 21.018576,
+    "VehicleNumber": "8433",
+    "Time": "2026-10-02 12:00:56",
+    "Lat": 52.239733,
+    "Brigade": "2"
+   },
+   {
+    "Lines": "503",
+    "Lon": 21.016614,
+    "VehicleNumber": "8551",
+    "Time": "2026-10-02 12:00:55",
+    "Lat": 52.241768,
+    "Brigade": "3"
+   },
+   {
+    "Lines": "175",
+    "Lon": 20.999986,
+    "VehicleNumber": "9612",
+    "Time": "2026-10-02 12:00:54",
+    "Lat": 52.228153,
+    "Brigade": "5"
+   },
+   {
+    "Lines": "507",
+    "Lon": 21.014663,
+    "VehicleNumber": "9417",
+    "Time": "2026-10-02 12:01:00",
+    "Lat": 52.231444,
+    "Brigade": "7"
+   },
+   {
+    "Lines": "517",
+    "Lon": 20.993843,
+    "VehicleNumber": "9283",
+    "Time": "2026-10-02 12:00:59",
+    "Lat": 52.226426,
+    "Brigade": "2"
+   },
+   {
+    "Lines": "521",
+    "Lon": 21.020486,
+    "VehicleNumber": "9356",
+    "Time": "2026-10-02 12:00:58",
+    "Lat": 52.231832,
+    "Brigade": "6"
+   },
+   {
+    "Lines": "521",
+    "Lon": 21.00614,
+    "VehicleNumber": "9371",
+    "Time": "2026-10-02 12:00:57",
+    "Lat": 52.229864,
+    "Brigade": "9"
+   }
+  ]
+ },
+ "previous": {
+  "tram": {
+   "result": [
+    {
+     "Lines": "17",
+     "Lon": 21.00672,
+     "VehicleNumber": "3112",
+     "Time": "2026-10-02 12:00:30",
+     "Lat": 52.239317,
+     "Brigade": "4"
+    },
+    {
+     "Lines": "17",
+     "Lon": 21.019059,
+     "VehicleNumber": "3207",
+     "Time": "2026-10-02 12:00:29",
+     "Lat": 52.217662,
+     "Brigade": "11"
+    },
+    {
+     "Lines": "4",
+     "Lon": 21.001767,
+     "VehicleNumber": "3018",
+     "Time": "2026-10-02 12:00:28",
+     "Lat": 52.243161,
+     "Brigade": "2"
+    },
+    {
+     "Lines": "4",
+     "Lon": 21.015248,
+     "VehicleNumber": "3165",
+     "Time": "2026-10-02 12:00:27",
+     "Lat": 52.223504,
+     "Brigade": "7"
+    },
+    {
+     "Lines": "15",
+     "Lon": 21.010169,
+     "VehicleNumber": "3241",
+     "Time": "2026-10-02 12:00:26",
+     "Lat": 52.233044,
+     "Brigade": "3"
+    },
+    {
+     "Lines": "15",
+     "Lon": 21.022071,
+     "VehicleNumber": "3089",
+     "Time": "2026-10-02 12:00:25",
+     "Lat": 52.213506,
+     "Brigade": "9"
+    },
+    {
+     "Lines": "18",
+     "Lon": 21.012789,
+     "VehicleNumber": "3304",
+     "Time": "2026-10-02 12:00:24",
+     "Lat": 52.228422,
+     "Brigade": "5"
+    },
+    {
+     "Lines": "18",
+     "Lon": 21.009472,
+     "VehicleNumber": "3122",
+     "Time": "2026-10-02 12:00:30",
+     "Lat": 52.234114,
+     "Brigade": "12"
+    },
+    {
+     "Lines": "35",
+     "Lon": 21.015297,
+     "VehicleNumber": "3046",
+     "Time": "2026-10-02 12:00:29",
+     "Lat": 52.223405,
+     "Brigade": "6"
+    },
+    {
+     "Lines": "35",
+     "Lon": 21.01274,
+     "VehicleNumber": "3271",
+     "Time": "2026-10-02 12:00:28",
+     "Lat": 52.22852,
+     "Brigade": "1"
+    },
+    {
+     "Lines": "35",
+     "Lon": 21.00237,
+     "VehicleNumber": "3190",
+     "Time": "2026-10-02 12:00:27",
+     "Lat": 52.242693,
+     "Brigade": "8"
+    },
+    {
+     "Lines": "7",
+     "Lon": 20.995939,
+     "VehicleNumber": "1421",
+     "Time": "2026-10-02 12:00:26",
+     "Lat": 52.227015,
+     "Brigade": "2"
+    },
+    {
+     "Lines": "9",
+     "Lon": 21.013714,
+     "VehicleNumber": "1455",
+     "Time": "2026-10-02 12:00:25",
+     "Lat": 52.231381,
+     "Brigade": "6"
+    },
+    {
+     "Lines": "22",
+     "Lon": 21.002081,
+     "VehicleNumber": "1318",
+     "Time": "2026-10-02 12:00:24",
+     "Lat": 52.228742,
+     "Brigade": "4"
+    },
+    {
+     "Lines": "24",
+     "Lon": 21.025642,
+     "VehicleNumber": "1502",
+     "Time": "2026-10-02 12:00:30",
+     "Lat": 52.23268,
+     "Brigade": "3"
+    },
+    {
+     "Lines": "25",
+     "Lon": 20.989796,
+     "VehicleNumber": "1377",
+     "Time": "2026-10-02 12:00:29",
+     "Lat": 52.225289,
+     "Brigade": "10"
+    }
+   ]
+  },
+  "bus": {
+   "result": [
+    {
+     "Lines": "116",
+     "Lon": 21.01448,
+     "VehicleNumber": "8702",
+     "Time": "2026-10-02 12:00:28",
+     "Lat": 52.245342,
+     "Brigade": "1"
+    },
+    {
+     "Lines": "116",
+     "Lon": 21.020432,
+     "VehicleNumber": "8715",
+     "Time": "2026-10-02 12:00:27",
+     "Lat": 52.234403,
+     "Brigade": "4"
+    },
+    {
+     "Lines": "180",
+     "Lon": 21.017419,
+     "VehicleNumber": "8433",
+     "Time": "2026-10-02 12:00:26",
+     "Lat": 52.241014,
+     "Brigade": "2"
+    },
+    {
+     "Lines": "503",
+     "Lon": 21.017937,
+     "VehicleNumber": "8551",
+     "Time": "2026-10-02 12:00:25",
+     "Lat": 52.240528,
+     "Brigade": "3"
+    },
+    {
+     "Lines": "175",
+     "Lon": 20.997786,
+     "VehicleNumber": "9612",
+     "Time": "2026-10-02 12:00:24",
+     "Lat": 52.227535,
+     "Brigade": "5"
+    },
+    {
+     "Lines": "507",
+     "Lon": 21.017068,
+     "VehicleNumber": "9417",
+     "Time": "2026-10-02 12:00:30",
+     "Lat": 52.231605,
+     "Brigade": "7"
+    },
+    {
+     "Lines": "517",
+     "Lon": 20.991643,
+     "VehicleNumber": "9283",
+     "Time": "2026-10-02 12:00:29",
+     "Lat": 52.225808,
+     "Brigade": "2"
+    },
+    {
+     "Lines": "521",
+     "Lon": 21.022838,
+     "VehicleNumber": "9356",
+     "Time": "2026-10-02 12:00:28",
+     "Lat": 52.232152,
+     "Brigade": "6"
+    },
+    {
+     "Lines": "521",
+     "Lon": 21.003932,
+     "VehicleNumber": "9371",
+     "Time": "2026-10-02 12:00:27",
+     "Lat": 52.229256,
+     "Brigade": "9"
+    }
+   ]
+  }
+ }
+}

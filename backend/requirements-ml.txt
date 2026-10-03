@@ -1,0 +1,6 @@
+# Heavy extras: real multilingual embeddings + OSM network download.
+# Without these, dedup falls back to a hashing embedding and load_osm.py cannot run.
+-r requirements.txt
+sentence-transformers>=3.0
+osmnx>=2.0
+geopandas>=1.0

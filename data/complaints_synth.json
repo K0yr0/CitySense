@@ -1,0 +1,3305 @@
+[
+ {
+  "text": "dziura. koło pałacu kultury od strony świętokrzyskiej",
+  "created_at": "2026-09-23T20:32:02+00:00",
+  "true_issue_id": 18,
+  "true_category": "road_damage",
+  "lon": 21.00055,
+  "lat": 52.234242,
+  "street": "Świętokrzyska"
+ },
+ {
+  "text": "ogromna dziura w jezdni ul. świętokrzyska róg emilii plater. rowerzysta się dziś przewrócił. wczoraj wieczorem było jeszcze gorzej. prosę o interwencję.",
+  "created_at": "2026-09-23T23:34:53+00:00",
+  "true_issue_id": 18,
+  "true_category": "road_damage",
+  "lon": 21.000712,
+  "lat": 52.234366,
+  "street": "Świętokrzyska"
+ },
+ {
+  "text": "zgłaszam: na świętokrzyskiej przy emilii plater jest wielka dziura, auta wpadają w nią kołami. zróbcie coś z tym!",
+  "created_at": "2026-09-24T04:21:11+00:00",
+  "true_issue_id": 18,
+  "true_category": "road_damage",
+  "lon": 21.000525,
+  "lat": 52.234385,
+  "street": "Świętokrzyska"
+ },
+ {
+  "text": "kolejne zgloszenie: rozjazd tramwajowy na skrzyzowaniu marszalkowskiej z pulawska halasuje cala noc. trwa to od tygodnia. serio, ile jeszcze?",
+  "created_at": "2026-09-24T05:01:35+00:00",
+  "true_issue_id": 6,
+  "true_category": "tram_track",
+  "lon": 21.023033,
+  "lat": 52.211768,
+  "street": "Plac Unii Lubelskiej"
+ },
+ {
+  "text": "uszkodzone tory przy przystanku plac unii lubelskiej, słychać metaliczne uderzenia. serio, ile jeszcze?",
+  "created_at": "2026-09-24T08:11:30+00:00",
+  "true_issue_id": 6,
+  "true_category": "tram_track",
+  "lon": 21.022682,
+  "lat": 52.211755,
+  "street": "Plac Unii Lubelskiej"
+ },
+ {
+  "text": "ROZWALONY ASFALT UL. SWIETOKRZYSKA ROG EMILII PLATER, OPONA DO WYMIANY. AUTA GWALTOWNIE HAMUJA I OMIJAJA. MASAKRA!!!",
+  "created_at": "2026-09-24T11:18:57+00:00",
+  "true_issue_id": 18,
+  "true_category": "road_damage",
+  "lon": 21.000479,
+  "lat": 52.234302,
+  "street": "Świętokrzyska"
+ },
+ {
+  "text": "dramat jakis, szanowni panstwo, na marszalkowskiej przy placu unii szyny wystaja ponad asfalt. halas slychac na calym osiedlu.",
+  "created_at": "2026-09-24T16:11:23+00:00",
+  "true_issue_id": 6,
+  "true_category": "tram_track",
+  "lon": 21.022624,
+  "lat": 52.211791,
+  "street": "Plac Unii Lubelskiej"
+ },
+ {
+  "text": "Zgłaszam: Płyty torowiska na Marszałkowskiej przy Plauc Unii ruszają się pod kołami tramwaju. Zgłaszam już drrugi raz.",
+  "created_at": "2026-09-24T18:42:53+00:00",
+  "true_issue_id": 6,
+  "true_category": "tram_track",
+  "lon": 21.022555,
+  "lat": 52.211908,
+  "street": "Plac Unii Lubelskiej"
+ },
+ {
+  "text": "PILNE! ZALANE PRZEJSCCIE NA SKRZYZOWANIU OKOPOWEJ I STAWEK, NIE DA SIE PRZEJSC SUCHA STOPA. WODA WLEWA SIE DO KLAKTI SCHODOWEJ. PROSZE O PILNA NAPRAWE!!!",
+  "created_at": "2026-09-24T19:43:35+00:00",
+  "true_issue_id": 31,
+  "true_category": "flooding",
+  "lon": 20.984971,
+  "lat": 52.251186,
+  "street": "Okopowa"
+ },
+ {
+  "text": "szanowni państwo, rozjazd tramwajowy na placu unii lubelskiej hałasuje całą noc. od wczoraj.",
+  "created_at": "2026-09-24T20:02:33+00:00",
+  "true_issue_id": 6,
+  "true_category": "tram_track",
+  "lon": 21.022871,
+  "lat": 52.211797,
+  "street": "Plac Unii Lubelskiej"
+ },
+ {
+  "text": "hej, przy metrze imielin leżą worki ze śmieciami od kilku dni. smrród nie do wytrzymania. pozdrawiam.",
+  "created_at": "2026-09-24T20:15:01+00:00",
+  "true_issue_id": 39,
+  "true_category": "waste",
+  "lon": 21.043037,
+  "lat": 52.149927,
+  "street": "Aleja KEN"
+ },
+ {
+  "text": "Halo, woda wybija ze studziienki przy przystanku Stawki. Zauważyłem dziś rano. Kto za to odpowiada?",
+  "created_at": "2026-09-24T20:59:27+00:00",
+  "true_issue_id": 31,
+  "true_category": "flooding",
+  "lon": 20.985253,
+  "lat": 52.251166,
+  "street": "Okopowa"
+ },
+ {
+  "text": "Szanowni Panstwo, na Marszalkowskiej przy Placu Unii szyny wystaja ponad asfalt. W tramwaju wszystko sie trzesie. Bardzo prosze o szybka reakcje.",
+  "created_at": "2026-09-24T23:00:15+00:00",
+  "true_issue_id": 6,
+  "true_category": "tram_track",
+  "lon": 21.022558,
+  "lat": 52.211876,
+  "street": "Plac Unii Lubelskiej"
+ },
+ {
+  "text": "NA JZEDNI PRZY PĘTLI ZRBOIŁ SIĘ UBYTEK NA PÓŁ PASA. DRAMAT!!!",
+  "created_at": "2026-09-25T00:00:52+00:00",
+  "true_issue_id": 18,
+  "true_category": "road_damage",
+  "lon": 21.000411,
+  "lat": 52.234298,
+  "street": "Świętokrzyska"
+ },
+ {
+  "text": "zalane. na skrzyżowaniu okopowej i stawek",
+  "created_at": "2026-09-25T02:16:20+00:00",
+  "true_issue_id": 31,
+  "true_category": "flooding",
+  "lon": 20.98509,
+  "lat": 52.251102,
+  "street": "Okopowa"
+ },
+ {
+  "text": "Dzień dobry, dzikie wysypisko śmieci koło Bliklego na Nowym Świecie. Dzieci się tam bawią. Bardzo proszę o szybką reakcję.",
+  "created_at": "2026-09-25T11:57:35+00:00",
+  "true_issue_id": 28,
+  "true_category": "waste",
+  "lon": 21.019912,
+  "lat": 52.233846,
+  "street": "Nowy Świat"
+ },
+ {
+  "text": "Na Swietokrzyskiej przy Emilii Plater dziura!!",
+  "created_at": "2026-09-25T13:19:37+00:00",
+  "true_issue_id": 18,
+  "true_category": "road_damage",
+  "lon": 21.000393,
+  "lat": 52.234401,
+  "street": "Świętokrzyska"
+ },
+ {
+  "text": "śmieci. ul. nowy świat róg chmielnej",
+  "created_at": "2026-09-25T14:29:08+00:00",
+  "true_issue_id": 28,
+  "true_category": "waste",
+  "lon": 21.020018,
+  "lat": 52.233994,
+  "street": "Nowy Świat"
+ },
+ {
+  "text": "Dzień dobry. Dzikie wysypisko śmieci na Nowym Świecie przy Chmielnej. Wygląda to jak wysypisko. Masakra.",
+  "created_at": "2026-09-25T15:47:29+00:00",
+  "true_issue_id": 28,
+  "true_category": "waste",
+  "lon": 21.020016,
+  "lat": 52.233991,
+  "street": "Nowy Świat"
+ },
+ {
+  "text": "Witam, zatkana studzienka kanalizacyjna koło cmentarza na Okopowej, woda nie schodzi. Woda wleewa się do klatki schodowej. Serio, ile jeszcze?",
+  "created_at": "2026-09-25T15:58:10+00:00",
+  "true_issue_id": 31,
+  "true_category": "flooding",
+  "lon": 20.984944,
+  "lat": 52.251056,
+  "street": "Okopowa"
+ },
+ {
+  "text": "Przy wejściu do metra na Świętokrzyskiej góra śmieci przy koszu. Wiatr roznosi śmieci po ulicy. Pozdrawiam.",
+  "created_at": "2026-09-25T16:46:26+00:00",
+  "true_issue_id": 19,
+  "true_category": "waste",
+  "lon": 21.012894,
+  "lat": 52.236963,
+  "street": "Świętokrzyska"
+ },
+ {
+  "text": "ul. nowy świat róg chmielnej góra śmieci przy koszu. wygląda to jak wysypisko. wczoraj wieczorem było jeszcze gorzej. pozdrawiam.",
+  "created_at": "2026-09-25T17:34:48+00:00",
+  "true_issue_id": 28,
+  "true_category": "waste",
+  "lon": 21.019952,
+  "lat": 52.234021,
+  "street": "Nowy Świat"
+ },
+ {
+  "text": "pilne! śmieci wysypują się z kontenerów ul. świętokrzyska róg mazowieckiej. wygląda to jak wysypisko. proszę o interwencję.",
+  "created_at": "2026-09-25T18:38:35+00:00",
+  "true_issue_id": 19,
+  "true_category": "waste",
+  "lon": 21.012835,
+  "lat": 52.237004,
+  "street": "Świętokrzyska"
+ },
+ {
+  "text": "Dzień dobry. Ktoś wyrzucił gruz i sttare meble ul. Nowy Świat róg Chmielnej. Wczoraj wieczorem było jeszcze gorzej. Kto za to odpowiada?",
+  "created_at": "2026-09-25T18:55:49+00:00",
+  "true_issue_id": 28,
+  "true_category": "waste",
+  "lon": 21.020157,
+  "lat": 52.234112,
+  "street": "Nowy Świat"
+ },
+ {
+  "text": "Pilne! Porzucone opony i inne odpady na Nowym Świecie przy Chmielnej. Ile można czekać?!",
+  "created_at": "2026-09-25T19:02:25+00:00",
+  "true_issue_id": 28,
+  "true_category": "waste",
+  "lon": 21.020138,
+  "lat": 52.233988,
+  "street": "Nowy Świat"
+ },
+ {
+  "text": "Przepełnione kosze na śmieci na Nowym Świecie przy Chmielnej. Pozdrawiam.",
+  "created_at": "2026-09-25T22:26:18+00:00",
+  "true_issue_id": 28,
+  "true_category": "waste",
+  "lon": 21.019996,
+  "lat": 52.234109,
+  "street": "Nowy Świat"
+ },
+ {
+  "text": "Dzikie wyspyisko śmieci na rogu Noweggo Światu i Chmielnej. Nikt nic z tym nie robi od tygodni. Dramat. No bez jaj.",
+  "created_at": "2026-09-25T22:30:38+00:00",
+  "true_issue_id": 28,
+  "true_category": "waste",
+  "lon": 21.01986,
+  "lat": 52.234025,
+  "street": "Nowy Świat"
+ },
+ {
+  "text": "śmieci. przy wejściu w chmielną",
+  "created_at": "2026-09-25T23:01:32+00:00",
+  "true_issue_id": 28,
+  "true_category": "waste",
+  "lon": 21.020127,
+  "lat": 52.233862,
+  "street": "Nowy Świat"
+ },
+ {
+  "text": "Dzień dobry, na Alei Solidarności przy Dworcu Wileńskim góra śmieci przy koszu. Wiatr roznosi śmieci po ulicy. Serio, ile jeszcze? No ludzie.",
+  "created_at": "2026-09-26T02:25:36+00:00",
+  "true_issue_id": 22,
+  "true_category": "waste",
+  "lon": 21.035562,
+  "lat": 52.254494,
+  "street": "Aleja Solidarności"
+ },
+ {
+  "text": "Szanowni Państwo, przepełnione kosze na śmieci na Targowej koło Dworca Wileńskiego. Ile można czekać?! Dramat jakiś.",
+  "created_at": "2026-09-26T02:43:10+00:00",
+  "true_issue_id": 22,
+  "true_category": "waste",
+  "lon": 21.035562,
+  "lat": 52.25462,
+  "street": "Aleja Solidarności"
+ },
+ {
+  "text": "Rubish everywhere on Nowy Świat, bins overflowing.",
+  "created_at": "2026-09-26T04:06:32+00:00",
+  "true_issue_id": 28,
+  "true_category": "waste",
+  "lon": 21.019977,
+  "lat": 52.233994,
+  "street": "Nowy Świat"
+ },
+ {
+  "text": "Witam, ktoś wyrzucił gruz i stare meble na rogu Nowego Światu i Chmielnej. Pozdrawiam!!",
+  "created_at": "2026-09-26T04:25:18+00:00",
+  "true_issue_id": 28,
+  "true_category": "waste",
+  "lon": 21.019679,
+  "lat": 52.233939,
+  "street": "Nowy Świat"
+ },
+ {
+  "text": "kolejne zgłoszenie: dzikie wysypisko śmieci koło galerii wileńskiej. szczury biegają. już trzeci dzień. proszę o interwencję.",
+  "created_at": "2026-09-26T07:27:16+00:00",
+  "true_issue_id": 22,
+  "true_category": "waste",
+  "lon": 21.035399,
+  "lat": 52.254508,
+  "street": "Aleja Solidarności"
+ },
+ {
+  "text": "Studzienka przy przystanku Stawki zapchana, cała ulica zalana. Serio, ile jeszcze?",
+  "created_at": "2026-09-26T07:34:53+00:00",
+  "true_issue_id": 31,
+  "true_category": "flooding",
+  "lon": 20.985102,
+  "lat": 52.25114,
+  "street": "Okopowa"
+ },
+ {
+  "text": "Witam, kosz ul. Swietokrzyska rog Mazowieckiej pelny, smieci fruwaja po chodniku. Dramat.",
+  "created_at": "2026-09-26T09:39:45+00:00",
+  "true_issue_id": 19,
+  "true_category": "waste",
+  "lon": 21.012973,
+  "lat": 52.23684,
+  "street": "Świętokrzyska"
+ },
+ {
+  "text": "Nie świeci się żadna latarnia przy szkole. Ktoś się już przewrócił po ciemku. Zrróbie coś z tym!",
+  "created_at": "2026-09-26T11:05:41+00:00",
+  "true_issue_id": 27,
+  "true_category": "streetlight",
+  "lon": 21.065191,
+  "lat": 52.246032,
+  "street": "Grochowska"
+ },
+ {
+  "text": "Kolo sklepu gora smieci przy koszu. Wczoraj wieczorem bylo jeszcze gorzej. Serio, ile jeszcze?",
+  "created_at": "2026-09-26T11:53:16+00:00",
+  "true_issue_id": 28,
+  "true_category": "waste",
+  "lon": 21.019903,
+  "lat": 52.23401,
+  "street": "Nowy Świat"
+ },
+ {
+  "text": "Zatkanna studzienka kanalizacyjna na Radzyminskiej przy Zabkowskiej, woda nie schodzi. Smrod nie do wytrzymania. Kto za to odpowiada?",
+  "created_at": "2026-09-26T12:34:26+00:00",
+  "true_issue_id": 36,
+  "true_category": "flooding",
+  "lon": 21.049029,
+  "lat": 52.255998,
+  "street": "Radzymińska"
+ },
+ {
+  "text": "Halo, kosz przy wejściu w Chmielną pełny, śmieci fruwają po chodniku. Smród nie do wytrzymania!!",
+  "created_at": "2026-09-26T13:49:52+00:00",
+  "true_issue_id": 28,
+  "true_category": "waste",
+  "lon": 21.019992,
+  "lat": 52.23389,
+  "street": "Nowy Świat"
+ },
+ {
+  "text": "halo, zgasły wszystkie lampy przy przystanku kinowa, strach chodzić po zmroku. proszę o pilną naprawę.",
+  "created_at": "2026-09-26T14:22:05+00:00",
+  "true_issue_id": 27,
+  "true_category": "streetlight",
+  "lon": 21.065093,
+  "lat": 52.245944,
+  "street": "Grochowska"
+ },
+ {
+  "text": "Hej, zatkana studzienka kanalizacyjna przy Dworcu Wschodnim, woda nie schodzi. Piesi muszą chodzić jezdnią. Dramat!!",
+  "created_at": "2026-09-26T14:22:49+00:00",
+  "true_issue_id": 24,
+  "true_category": "flooding",
+  "lon": 21.042766,
+  "lat": 52.248211,
+  "street": "Targowa"
+ },
+ {
+  "text": "Flooded street on Targowa after rain, the drains are blocked.",
+  "created_at": "2026-09-26T14:42:42+00:00",
+  "true_issue_id": 24,
+  "true_category": "flooding",
+  "lon": 21.042663,
+  "lat": 52.248296,
+  "street": "Targowa"
+ },
+ {
+  "text": "Witam, zalane przejście na skrzyżowaniu Okopowej i Stawek, nie da się przejść suchą stopą. Piesi muszą chodzić jezdnią. Dziękuję.",
+  "created_at": "2026-09-26T15:57:45+00:00",
+  "true_issue_id": 31,
+  "true_category": "flooding",
+  "lon": 20.984903,
+  "lat": 52.251139,
+  "street": "Okopowa"
+ },
+ {
+  "text": "witam, zalane przejscie kolo zabki, nie da sie przejsc sucha stopa. zima bedzie lodowisko. serio, ile jeszcze?",
+  "created_at": "2026-09-26T19:19:15+00:00",
+  "true_issue_id": 36,
+  "true_category": "flooding",
+  "lon": 21.048788,
+  "lat": 52.255957,
+  "street": "Radzymińska"
+ },
+ {
+  "text": "Halo, przy wejściu w Chmielną leżą worki ze śmieciami od kilku dni. Dzieci się tam bawią. Pozdrawiam.",
+  "created_at": "2026-09-26T19:39:30+00:00",
+  "true_issue_id": 28,
+  "true_category": "waste",
+  "lon": 21.019927,
+  "lat": 52.233898,
+  "street": "Nowy Świat"
+ },
+ {
+  "text": "Dzień dobry, studzienka przy przejściu dla pieszych zapchana, cała ulica zalana. Woda wlewa się do klatki schodowej. Serio, ile jeszcze?",
+  "created_at": "2026-09-26T19:48:14+00:00",
+  "true_issue_id": 24,
+  "true_category": "flooding",
+  "lon": 21.042872,
+  "lat": 52.248152,
+  "street": "Targowa"
+ },
+ {
+  "text": "Szanowni Panstwo, na Targowej przy Kiowskiej stoi ogrommna kaluza, auta chlapia na ludzi. Nikt nic z tym nie robi od tygodni. Kto za to odpowiada?",
+  "created_at": "2026-09-26T20:19:44+00:00",
+  "true_issue_id": 24,
+  "true_category": "flooding",
+  "lon": 21.04292,
+  "lat": 52.248031,
+  "street": "Targowa"
+ },
+ {
+  "text": "RUBBISH EVERYWHRE NEAR THE SHOP, BINS OVERFLOWING!!!",
+  "created_at": "2026-09-26T20:45:52+00:00",
+  "true_issue_id": 28,
+  "true_category": "waste",
+  "lon": 21.019951,
+  "lat": 52.23395,
+  "street": "Nowy Świat"
+ },
+ {
+  "text": "zgłaszam: dzikie wysypisko śmieci koło galerii wileńskiej. szczury biegają. wczoraj wieczorem było jeszcze gorzej. proszę o interwencję.",
+  "created_at": "2026-09-26T22:45:29+00:00",
+  "true_issue_id": 22,
+  "true_category": "waste",
+  "lon": 21.035663,
+  "lat": 52.254454,
+  "street": "Aleja Solidarności"
+ },
+ {
+  "text": "Szczlina przy szynie tramwajowej koło Doomów Towarowych Centrum, koło roweru wpada. Nikt nic z tym nie robi od tygodni. Dramat.",
+  "created_at": "2026-09-27T01:47:23+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008631,
+  "lat": 52.235143,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Dzien dobry. Dzikie wysypisko smieci na Targowej kolo Dworca Wilenskiego. Prooblem jest od miesiaca.",
+  "created_at": "2026-09-27T02:16:34+00:00",
+  "true_issue_id": 22,
+  "true_category": "waste",
+  "lon": 21.035459,
+  "lat": 52.254512,
+  "street": "Aleja Solidarności"
+ },
+ {
+  "text": "Tory kolo Domow Towarowych Centrum",
+  "created_at": "2026-09-27T02:35:39+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008752,
+  "lat": 52.235135,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "zgłaszam: płyty torowiska koło sklepu ruszają się pod koami tramwaju.",
+  "created_at": "2026-09-27T02:58:12+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008749,
+  "lat": 52.235218,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Zgłaszam: Tory tramwjowe na skrzyżowaniu Marszałkowskiej i Świętokrzyskiej są w fatalnym stanie, tramwaj strasznie stuka. Bardzo proszę o szybką reakcję.",
+  "created_at": "2026-09-27T03:01:18+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008595,
+  "lat": 52.235242,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Halo, uszkodzone tory na Marszałkowskiej przy Świętokrzyskiej, słychać metaliczne uderzenia. Od wczoraj. Proszę o interwencję.",
+  "created_at": "2026-09-27T03:09:58+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.009067,
+  "lat": 52.235122,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Kolo Domow Towarowych Centnrum tory!!",
+  "created_at": "2026-09-27T03:57:16+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008766,
+  "lat": 52.235261,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Szanowni Państwo, tramwaje na Marszałkowskiej przy Świętokrzyskiej trzęsą jak pralka, tory do remontu. Serio, ile jeszcze?",
+  "created_at": "2026-09-27T04:41:01+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008449,
+  "lat": 52.235275,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Tory obok apteki",
+  "created_at": "2026-09-27T05:05:11+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008556,
+  "lat": 52.235271,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "halo, uszkodzone tory przy szkole, slychac metaliczne uderzenia. tramwaje jezdza tu bardzo wolno.",
+  "created_at": "2026-09-27T05:18:12+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008795,
+  "lat": 52.235194,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Pilne! Szczelina przy szynie tramwajowej przy wyjściu z metra Świętokrzyska, koło roweru wpada. Serio, ile jeszcze?",
+  "created_at": "2026-09-27T05:26:15+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008684,
+  "lat": 52.235148,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "dzień dobry. woda wybija ze studzienki przy przystanku. zgłaszam już drugi raz. dramat.",
+  "created_at": "2026-09-27T05:27:09+00:00",
+  "true_issue_id": 24,
+  "true_category": "flooding",
+  "lon": 21.042666,
+  "lat": 52.248189,
+  "street": "Targowa"
+ },
+ {
+  "text": "Dzień dobry, kosz na Targowej koło Dworca Wileńskiego pełny, śmieci fruwają po chodniku. Wygląda to jak wysypisko. Zgłaszam już drugi raz. Dziękuję.",
+  "created_at": "2026-09-27T05:30:50+00:00",
+  "true_issue_id": 22,
+  "true_category": "waste",
+  "lon": 21.035263,
+  "lat": 52.254574,
+  "street": "Aleja Solidarności"
+ },
+ {
+  "text": "ZGŁASZAM: PĘKNIĘTA SZYNA?? TRAMWAJ PODSKAKUJE. JAKBY ZARAZ MIAŁ SIĘ WYKOLEIĆ. ZGŁASZAM JUŻ DRUGI RAZ. ZRÓBCIE COŚ Z TYM!!!!",
+  "created_at": "2026-09-27T06:15:36+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008734,
+  "lat": 52.235144,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Dzień dobry, uszkodzone tory przy wyjściu z mtra Świętokrzyska, słychać metaliczne uderzenia. Serio, ile jeszcze?",
+  "created_at": "2026-09-27T06:44:16+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008733,
+  "lat": 52.235279,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "ludzie, szczelina przy szynie tramwajowej kolo domow towarowych centrum, kolo roweru wpada. ile mozna czekac?!",
+  "created_at": "2026-09-27T07:47:52+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.00882,
+  "lat": 52.235075,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "witam, zwrotnica koło domów towarowych centrum chyba uszkodzona, tramwaje zwalniają do zera. proszę o pilną naprawę.",
+  "created_at": "2026-09-27T09:01:28+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008513,
+  "lat": 52.235111,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Zgłaszam: Zwrotnica na skrzyżowaniu Marszałkowskiej i Świętokrzyskiej chyba uszkodzona, tramwaje zwalniają do zera. Trwa to od tygodnia.",
+  "created_at": "2026-09-27T10:04:52+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008857,
+  "lat": 52.235194,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Dzień dobry. Płyty torowiska na skrzyżowaniu Marszałkowskiej i Świętokrzyskiej ruszają się pod kołami tramwaju. Tramwaje jeżdżą tu bardzo wolno. Pozdrawiam.",
+  "created_at": "2026-09-27T10:19:02+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008851,
+  "lat": 52.235153,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "hej, szczelina przy synie tramwajowej ul. marszalkowska rog swietokrzyskiej, kolo roweru wpada. ludzie w tramwaju leca na siebie. od wczoraj. prosze o interwencje.",
+  "created_at": "2026-09-27T10:26:00+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008419,
+  "lat": 52.235355,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "dzień dobry. tramwaje na mojej ulicy trzęsą jak pralka, tory do remontu. w tramwaju wszystko się trzęsie. bardzo proszę o szybką reakcję.",
+  "created_at": "2026-09-27T11:27:25+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008609,
+  "lat": 52.235117,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Witam, koło Domów Towarowych Centrum szyny wystają ponad asfalt. W tramwaju wszystko się trzęsie. Zgłaszam już drugi raz. Dziękuję.",
+  "created_at": "2026-09-27T11:56:46+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008559,
+  "lat": 52.235081,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Kolejne zgloszenie: Szczelina przy szynie tramwajowej przy wyjsciu z metra Swietokrzyska, kolo roweru wpada. Niebezpieczne dla rowerzystow. Nikt nic z tym nie robi od tygodni.",
+  "created_at": "2026-09-27T12:15:39+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008741,
+  "lat": 52.235208,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "tory. na marszałkowsikej przy świętokrzyksiej",
+  "created_at": "2026-09-27T12:21:16+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008863,
+  "lat": 52.235161,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "The tram tracks on Marszałkowska are broken, trams are very loud.",
+  "created_at": "2026-09-27T12:46:20+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008984,
+  "lat": 52.235199,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Szanowni Państwo, uszkodzone tory przy przystanku, słychać metaliczne uderzenia. Zróbcie coś z tym!",
+  "created_at": "2026-09-27T14:06:13+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008541,
+  "lat": 52.235112,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Halo, pęknięta szyna na skrzyżowaniu Marszałkowskiej i Świętokrzyskiej?? Tramwaj podskakuje. Jakby zaraz miał się wykoleić. Zróbcie coś z tym!",
+  "created_at": "2026-09-27T14:06:30+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008582,
+  "lat": 52.235197,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Dzień dobry. Butelki i odpady wszędzie koło Galerii Wileńskiej, nikt nie sprząta. Szczury biegają. Trwa to od tygodnia. Zróbcie coś z tym!",
+  "created_at": "2026-09-27T15:45:34+00:00",
+  "true_issue_id": 22,
+  "true_category": "waste",
+  "lon": 21.035457,
+  "lat": 52.254607,
+  "street": "Aleja Solidarności"
+ },
+ {
+  "text": "szanowni panstwo, zwrotnica przy wyjsciu z metra swietokrzyska chyba uszkodzona, tramwaje zwalniaja do zera. zauwazylem dzis rano. kto za to odpowiada?",
+  "created_at": "2026-09-27T15:47:33+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008747,
+  "lat": 52.235108,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "rubbish everywhere on aleja solidarności, bins overflowing.",
+  "created_at": "2026-09-27T15:58:15+00:00",
+  "true_issue_id": 22,
+  "true_category": "waste",
+  "lon": 21.035434,
+  "lat": 52.254494,
+  "street": "Aleja Solidarności"
+ },
+ {
+  "text": "Dzień dobry, rozjazd tramwajowy przy wyjściu z metra Świętokrzyska hałasuje całą noc. Niebezpieczne dla rowerzystów. Ile można czekać?!",
+  "created_at": "2026-09-27T15:59:30+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008565,
+  "lat": 52.235135,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Znouw to samo na Mrszałkowskiej przy Świętokrzyskiej – tory",
+  "created_at": "2026-09-27T16:11:07+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008616,
+  "lat": 52.235149,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "rubbish everywhere on aleja solidarności, bins overflowing.",
+  "created_at": "2026-09-27T16:45:35+00:00",
+  "true_issue_id": 22,
+  "true_category": "waste",
+  "lon": 21.035514,
+  "lat": 52.254603,
+  "street": "Aleja Solidarności"
+ },
+ {
+  "text": "Dzien dobry. Plyty torowiska na Marszalkowkiej przy Swietokrzyskiej ruszaja sie pod kolami tramwaju. Masakra.",
+  "created_at": "2026-09-27T17:21:45+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008616,
+  "lat": 52.235278,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Dramat jakiś, kolejne zgłoszenie: Po każdym deszczu na mojej ulicy zalana jezdnia, woda po kostki. Zróbcie coś z tym!",
+  "created_at": "2026-09-27T17:48:37+00:00",
+  "true_issue_id": 36,
+  "true_category": "flooding",
+  "lon": 21.049054,
+  "lat": 52.255967,
+  "street": "Radzymińska"
+ },
+ {
+  "text": "zgłaszam: zwrotnica na marszałkowskiej przy świętokrzyskiej chyba uszkodzona, tramwaje zwalniają do zera. w tramwaju wszystko się trzęsie.",
+  "created_at": "2026-09-27T17:54:30+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008835,
+  "lat": 52.235225,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "HEJ, GŁOŚNE WALLENIE TRAMWAJÓW KOŁO SKLEPU, COŚ JEST NIE TAK Z TOROWISKIEM. ROWERZYSTA WPADŁ KOŁEM W SZYNĘ!!!",
+  "created_at": "2026-09-27T18:17:09+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008705,
+  "lat": 52.235252,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "znowu to samo przy wejsciu w chemlna – smieci",
+  "created_at": "2026-09-27T19:16:34+00:00",
+  "true_issue_id": 28,
+  "true_category": "waste",
+  "lon": 21.020096,
+  "lat": 52.233907,
+  "street": "Nowy Świat"
+ },
+ {
+  "text": "Hej, tramwaje na Marszałkowskiej przy Świtokrzyskiej trzęsą jak pralka, tory do remontu. Zauważyłem dziś rano. Dramat. Porażka.",
+  "created_at": "2026-09-27T20:53:17+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008594,
+  "lat": 52.235285,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Tory. ul. Marszałkowska róg Świętokrzyskiej",
+  "created_at": "2026-09-27T22:03:40+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008558,
+  "lat": 52.235228,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Dzień dobry. Torowisko koło Domów Towarowych Centrum się zapada, między szynami dziury. Tramwaje jeżdżą tu bardzo wolno. Problem jest od miesiąca. Proszę o pinlą naprawę.",
+  "created_at": "2026-09-27T22:28:20+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008769,
+  "lat": 52.2351,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "zgłaszam: zwrotnica koło domów towarowych centrum chyba uszkodzona, tramwaje zwalniają do zera. ludzie w tramwaju lecą na siebie. zróbcie coś z tym!",
+  "created_at": "2026-09-27T22:41:15+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008435,
+  "lat": 52.235256,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Ludzie, ogomna dziua w jezdni ul. Wolska rog Plockiej. Prosze o interwencje.",
+  "created_at": "2026-09-28T00:15:09+00:00",
+  "true_issue_id": 32,
+  "true_category": "road_damage",
+  "lon": 20.96688,
+  "lat": 52.233053,
+  "street": "Wolska"
+ },
+ {
+  "text": "Pilne! Torowisko na Marszałkowskiej przy Świętokrzyskiej się zapada, między szynaim dziury. Hałas słyhcać na całym osiedlu. Kto za to odpowiada?",
+  "created_at": "2026-09-28T00:25:12+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008646,
+  "lat": 52.235195,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Ludzie, zapadnięta nawierzchnia koło Biedronki na Wolskiej. Serio, ile jeszcze? Masakra.",
+  "created_at": "2026-09-28T00:43:09+00:00",
+  "true_issue_id": 32,
+  "true_category": "road_damage",
+  "lon": 20.966784,
+  "lat": 52.233057,
+  "street": "Wolska"
+ },
+ {
+  "text": "Zglaszam: Przy Biedronce znowu dziura, tym razeem jeszcze glebsza. Prosze o interwencje.",
+  "created_at": "2026-09-28T00:50:42+00:00",
+  "true_issue_id": 32,
+  "true_category": "road_damage",
+  "lon": 20.966614,
+  "lat": 52.233118,
+  "street": "Wolska"
+ },
+ {
+  "text": "Przy Biedronce tory!!",
+  "created_at": "2026-09-28T01:14:26+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008543,
+  "lat": 52.235137,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "streetlight on grochowska is out, it is very dark at night.",
+  "created_at": "2026-09-28T02:12:05+00:00",
+  "true_issue_id": 27,
+  "true_category": "streetlight",
+  "lon": 21.064823,
+  "lat": 52.246013,
+  "street": "Grochowska"
+ },
+ {
+  "text": "Od kilku dni na Krakowskim Przedmieściu przy Uniwersytecie kompletnie ciemno, latarnie nie działają. Proszę o interwencję.",
+  "created_at": "2026-09-28T02:47:16+00:00",
+  "true_issue_id": 29,
+  "true_category": "streetlight",
+  "lon": 21.01624,
+  "lat": 52.240267,
+  "street": "Krakowskie Przedmieście"
+ },
+ {
+  "text": "Na skrzyżowaniu Grójeckiej i Opaczewksiej zalane!!",
+  "created_at": "2026-09-28T03:09:36+00:00",
+  "true_issue_id": 12,
+  "true_category": "flooding",
+  "lon": 20.972293,
+  "lat": 52.208226,
+  "street": "Grójecka"
+ },
+ {
+  "text": "Kolejne zgłoszenie: Wyrwa w asfalcie przy przystanku Płocka, z każdym dniem większa. Ile można czekać?!",
+  "created_at": "2026-09-28T03:11:31+00:00",
+  "true_issue_id": 32,
+  "true_category": "road_damage",
+  "lon": 20.966725,
+  "lat": 52.233042,
+  "street": "Wolska"
+ },
+ {
+  "text": "Hej, pod blokiem asfalt się kruszy i robi się głęboka wyrwa. Auta gwałtownie hamują i omijają. Ile można czekać?!",
+  "created_at": "2026-09-28T04:47:29+00:00",
+  "true_issue_id": 32,
+  "true_category": "road_damage",
+  "lon": 20.966817,
+  "lat": 52.233051,
+  "street": "Wolska"
+ },
+ {
+  "text": "Znowu to samo na Wolskiej przy Plockiej – dziura",
+  "created_at": "2026-09-28T04:52:01+00:00",
+  "true_issue_id": 32,
+  "true_category": "road_damage",
+  "lon": 20.966861,
+  "lat": 52.233011,
+  "street": "Wolska"
+ },
+ {
+  "text": "Kolejne zgłoszenie: Na jezdni przy przystanku zrobł się ubyteek na pół pasa. Autobusy zjeżdżają na drugi pas. Proszę o interwencję.",
+  "created_at": "2026-09-28T05:24:34+00:00",
+  "true_issue_id": 32,
+  "true_category": "road_damage",
+  "lon": 20.966684,
+  "lat": 52.233052,
+  "street": "Wolska"
+ },
+ {
+  "text": "tramwaje koło domów towarowych centrum trzęsą jak pralka, tory do remontu. nikt nic z tym nie robi od tygodni. dramat.",
+  "created_at": "2026-09-28T06:20:14+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008677,
+  "lat": 52.235425,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "HEJ, PEKNIETA SZYNA PRZY WYJSCIU Z METRA SWIETOKRZYSKA?? TRAMWAJ PODSKAKUJE. LUDZIE W TRAMWAJU LECA NA SIEBIE. PROSZE O PILNA NAPRAWE!!!",
+  "created_at": "2026-09-28T07:44:35+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008874,
+  "lat": 52.235125,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "no bez jaj, znowu to samo na wolskiej przy plockiej – dziura",
+  "created_at": "2026-09-28T08:34:57+00:00",
+  "true_issue_id": 32,
+  "true_category": "road_damage",
+  "lon": 20.966734,
+  "lat": 52.23303,
+  "street": "Wolska"
+ },
+ {
+  "text": "Zgłaszam: Ul. Marszałkowska róg Królewskiej szyny wystają ponad asfalt. Problem jest od miesiąca. Serio, ile jeszcze?",
+  "created_at": "2026-09-28T09:00:37+00:00",
+  "true_issue_id": 1,
+  "true_category": "tram_track",
+  "lon": 21.006206,
+  "lat": 52.239027,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Pilne! Na jezdni przy Biedronce zrobił się uytek na pół pasa. W nocy jej w ogóle nie widać. Dziękuję.",
+  "created_at": "2026-09-28T09:26:10+00:00",
+  "true_issue_id": 38,
+  "true_category": "road_damage",
+  "lon": 21.110891,
+  "lat": 52.234985,
+  "street": "Ostrobramska"
+ },
+ {
+  "text": "Pilne! Torowisko ul. Marszałkowska róg Świętokrzyskiej się zapada, między szynami dziury. Ludzie w tramwaju lecą na siebie. Trwa to od tygodnia. Zróbcie coś z tym!",
+  "created_at": "2026-09-28T10:45:19+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008514,
+  "lat": 52.235136,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Tory na skrzyzowaniu Marszalkowskiej z Krolewska",
+  "created_at": "2026-09-28T10:58:26+00:00",
+  "true_issue_id": 1,
+  "true_category": "tram_track",
+  "lon": 21.006515,
+  "lat": 52.238967,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "na ostrobramskiej przy fieldorfa dziura!!",
+  "created_at": "2026-09-28T10:58:42+00:00",
+  "true_issue_id": 38,
+  "true_category": "road_damage",
+  "lon": 21.110871,
+  "lat": 52.234898,
+  "street": "Ostrobramska"
+ },
+ {
+  "text": "Przy przystanku Zamieniecka dziura!!",
+  "created_at": "2026-09-28T11:14:08+00:00",
+  "true_issue_id": 26,
+  "true_category": "road_damage",
+  "lon": 21.077112,
+  "lat": 52.24533,
+  "street": "Grochowska"
+ },
+ {
+  "text": "serio, kolejne zgloszenie: na mojej ulicy szyny wystaja ponad asfalt. jakby zaraz mial sie wykoleic. prosze o pilna naprawe.",
+  "created_at": "2026-09-28T11:25:33+00:00",
+  "true_issue_id": 2,
+  "true_category": "tram_track",
+  "lon": 21.008832,
+  "lat": 52.235197,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Zgłaszam: Ogromna dziura w jezdni koło Żabki. Prawie urwałem koło. Proszę o interwencję.",
+  "created_at": "2026-09-28T11:28:33+00:00",
+  "true_issue_id": 38,
+  "true_category": "road_damage",
+  "lon": 21.11094,
+  "lat": 52.235159,
+  "street": "Ostrobramska"
+ },
+ {
+  "text": "dzien dobry. po kazdym deszczu przy przystanku opacczewska zalnaa jezdnia, woda po kostki.",
+  "created_at": "2026-09-28T11:34:03+00:00",
+  "true_issue_id": 12,
+  "true_category": "flooding",
+  "lon": 20.972137,
+  "lat": 52.208288,
+  "street": "Grójecka"
+ },
+ {
+  "text": "Na Grochowskiej przy Zamienieckiej jest wielka dziura, auta wpadaja w nia kolami!!",
+  "created_at": "2026-09-28T12:09:20+00:00",
+  "true_issue_id": 26,
+  "true_category": "road_damage",
+  "lon": 21.077082,
+  "lat": 52.245294,
+  "street": "Grochowska"
+ },
+ {
+  "text": "Dzień dobry, na Grochowskiej przy Zamienieckiej asfalt się kruszy i robi się głęboka wyrwa. Neibezpiecznie dla motocyklistów. Dziękuję.",
+  "created_at": "2026-09-28T13:20:30+00:00",
+  "true_issue_id": 26,
+  "true_category": "road_damage",
+  "lon": 21.077055,
+  "lat": 52.245342,
+  "street": "Grochowska"
+ },
+ {
+  "text": "Hej, zwrotnica przy przystanku Wiatraczna chyba uszkodzona, tramwaje zwalniaja do zera. Prosze o interwencje.",
+  "created_at": "2026-09-28T16:38:42+00:00",
+  "true_issue_id": 25,
+  "true_category": "tram_track",
+  "lon": 21.089176,
+  "lat": 52.244961,
+  "street": "Grochowska"
+ },
+ {
+  "text": "hej, rojzazd tramwajowy na rondzie wiatraczna hałsuje całą noc. masakra.",
+  "created_at": "2026-09-28T17:34:54+00:00",
+  "true_issue_id": 25,
+  "true_category": "tram_track",
+  "lon": 21.088846,
+  "lat": 52.244821,
+  "street": "Grochowska"
+ },
+ {
+  "text": "Hej, na skrzyzowaniu Grojeckiej i Opaczewskiej po ulewie wielkie rozlewisko, kratki nie odbieraja wody. Auta staja w wodzie. Zauwazylem dzis rano. Bardzo prosze o szybka reakcje.",
+  "created_at": "2026-09-28T18:16:18+00:00",
+  "true_issue_id": 12,
+  "true_category": "flooding",
+  "lon": 20.972235,
+  "lat": 52.208122,
+  "street": "Grójecka"
+ },
+ {
+  "text": "Tory tramwajowe ul. Marszakłowska róg Królewskiej są w fatalnym stanie, tramwaj strasznie stuka. Hałas słychać na całym osiedlu. Serio, ile jeszcze?",
+  "created_at": "2026-09-28T18:25:54+00:00",
+  "true_issue_id": 1,
+  "true_category": "tram_track",
+  "lon": 21.006359,
+  "lat": 52.239085,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Hej, szczelina przy szynie tramwajowej koło sklepu, koło roweru wpada. Proszę o interwencję.",
+  "created_at": "2026-09-28T18:39:17+00:00",
+  "true_issue_id": 1,
+  "true_category": "tram_track",
+  "lon": 21.006457,
+  "lat": 52.239018,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "dzień dobry, tory tramwajowe na skrzyżowaniu marszałkowskiej z królewską są w fatalnym stanie, tramwaj strasznie stuka. hałas słychać na całym osiedlu. ile można czekać?!",
+  "created_at": "2026-09-28T21:36:30+00:00",
+  "true_issue_id": 1,
+  "true_category": "tram_track",
+  "lon": 21.006372,
+  "lat": 52.238997,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "znowu to samo ul. ostrobramska róg fieldorfa – dziura",
+  "created_at": "2026-09-28T21:36:44+00:00",
+  "true_issue_id": 38,
+  "true_category": "road_damage",
+  "lon": 21.111066,
+  "lat": 52.234936,
+  "street": "Ostrobramska"
+ },
+ {
+  "text": "Ludzie, u nas na ulicy znowu dziura, tym razem jeszcze głębsza.",
+  "created_at": "2026-09-28T21:46:45+00:00",
+  "true_issue_id": 26,
+  "true_category": "road_damage",
+  "lon": 21.077253,
+  "lat": 52.245338,
+  "street": "Grochowska"
+ },
+ {
+  "text": "Na Rondzie Wiatraczznna tory!!",
+  "created_at": "2026-09-28T22:40:35+00:00",
+  "true_issue_id": 25,
+  "true_category": "tram_track",
+  "lon": 21.089048,
+  "lat": 52.244735,
+  "street": "Grochowska"
+ },
+ {
+  "text": "Ul. Grochowska róg Zamienieckiej dziura!!",
+  "created_at": "2026-09-28T23:19:02+00:00",
+  "true_issue_id": 26,
+  "true_category": "road_damage",
+  "lon": 21.076957,
+  "lat": 52.24531,
+  "street": "Grochowska"
+ },
+ {
+  "text": "Ul. Grochowska róg Zamienieckiej dziura!!",
+  "created_at": "2026-09-28T23:29:48+00:00",
+  "true_issue_id": 26,
+  "true_category": "road_damage",
+  "lon": 21.076957,
+  "lat": 52.245184,
+  "street": "Grochowska"
+ },
+ {
+  "text": "Ludzie, głęboka dziura ul. Modlińska koło FSO, w deszczu jej w ogóle nie widać. Masakra.",
+  "created_at": "2026-09-28T23:55:40+00:00",
+  "true_issue_id": 37,
+  "true_category": "road_damage",
+  "lon": 21.002024,
+  "lat": 52.293093,
+  "street": "Modlińska"
+ },
+ {
+  "text": "Witam, szczelina przy szynie tramwajowej koło Biedronki przy Wiatracznej, koło roweru wpada. Hałas słychać na całym osiedlu. Pozdrawiam!!",
+  "created_at": "2026-09-29T01:02:16+00:00",
+  "true_issue_id": 25,
+  "true_category": "tram_track",
+  "lon": 21.089132,
+  "lat": 52.244743,
+  "street": "Grochowska"
+ },
+ {
+  "text": "Szanowni Panstwo, uszkodzone tory na osiedlu, slychac metaliczne uderzenia. Jakby zaraz mial sie wykoleic. Trwa to od tygodnia.",
+  "created_at": "2026-09-29T01:13:25+00:00",
+  "true_issue_id": 1,
+  "true_category": "tram_track",
+  "lon": 21.006477,
+  "lat": 52.239028,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "dziura w drodze przy przystanku zran fso jak krater. prosze o interwencje.",
+  "created_at": "2026-09-29T01:53:36+00:00",
+  "true_issue_id": 37,
+  "true_category": "road_damage",
+  "lon": 21.001858,
+  "lat": 52.292983,
+  "street": "Modlińska"
+ },
+ {
+  "text": "dzień dobry. ogromna dziura w jezdni koło kościoła na grochowskiej. prawie urwałem koło.",
+  "created_at": "2026-09-29T02:20:54+00:00",
+  "true_issue_id": 26,
+  "true_category": "road_damage",
+  "lon": 21.077016,
+  "lat": 52.245291,
+  "street": "Grochowska"
+ },
+ {
+  "text": "Dzień dobry, głęboka dziura ul. Modlińska koło FSO, w deszczu jej w ogóle nie widać. Wczoraj wieczorem było jeszcze gorzej. Pozdrawiam!!",
+  "created_at": "2026-09-29T02:48:24+00:00",
+  "true_issue_id": 37,
+  "true_category": "road_damage",
+  "lon": 21.002158,
+  "lat": 52.292953,
+  "street": "Modlińska"
+ },
+ {
+  "text": "kolejne zgłoszenie: na grójeckiej przy banacha asfalt się kruszy i robi się głęboka wyrwa. w nocy jej w ogóle nie widać. pozdrawiam.",
+  "created_at": "2026-09-29T05:09:52+00:00",
+  "true_issue_id": 11,
+  "true_category": "road_damage",
+  "lon": 20.978917,
+  "lat": 52.214703,
+  "street": "Grójecka"
+ },
+ {
+  "text": "dzień dobry. tramwaje na placu narutowicza trzęsą jak pralka, tory do remontu. jakby zaraz miał się wykoleić. już trzeci dzień. proszę o interwencję.",
+  "created_at": "2026-09-29T05:33:51+00:00",
+  "true_issue_id": 10,
+  "true_category": "tram_track",
+  "lon": 20.984532,
+  "lat": 52.219617,
+  "street": "Grójecka"
+ },
+ {
+  "text": "torowisok na rogu się zapada, międyz szynami dziury. ludzie w tramwaju lecą na siebie. pozdrawiam.",
+  "created_at": "2026-09-29T05:44:16+00:00",
+  "true_issue_id": 1,
+  "true_category": "tram_track",
+  "lon": 21.006325,
+  "lat": 52.239151,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Pilne! Tory tramwajowe na skrzyżowaniu Andersa i Muranowskiej są w fatalnym stanie, tramwaj strasznie stuka. Rowerzysta wpadł kołem w szynę.",
+  "created_at": "2026-09-29T06:15:34+00:00",
+  "true_issue_id": 30,
+  "true_category": "tram_track",
+  "lon": 20.997818,
+  "lat": 52.250944,
+  "street": "Andersa"
+ },
+ {
+  "text": "Pęknięta szyna na Andersa przy Muranowskiej?? Tramwaj podskakuje. Proszę o interwencję!!",
+  "created_at": "2026-09-29T09:47:33+00:00",
+  "true_issue_id": 30,
+  "true_category": "tram_track",
+  "lon": 20.997772,
+  "lat": 52.250995,
+  "street": "Andersa"
+ },
+ {
+  "text": "Halo, rozjazd tramwajowy na osiedlu halasuje cala noc. Zrobcie cos z tym!",
+  "created_at": "2026-09-29T10:22:00+00:00",
+  "true_issue_id": 1,
+  "true_category": "tram_track",
+  "lon": 21.006555,
+  "lat": 52.239145,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Hej, na Placu Narutowicza szyny wystają ponad asfalt. Ile można czekać?!",
+  "created_at": "2026-09-29T10:26:48+00:00",
+  "true_issue_id": 10,
+  "true_category": "tram_track",
+  "lon": 20.984383,
+  "lat": 52.219429,
+  "street": "Grójecka"
+ },
+ {
+  "text": "Kolejne zgłoszenie: Głęboka dzirua niedaleko kościoła, w deszczu jej w ogóle nie widać. Autobusy zjeżdżają na drugi pas. Barddzo proszę o szybką reakcję.",
+  "created_at": "2026-09-29T10:37:57+00:00",
+  "true_issue_id": 11,
+  "true_category": "road_damage",
+  "lon": 20.978815,
+  "lat": 52.214756,
+  "street": "Grójecka"
+ },
+ {
+  "text": "Zgłaszam: Płyty torowiska na Placu Narutowicza ruszają się pod kołami tramwaju. Rowerzysta wpadł kołem w szynę. Trwa to od tygodnia. Dziękuję.",
+  "created_at": "2026-09-29T11:10:33+00:00",
+  "true_issue_id": 10,
+  "true_category": "tram_track",
+  "lon": 20.984656,
+  "lat": 52.219538,
+  "street": "Grójecka"
+ },
+ {
+  "text": "Huge pothole near the shop, please fix it.",
+  "created_at": "2026-09-29T12:00:32+00:00",
+  "true_issue_id": 37,
+  "true_category": "road_damage",
+  "lon": 21.002151,
+  "lat": 52.292946,
+  "street": "Modlińska"
+ },
+ {
+  "text": "torowisko na rondzie wiatraczna sie zapada, miedzy szynami dziury. niebezpieczne dla rowerzystow. zrobcie cos z tym!",
+  "created_at": "2026-09-29T12:18:52+00:00",
+  "true_issue_id": 25,
+  "true_category": "tram_track",
+  "lon": 21.08903,
+  "lat": 52.244738,
+  "street": "Grochowska"
+ },
+ {
+  "text": "Wyrwany krawężnik i dziura przy przejściu ul. Grójecka róg Banacha. Niebezpiecznie dla motocyklistów.",
+  "created_at": "2026-09-29T12:40:31+00:00",
+  "true_issue_id": 11,
+  "true_category": "road_damage",
+  "lon": 20.978905,
+  "lat": 52.214652,
+  "street": "Grójecka"
+ },
+ {
+  "text": "Zapadnięta nawierzchnia na Grójecikej przy Banacha. Proszę o plną naprawę. Masakra.",
+  "created_at": "2026-09-29T12:44:11+00:00",
+  "true_issue_id": 11,
+  "true_category": "road_damage",
+  "lon": 20.978897,
+  "lat": 52.214485,
+  "street": "Grójecka"
+ },
+ {
+  "text": "No ludzie, tory tramwajowe przy przystanku Wiatraczna są w fatalnym stanie, tramwaj strasznie stuka. Tramwaje jeżdżą tu bardzo wolno. Trwa to od tygodnia. Dziękuję!!",
+  "created_at": "2026-09-29T12:50:14+00:00",
+  "true_issue_id": 25,
+  "true_category": "tram_track",
+  "lon": 21.089013,
+  "lat": 52.244733,
+  "street": "Grochowska"
+ },
+ {
+  "text": "Ludzie, koło bazarku na Grójeckiej stoi ogromna kałuża, auta chlapią na ludzi. Pozdrawiam.",
+  "created_at": "2026-09-29T13:31:08+00:00",
+  "true_issue_id": 12,
+  "true_category": "flooding",
+  "lon": 20.972276,
+  "lat": 52.208176,
+  "street": "Grójecka"
+ },
+ {
+  "text": "halo, pęknięta szyna koło żabki?? tramwaj podskakuje. problem jest od miesiąca.",
+  "created_at": "2026-09-29T13:40:04+00:00",
+  "true_issue_id": 10,
+  "true_category": "tram_track",
+  "lon": 20.984397,
+  "lat": 52.219408,
+  "street": "Grójecka"
+ },
+ {
+  "text": "Witam, na Pulawskiej przy Madalinskiego asfalt sie kruszy i robi sie gleboka wyrwa. Od wczoraj. Serio, ile jeszcze?",
+  "created_at": "2026-09-29T13:47:13+00:00",
+  "true_issue_id": 7,
+  "true_category": "road_damage",
+  "lon": 21.022814,
+  "lat": 52.204454,
+  "street": "Puławska"
+ },
+ {
+  "text": "Dzień dobry. Uszkodzone tory na Grójeckiej koło Akademika, słychać metaliczne uderzenia. Ludzie w tramwaju lecą na siebie. Pozdrawiam. Kurde.",
+  "created_at": "2026-09-29T13:54:01+00:00",
+  "true_issue_id": 10,
+  "true_category": "tram_track",
+  "lon": 20.984315,
+  "lat": 52.219357,
+  "street": "Grójecka"
+ },
+ {
+  "text": "Kolejne zgłoszenie: U nas na ulicy asfalt się kruszy i robi się głęboka wyrwa. Autobusy zjeżdżają na drugi pas. Serio, ile jeszcze?",
+  "created_at": "2026-09-29T14:21:59+00:00",
+  "true_issue_id": 7,
+  "true_category": "road_damage",
+  "lon": 21.022615,
+  "lat": 52.204446,
+  "street": "Puławska"
+ },
+ {
+  "text": "Dzień dobry. Szczelina przy szynie tramwajowej przy przystanku Hoża, koło roweru wpada. Tramwaje jeżdżą tu bardzo wolno.",
+  "created_at": "2026-09-29T14:47:56+00:00",
+  "true_issue_id": 4,
+  "true_category": "tram_track",
+  "lon": 21.013707,
+  "lat": 52.22643,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Dzień dobry, zapadnięta nawierzchnia niedaleko kościoła. Niebezpiecznie dla motocyklistów. Nikt nic z tym nie robi od tygodni. Ile można czekać?!",
+  "created_at": "2026-09-29T15:39:31+00:00",
+  "true_issue_id": 17,
+  "true_category": "road_damage",
+  "lon": 20.983325,
+  "lat": 52.230222,
+  "street": "Rondo Daszyńskiego"
+ },
+ {
+  "text": "Pilne! Zwrotnica na skrzyzowaniu Andersa i Muranowskiej chyba uszkodzona, tramwaje zwalniaja do zera. Bardzo prosze o szybka reakcje!!",
+  "created_at": "2026-09-29T15:58:50+00:00",
+  "true_issue_id": 30,
+  "true_category": "tram_track",
+  "lon": 20.9977,
+  "lat": 52.250916,
+  "street": "Andersa"
+ },
+ {
+  "text": "dzień dobry, głośne walenie tramwajów na skrzyżowaniu grochowskiej i wiatracznej, coś jest nie tak z torowiskiem. masakra.",
+  "created_at": "2026-09-29T16:08:50+00:00",
+  "true_issue_id": 25,
+  "true_category": "tram_track",
+  "lon": 21.088869,
+  "lat": 52.244714,
+  "street": "Grochowska"
+ },
+ {
+  "text": "Hej, u nas na ulicy znowu dziura, tym razem jeszcze głębsza. Auta gwałtownie hamją i omijają. Trwa to od tygodnia. Proszę o interwencję.",
+  "created_at": "2026-09-29T16:18:58+00:00",
+  "true_issue_id": 7,
+  "true_category": "road_damage",
+  "lon": 21.022678,
+  "lat": 52.204477,
+  "street": "Puławska"
+ },
+ {
+  "text": "Tramwaje na skrzyzowaniu Marszalkowskiej z Kroelwska tzesa jak pralka, tory do remontu. Serio, ile jeszcze?",
+  "created_at": "2026-09-29T16:27:35+00:00",
+  "true_issue_id": 1,
+  "true_category": "tram_track",
+  "lon": 21.006377,
+  "lat": 52.23912,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "dziura na puławskiej przy madalińskiego",
+  "created_at": "2026-09-29T16:50:39+00:00",
+  "true_issue_id": 7,
+  "true_category": "road_damage",
+  "lon": 21.022715,
+  "lat": 52.204411,
+  "street": "Puławska"
+ },
+ {
+  "text": "zglaszam: na placu narutowicza szyny wystaja ponad asfalt. pozdrawiam.",
+  "created_at": "2026-09-29T16:59:38+00:00",
+  "true_issue_id": 10,
+  "true_category": "tram_track",
+  "lon": 20.984249,
+  "lat": 52.219521,
+  "street": "Grójecka"
+ },
+ {
+  "text": "porażka, szanowni państwo, torowisko przy przystanku królewksa się zapada, między szynami dziury. tramwaje jeżdżą tu bardzo wolno. już trzeci dzień.",
+  "created_at": "2026-09-29T17:07:04+00:00",
+  "true_issue_id": 1,
+  "true_category": "tram_track",
+  "lon": 21.006339,
+  "lat": 52.239098,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Pilne! Koło sklepu znowu dziura, tym razem jeszcze głębsza. Zauważyłem dziś rano.",
+  "created_at": "2026-09-29T17:15:46+00:00",
+  "true_issue_id": 11,
+  "true_category": "road_damage",
+  "lon": 20.979234,
+  "lat": 52.214682,
+  "street": "Grójecka"
+ },
+ {
+  "text": "Halo, dziura na dziurze przy Biedronce, jezdnia cala rozwalona. Auta gwaltownie hamuja i omijaja. Dziekuje.",
+  "created_at": "2026-09-29T17:22:48+00:00",
+  "true_issue_id": 7,
+  "true_category": "road_damage",
+  "lon": 21.02289,
+  "lat": 52.204487,
+  "street": "Puławska"
+ },
+ {
+  "text": "szanowni państwo, koleiny i dziury koło lidla na grójeckiej, nie da się normalnie jechać. rowerzysta się dziś przewrócił. już trzeci dzień. ile można czekać?!",
+  "created_at": "2026-09-29T18:22:58+00:00",
+  "true_issue_id": 11,
+  "true_category": "road_damage",
+  "lon": 20.978776,
+  "lat": 52.214709,
+  "street": "Grójecka"
+ },
+ {
+  "text": "Zapadnięta nawierzchnia przy wyjściu z metra Rondo Daszyńskiego. Auta gwałotwnie hamują i omijają. Ile można czekać?!",
+  "created_at": "2026-09-29T18:26:23+00:00",
+  "true_issue_id": 17,
+  "true_category": "road_damage",
+  "lon": 20.983178,
+  "lat": 52.230249,
+  "street": "Rondo Daszyńskiego"
+ },
+ {
+  "text": "Kolejne zgloszenie: Kolo Biedronki na Pulawskiej jest wielka dziura, auta wpadaja w nia kolami. Zglasazm juz drugi raz. Ile mozna czekac?!",
+  "created_at": "2026-09-29T18:28:01+00:00",
+  "true_issue_id": 7,
+  "true_category": "road_damage",
+  "lon": 21.022999,
+  "lat": 52.204553,
+  "street": "Puławska"
+ },
+ {
+  "text": "dzień dobry. dziura na dziurze przy rondzie daszyńskiego od strony prostej, jezdnia cała rozwalona. uszkodziłem felgę. nikt nic z tym nie robi od tygodni. masakra.",
+  "created_at": "2026-09-29T18:33:47+00:00",
+  "true_issue_id": 17,
+  "true_category": "road_damage",
+  "lon": 20.983218,
+  "lat": 52.230273,
+  "street": "Rondo Daszyńskiego"
+ },
+ {
+  "text": "Dzień dobry. Zapadnięta nawierzchnia Al. Jerozolimskie róg Emilii Plater. Ile można czekać?!",
+  "created_at": "2026-09-29T18:43:22+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.003998,
+  "lat": 52.228704,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "ludzie, na jezdni na rondzie daszyńskiego zrobił się ubytek na pół pasa. zaraz będzie wypadek. dramat.",
+  "created_at": "2026-09-29T19:04:30+00:00",
+  "true_issue_id": 17,
+  "true_category": "road_damage",
+  "lon": 20.983128,
+  "lat": 52.230016,
+  "street": "Rondo Daszyńskiego"
+ },
+ {
+  "text": "Pilne! Rozwalony asfalt przy Dworcu Centralnym, opona do wymiany. Od wczoraj.",
+  "created_at": "2026-09-29T19:07:30+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.00415,
+  "lat": 52.228845,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Witam, zwrotnica na Rondzie Wiatraczna chyba uszkodzona, tramwaje zwalniają do zera. Jakby zaraz miał się wykoleić.",
+  "created_at": "2026-09-29T19:42:50+00:00",
+  "true_issue_id": 25,
+  "true_category": "tram_track",
+  "lon": 21.088786,
+  "lat": 52.244888,
+  "street": "Grochowska"
+ },
+ {
+  "text": "WYRWANY KRAWEZNIK I DZIURA PRZY PRZEJSCIU NA SKRZYZOWANIU ALEJ JEROZOLIMSKICH I EMILII PLATER. ROWERZYSTA SIE DZIS PRZEWROCIL. POZDRAWIAM!!!",
+  "created_at": "2026-09-29T20:25:26+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.003989,
+  "lat": 52.228676,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Szanowni Panstwo, torowisko u nas na ulicy sie zapada, miedzy szynami dziury. Trwa to od tygodnia. Dziekuje.",
+  "created_at": "2026-09-29T20:31:38+00:00",
+  "true_issue_id": 1,
+  "true_category": "tram_track",
+  "lon": 21.006512,
+  "lat": 52.239087,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Witam, głęboka dziura na skrzyżowaniu Prostej i Towarowej, w deszczu jej w ogóle nie widać. Auta gwałtownie hamują i omijają. Trwa to od tygodnia. Zróbcie coś z tym! Masakra.",
+  "created_at": "2026-09-29T20:35:12+00:00",
+  "true_issue_id": 17,
+  "true_category": "road_damage",
+  "lon": 20.983092,
+  "lat": 52.230273,
+  "street": "Rondo Daszyńskiego"
+ },
+ {
+  "text": "HEJ, ROZJAZD TRAMWAJOWY NA GROCHOWSKIEJ PRZY WIATRACZNEJ HAŁASUJE CAŁĄ NOC. W TRAMWAJU WSSZYSTKO SIĘ TRZĘSIE. ZAUWAŻYŁEM DZIŚ RANO!!!",
+  "created_at": "2026-09-29T20:46:23+00:00",
+  "true_issue_id": 25,
+  "true_category": "tram_track",
+  "lon": 21.089099,
+  "lat": 52.244751,
+  "street": "Grochowska"
+ },
+ {
+  "text": "Pilne! Rozjazd tramwajowy przy przystanku Plac Narutowicza halasuej cala noc. Masakra.",
+  "created_at": "2026-09-29T20:52:40+00:00",
+  "true_issue_id": 10,
+  "true_category": "tram_track",
+  "lon": 20.984567,
+  "lat": 52.219501,
+  "street": "Grójecka"
+ },
+ {
+  "text": "Halo, dziura na dziurze, jezdnia cała rozwalona. Dramat jakiś.",
+  "created_at": "2026-09-29T22:05:19+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.00398,
+  "lat": 52.228723,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Płyty torowiska ul. Marszałkowska róg Królewskiej ruszają się pod kołami tramwaju. Hałas słychać na całym osiedlu. Serio, ile jeszcze?",
+  "created_at": "2026-09-29T22:26:13+00:00",
+  "true_issue_id": 1,
+  "true_category": "tram_track",
+  "lon": 21.006363,
+  "lat": 52.239049,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Szanowni Państwo, ogromna dzuira w jezdni Al. Jerozolimskie róg Emilii Plater. Niebezzpiecznie dla motocyklistów. Dziękuję.",
+  "created_at": "2026-09-29T22:44:33+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.004092,
+  "lat": 52.22886,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "pilne! szczelina przy szynie tramwajowej koło zoo od strony jagiellońskiej, koło roweru wpada. rowerzysta wpadł kołeem w szynę. pozdrawiam.",
+  "created_at": "2026-09-29T22:46:43+00:00",
+  "true_issue_id": 35,
+  "true_category": "tram_track",
+  "lon": 21.023096,
+  "lat": 52.259936,
+  "street": "Jagiellońska"
+ },
+ {
+  "text": "Dzień dobry, uszkodzony chodnik na skrzyżowaniu Alej Jerozolimskich i Emilii Plater, płyty powyrywane. Rowerzysta się dziś przewrócił. Problem jest od miesiąca. Proszę o pilną naprawę.",
+  "created_at": "2026-09-29T23:07:59+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.004084,
+  "lat": 52.228778,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "pilne! zapadnieta nawierzchina na modilnskiej przy zeraniu. zaraz bedzie wypadek. problem jest od miesiaca. dziekuje.",
+  "created_at": "2026-09-29T23:13:33+00:00",
+  "true_issue_id": 37,
+  "true_category": "road_damage",
+  "lon": 21.001981,
+  "lat": 52.29301,
+  "street": "Modlińska"
+ },
+ {
+  "text": "Dzien dobry, w Alejach Jerozolimskich przy Placu Zawiszy szyny wystaja ponad asfalt. Kto za to odpowiada?",
+  "created_at": "2026-09-29T23:25:55+00:00",
+  "true_issue_id": 16,
+  "true_category": "tram_track",
+  "lon": 20.989663,
+  "lat": 52.224054,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Ludzie, rozwalony asfalt na Rondzie Daszyńskiego, opona do wymiany. Zgłaszam już drgui raz. Serio, ile jeszcze?",
+  "created_at": "2026-09-29T23:50:21+00:00",
+  "true_issue_id": 17,
+  "true_category": "road_damage",
+  "lon": 20.983113,
+  "lat": 52.230207,
+  "street": "Rondo Daszyńskiego"
+ },
+ {
+  "text": "HALO, USZKODZONY CHODNIK UL. GRÓJECKA RÓG BANACHA, PŁYTY POWYRYWANE. ROWWERZYSTA SIĘ DZIŚ PRZEWRÓCIŁ. POZDRAWIAM!!!",
+  "created_at": "2026-09-30T00:15:04+00:00",
+  "true_issue_id": 11,
+  "true_category": "road_damage",
+  "lon": 20.97906,
+  "lat": 52.214659,
+  "street": "Grójecka"
+ },
+ {
+  "text": "tory kolo biedronki przy wiatracznej",
+  "created_at": "2026-09-30T00:41:41+00:00",
+  "true_issue_id": 25,
+  "true_category": "tram_track",
+  "lon": 21.088807,
+  "lat": 52.244787,
+  "street": "Grochowska"
+ },
+ {
+  "text": "Halo, na Puławskiej koło metrra Wilanoswka tramwaj mocno szarpnął na torach. Wczoraj wieczorem było jeszcze gorzej. Bardzo proszę o szybką reakcję!!",
+  "created_at": "2026-09-30T00:45:26+00:00",
+  "true_issue_id": 8,
+  "true_category": "tram_track",
+  "lon": 21.022275,
+  "lat": 52.181067,
+  "street": "Puławska"
+ },
+ {
+  "text": "Hej, na jezdni na skrzyżowaniu Alej Jerozolimskich i Emilii Plater zrobił się ubytek na pół pasa. Od wczoraj. Pozdrawiam.",
+  "created_at": "2026-09-30T01:16:00+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.004044,
+  "lat": 52.228804,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "ZGŁASZAM: ROZJAZD TRAMWAJOWY NA OSIEDLU HAŁASUJE CAŁĄ NOC. MASAKRA!!!",
+  "created_at": "2026-09-30T01:23:28+00:00",
+  "true_issue_id": 16,
+  "true_category": "tram_track",
+  "lon": 20.989551,
+  "lat": 52.223946,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Dramat jakiś, pilne! Tramwaje na skrzyżowaniu Andersa i Muranowskiej trzęsą jak pralka, tory do remontu. Bardzo proszę o szybką reakcję.",
+  "created_at": "2026-09-30T01:27:32+00:00",
+  "true_issue_id": 30,
+  "true_category": "tram_track",
+  "lon": 20.997574,
+  "lat": 52.251034,
+  "street": "Andersa"
+ },
+ {
+  "text": "witam, peknieta szyna przy przystanku plac narutowicza?? tramwaj podskakuje. rowerzysta wpadl kolem w szyne. bardzo prosze o szybka reakcje.",
+  "created_at": "2026-09-30T01:30:09+00:00",
+  "true_issue_id": 10,
+  "true_category": "tram_track",
+  "lon": 20.984514,
+  "lat": 52.219594,
+  "street": "Grójecka"
+ },
+ {
+  "text": "Pilne! Rozwaly asfalt ul. Puławska róg Madalińskiego, opona do wymiany. W nocy jej w ogóle nie widać. Zróbcie coś z tym! No bez jaj.",
+  "created_at": "2026-09-30T01:32:58+00:00",
+  "true_issue_id": 7,
+  "true_category": "road_damage",
+  "lon": 21.022644,
+  "lat": 52.204505,
+  "street": "Puławska"
+ },
+ {
+  "text": "Streetlight on Aleja Solidarnosci is out, it is very dark at night.",
+  "created_at": "2026-09-30T01:36:34+00:00",
+  "true_issue_id": 21,
+  "true_category": "streetlight",
+  "lon": 20.981416,
+  "lat": 52.240863,
+  "street": "Aleja Solidarności"
+ },
+ {
+  "text": "Tramwaje na skrzyżowaniu Marszałkowskiej z Wilcąz trzęsą jak pralka, tory do remontu. Niebezpieczne dla rowerzystów. Dziękuję.",
+  "created_at": "2026-09-30T02:36:57+00:00",
+  "true_issue_id": 4,
+  "true_category": "tram_track",
+  "lon": 21.013794,
+  "lat": 52.226505,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Ludzie, płyty torowiska ruszaają się pod kołami tramwaju. Niebezpieczne dla rowerzystów. Poszę o interwencję.",
+  "created_at": "2026-09-30T02:37:43+00:00",
+  "true_issue_id": 8,
+  "true_category": "tram_track",
+  "lon": 21.022607,
+  "lat": 52.181036,
+  "street": "Puławska"
+ },
+ {
+  "text": "Kurde, koljene zgłoszenie: Koło Biedronki na Puławsskiej asfalt się kruszy i robi się głęboka wyrwa. Proszę o interwencję.",
+  "created_at": "2026-09-30T03:13:03+00:00",
+  "true_issue_id": 7,
+  "true_category": "road_damage",
+  "lon": 21.022718,
+  "lat": 52.204525,
+  "street": "Puławska"
+ },
+ {
+  "text": "rozwalony asfalt na skrzyżowaniu grójeckiej z banacha, opona do wymiany. wczroaj wieczorem było jeszcze gorzej. kto za to odpowiada?",
+  "created_at": "2026-09-30T03:30:19+00:00",
+  "true_issue_id": 11,
+  "true_category": "road_damage",
+  "lon": 20.979012,
+  "lat": 52.214649,
+  "street": "Grójecka"
+ },
+ {
+  "text": "Zgłaszam: Koleiny i dziury na skrzyżowanniu Alej Jerozolimskich i Emilii Plater, nie da się normalnie jechać. Problem jest od miesiąca. Pozdrawiam.",
+  "created_at": "2026-09-30T03:32:12+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.004023,
+  "lat": 52.228777,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Ludzie, uszkodzone tory koło ZOO od stony Jagiellońskiej, słychać metaliczne uderzenia. Trwa to od tygodnia. Serio, ile jeszcze?",
+  "created_at": "2026-09-30T03:36:50+00:00",
+  "true_issue_id": 35,
+  "true_category": "tram_track",
+  "lon": 21.023113,
+  "lat": 52.260039,
+  "street": "Jagiellońska"
+ },
+ {
+  "text": "Szanowni Państwo, płyty torowiska na Puławskiej przy Domaniewskiej ruszają się pod kołami tramwaju. Jakby zaraz miał się wykoleić. Zauważyłem dziś rano. Bardzo proszę o szybką reakcję.",
+  "created_at": "2026-09-30T03:59:20+00:00",
+  "true_issue_id": 8,
+  "true_category": "tram_track",
+  "lon": 21.022191,
+  "lat": 52.180979,
+  "street": "Puławska"
+ },
+ {
+  "text": "Szanowni Państwo, dziura w drodze na skrzyżowaniu Puławskiej i Madalińskiego jak krater. Zaraz będzie wypadek. Zauważyłem dziś rano.",
+  "created_at": "2026-09-30T04:37:09+00:00",
+  "true_issue_id": 7,
+  "true_category": "road_damage",
+  "lon": 21.022758,
+  "lat": 52.204537,
+  "street": "Puławska"
+ },
+ {
+  "text": "na grójeckiej koło akademika tramwaj mocno szarpnął na torach. ile można czekać?!",
+  "created_at": "2026-09-30T05:30:21+00:00",
+  "true_issue_id": 10,
+  "true_category": "tram_track",
+  "lon": 20.984533,
+  "lat": 52.219544,
+  "street": "Grójecka"
+ },
+ {
+  "text": "Pilne! Uszkodzony chodnik Al. Jerozolimskie róg Emilii Plater, płyty powyrywane. Masakra.",
+  "created_at": "2026-09-30T05:35:35+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.003918,
+  "lat": 52.228816,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Torowisko na osiedlu się zapada, midęzzy szynami dziury. Niebezpieczne dla rowerzystów. Proszę o pilną naprawę.",
+  "created_at": "2026-09-30T06:06:46+00:00",
+  "true_issue_id": 10,
+  "true_category": "tram_track",
+  "lon": 20.984569,
+  "lat": 52.219596,
+  "street": "Grójecka"
+ },
+ {
+  "text": "Witam, uszkodzone tory na Jagiellońskiej przy Ratuszowej, słychać metaliczne uderzenia. Niebezpieczne dla rowerzystów. Proszę o interwencję.",
+  "created_at": "2026-09-30T06:15:22+00:00",
+  "true_issue_id": 35,
+  "true_category": "tram_track",
+  "lon": 21.023167,
+  "lat": 52.259944,
+  "street": "Jagiellońska"
+ },
+ {
+  "text": "Dzień dobry. Dziura w drodze w Alejach Jerozolimskich przy Emilii Plater jak krater. Wczoraj wieczorem było jeszcze gorzej. Bardzo proszę o szybką reakcję.",
+  "created_at": "2026-09-30T06:23:34+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.004204,
+  "lat": 52.228732,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Ludzie, rozjazd tramwajowy na Jagiellonskiej przy Ratuszowej halasuje cala noc.",
+  "created_at": "2026-09-30T07:22:06+00:00",
+  "true_issue_id": 35,
+  "true_category": "tram_track",
+  "lon": 21.023105,
+  "lat": 52.260039,
+  "street": "Jagiellońska"
+ },
+ {
+  "text": "halo, płyty torowiska ul. puławska róg domaniewskiej ruszają się pod kołami tramwaju. niebezpieczne dla rowerzystów. bardzo proszę o szybką reakcję.",
+  "created_at": "2026-09-30T07:24:05+00:00",
+  "true_issue_id": 8,
+  "true_category": "tram_track",
+  "lon": 21.022474,
+  "lat": 52.180886,
+  "street": "Puławska"
+ },
+ {
+  "text": "tramwaje na skrzyżowaniu solidarności i jana pawła trzęsą jak pralka, tory do remontu. nikt nic z tym nie robi od tygodni. kto za to odpowiada?",
+  "created_at": "2026-09-30T07:31:36+00:00",
+  "true_issue_id": 20,
+  "true_category": "tram_track",
+  "lon": 20.993703,
+  "lat": 52.242779,
+  "street": "Aleja Solidarności"
+ },
+ {
+  "text": "zalane przejscie w alejach jerozolimskich przy dworcu zachodnim, nie da sie przejsc sucha stopa.",
+  "created_at": "2026-09-30T07:43:27+00:00",
+  "true_issue_id": 15,
+  "true_category": "flooding",
+  "lon": 20.966206,
+  "lat": 52.219379,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Witam, zapadnięta nawierzchnia Al. Jerozolimskie róg Emilii Plater. Trwa to od tygodnia. Zróbcie coś z tym!",
+  "created_at": "2026-09-30T07:51:02+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.003935,
+  "lat": 52.228722,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Zgłaszam: Tramwaje ul. Puławska róg Domaniewskiej trzęsą jak pralka, tory do remontu. Dziękuję.",
+  "created_at": "2026-09-30T07:53:20+00:00",
+  "true_issue_id": 8,
+  "true_category": "tram_track",
+  "lon": 21.022487,
+  "lat": 52.181081,
+  "street": "Puławska"
+ },
+ {
+  "text": "Kolejne zgloszenie: Nie swieci sie zadna latarnia na Pulawskiej przy Krolikarni. Ktos sie juz przewrocil po ciemku. Zauwazylem dzis rano. Bardzo prosze o szybka reakcje!!",
+  "created_at": "2026-09-30T08:05:21+00:00",
+  "true_issue_id": 9,
+  "true_category": "streetlight",
+  "lon": 21.023412,
+  "lat": 52.189944,
+  "street": "Puławska"
+ },
+ {
+  "text": "Tory tramajowe na Grojeckiej przy Plaacu Narutowicza sa w fatalnym stanie, tramwaj strasznie stuka. Bardzo prosze o szybka reakcje.",
+  "created_at": "2026-09-30T08:13:34+00:00",
+  "true_issue_id": 10,
+  "true_category": "tram_track",
+  "lon": 20.984489,
+  "lat": 52.219506,
+  "street": "Grójecka"
+ },
+ {
+  "text": "kolejne zgloszenie: wyrwany kraweznik i dziura przy przejsciu obok apteki. bardzo prosze o szybka reakcje.",
+  "created_at": "2026-09-30T08:59:13+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.004036,
+  "lat": 52.228776,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "halo, zwrotnica na skrzyżowaniu alej jerozolimskich z grójecką chyba uszkodzona, tramwaje zwalniają do zera. wczoraj wieczorem było jeszcze gorzej. kto za to odpowiada?",
+  "created_at": "2026-09-30T09:47:18+00:00",
+  "true_issue_id": 16,
+  "true_category": "tram_track",
+  "lon": 20.989661,
+  "lat": 52.22399,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Serio, dziura. na skrzyżoaniu Grójeckiej z Banacha",
+  "created_at": "2026-09-30T09:51:36+00:00",
+  "true_issue_id": 11,
+  "true_category": "road_damage",
+  "lon": 20.979127,
+  "lat": 52.214689,
+  "street": "Grójecka"
+ },
+ {
+  "text": "Pilne! Latarnia nie świeci na skrzyżowaniu Solidarności z Okopową. Masakra.",
+  "created_at": "2026-09-30T10:24:07+00:00",
+  "true_issue_id": 21,
+  "true_category": "streetlight",
+  "lon": 20.981523,
+  "lat": 52.240985,
+  "street": "Aleja Solidarności"
+ },
+ {
+  "text": "zalany przeejazd w alejach jerozolismkich przy dworcu zachodnim. kto za to odpowiada?",
+  "created_at": "2026-09-30T10:54:59+00:00",
+  "true_issue_id": 15,
+  "true_category": "flooding",
+  "lon": 20.96613,
+  "lat": 52.21944,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Halo, koleiny i dziury na Ronzie Dmowskiego, nie da się normalnie jechać. Pozdrawiam. Porażka.",
+  "created_at": "2026-09-30T10:57:25+00:00",
+  "true_issue_id": 3,
+  "true_category": "road_damage",
+  "lon": 21.011495,
+  "lat": 52.230864,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "ludzie, uszkodzony chodnik przy przystanku morskie oko, plyty powyrywane. kto za to odpowiada?",
+  "created_at": "2026-09-30T11:14:54+00:00",
+  "true_issue_id": 7,
+  "true_category": "road_damage",
+  "lon": 21.022979,
+  "lat": 52.204397,
+  "street": "Puławska"
+ },
+ {
+  "text": "Uszkodzony chodnik ul. Grójecka róg Banacha, płyty powyrywane. Serio, ile jeszcze?",
+  "created_at": "2026-09-30T11:39:59+00:00",
+  "true_issue_id": 11,
+  "true_category": "road_damage",
+  "lon": 20.979136,
+  "lat": 52.214591,
+  "street": "Grójecka"
+ },
+ {
+  "text": "Dzień dobry, głośne walenie tramwajów na Puławskiej przy Domaniewskiej, coś jest nie tak z torowiskiem. Rowerzysta wpadł kołem w szynę. Ile można czekać?! Serio.",
+  "created_at": "2026-09-30T11:41:17+00:00",
+  "true_issue_id": 8,
+  "true_category": "tram_track",
+  "lon": 21.022508,
+  "lat": 52.181116,
+  "street": "Puławska"
+ },
+ {
+  "text": "Szanowni Państwo, uszkodzony chodnik na Marszałkowskiej przy Alejach Jerozolimskich, płyty powyrywane. Problem jest od miesiąca.",
+  "created_at": "2026-09-30T11:43:18+00:00",
+  "true_issue_id": 3,
+  "true_category": "road_damage",
+  "lon": 21.011667,
+  "lat": 52.230742,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Kolejne zgłoszenie: Rozwalony asfalt Al. Jerozolimskie róg Emilii Plater, opona do wymiany. Nikt nic z tym nie robi od tygodni. Bardzo proszę o szybką reakcję.",
+  "created_at": "2026-09-30T11:57:38+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.00397,
+  "lat": 52.228838,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Dzein dobry, dziura w drodze przy wyjsciu z metra Rondo Daszynskiego jak krater. Dzieci tedy chodza do szkoly. Masakra.",
+  "created_at": "2026-09-30T12:03:27+00:00",
+  "true_issue_id": 17,
+  "true_category": "road_damage",
+  "lon": 20.983218,
+  "lat": 52.230042,
+  "street": "Rondo Daszyńskiego"
+ },
+ {
+  "text": "Pilne! Głęboka dziura na Marszałkowskiej przy Alejach Jerozolimskich, w deszczu jej w ogólle nie widać. Niebezpieczniie dla motocyklistów. Dziękuję.",
+  "created_at": "2026-09-30T12:04:51+00:00",
+  "true_issue_id": 3,
+  "true_category": "road_damage",
+  "lon": 21.011649,
+  "lat": 52.23093,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Halo, ul. Pulawska rog Madalinskiego jest wielka dziura, auta wpadaja w nia kolami. Zaraz bedzie wypadek. Prosze o interwencje.",
+  "created_at": "2026-09-30T12:08:24+00:00",
+  "true_issue_id": 7,
+  "true_category": "road_damage",
+  "lon": 21.022654,
+  "lat": 52.204663,
+  "street": "Puławska"
+ },
+ {
+  "text": "Dzień dobry, torowisko al. Solidarności róg Jana Pawła II się zapada, między szynaim dziury. Tramwaje jeżżdżą tu bardzo wolno. Zróbcie coś z tym!",
+  "created_at": "2026-09-30T12:28:36+00:00",
+  "true_issue_id": 20,
+  "true_category": "tram_track",
+  "lon": 20.99354,
+  "lat": 52.242828,
+  "street": "Aleja Solidarności"
+ },
+ {
+  "text": "Zgłaszam: Na Marszałkowskiej przy Wilczej tramwaj mocno szrapnął na torach. Kto za to odpowiada?",
+  "created_at": "2026-09-30T12:38:42+00:00",
+  "true_issue_id": 4,
+  "true_category": "tram_track",
+  "lon": 21.013455,
+  "lat": 52.226551,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Szanowni Państwo, przy przystanku Plac Zawiszy szyny wystają ponad asfalt. Zauważyłem dziś rano. Proszę o pilną naprawę.",
+  "created_at": "2026-09-30T12:43:36+00:00",
+  "true_issue_id": 16,
+  "true_category": "tram_track",
+  "lon": 20.989757,
+  "lat": 52.223957,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Hej, dziura w drodze koło Biedronki na Puławskiej jak krater. Zróbcie coś z tym!",
+  "created_at": "2026-09-30T12:46:59+00:00",
+  "true_issue_id": 7,
+  "true_category": "road_damage",
+  "lon": 21.022798,
+  "lat": 52.204605,
+  "street": "Puławska"
+ },
+ {
+  "text": "rozwalony asfalt koło przystanku centrum, opona do wymiany. w nocy jej w ogóle nie widać. zróbcie coś z tym!",
+  "created_at": "2026-09-30T12:51:02+00:00",
+  "true_issue_id": 3,
+  "true_category": "road_damage",
+  "lon": 21.0114,
+  "lat": 52.230856,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Porazka, dziura na dziurze na Marszalkowskiej przy Alejach Jerozolimskich, jezdnia cala rozwalona. Trwa to od tygodnia. Serio, ile jeszcze?",
+  "created_at": "2026-09-30T13:03:17+00:00",
+  "true_issue_id": 3,
+  "true_category": "road_damage",
+  "lon": 21.011442,
+  "lat": 52.230921,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Wyrwany krawężnik i dziura przy przejściu na Puławskiej przy Madalińskiego. Nikt nic z tym nie robi od tygodni. Pozdrawiam.",
+  "created_at": "2026-09-30T13:25:00+00:00",
+  "true_issue_id": 7,
+  "true_category": "road_damage",
+  "lon": 21.022902,
+  "lat": 52.204462,
+  "street": "Puławska"
+ },
+ {
+  "text": "Witam, szczelina przy szynie tramwajowej na Alei Solidarności przy Jana Pawła II, koło roweru wpada. Tramwaje jeżdżą tu bardzo wolno. Bardzo proszę o szybką reakcję.",
+  "created_at": "2026-09-30T13:34:39+00:00",
+  "true_issue_id": 20,
+  "true_category": "tram_track",
+  "lon": 20.99366,
+  "lat": 52.242822,
+  "street": "Aleja Solidarności"
+ },
+ {
+  "text": "dzien dobry, wyrwany kraweznik i dziura przy przejsciu na marszalkowskiej przy rondzie dmowskiego. prawie urwalem kolo. nikt nic z tym nie robi od tygodni. pozdrawiam.",
+  "created_at": "2026-09-30T13:35:32+00:00",
+  "true_issue_id": 3,
+  "true_category": "road_damage",
+  "lon": 21.011639,
+  "lat": 52.230923,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "kolejne zgloszenie: tramwaje na skrzyzowaniu marszalkowskiej z wilcza trzesa jak pralka, tory do remontu. nikt nic z tym nie robi od tygodni. prosze o interwencje.",
+  "created_at": "2026-09-30T13:51:06+00:00",
+  "true_issue_id": 4,
+  "true_category": "tram_track",
+  "lon": 21.013807,
+  "lat": 52.226522,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Glosne walenie tramwajow na Grojeckiej kolo Akademika, cos jest nie tak z torowiskiem. Prosze o interwencje.",
+  "created_at": "2026-09-30T15:03:18+00:00",
+  "true_issue_id": 10,
+  "true_category": "tram_track",
+  "lon": 20.9847,
+  "lat": 52.219549,
+  "street": "Grójecka"
+ },
+ {
+  "text": "Zgłaszam: Płyty torowiska w Alejach Jerozolimskich przy Placu Zawiszy ruszają się pod kołami tramwaju.",
+  "created_at": "2026-09-30T15:17:47+00:00",
+  "true_issue_id": 16,
+  "true_category": "tram_track",
+  "lon": 20.989761,
+  "lat": 52.224004,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Kolejne zgłoszenie: Zwrotnica przy Biedronce chyba uszkodzona, tramwaje zwalniają do zera. Pozdrawiam. No bez jaj.",
+  "created_at": "2026-09-30T15:30:34+00:00",
+  "true_issue_id": 20,
+  "true_category": "tram_track",
+  "lon": 20.993566,
+  "lat": 52.242811,
+  "street": "Aleja Solidarności"
+ },
+ {
+  "text": "zapadnieta nawierzchnia na marszalkowskiej przy alejcah jerozolimskich. autobusy zjezdzaa na drugi pas. bardzo prosze o szybka reakcje.",
+  "created_at": "2026-09-30T15:42:56+00:00",
+  "true_issue_id": 3,
+  "true_category": "road_damage",
+  "lon": 21.011576,
+  "lat": 52.230876,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Ludzie, wyrwany kraawężnik i dziura przy przejściu koło Biedronki na Puławskiej. Dzieci tędy chodzą do szkoły. Zgłaszam już drgi raz. Pozdrawiam.",
+  "created_at": "2026-09-30T16:22:36+00:00",
+  "true_issue_id": 7,
+  "true_category": "road_damage",
+  "lon": 21.022778,
+  "lat": 52.204614,
+  "street": "Puławska"
+ },
+ {
+  "text": "Zapadnięta nawierzchnia przy szkole. Dzieci tędy chodzą do szkoły. Pozdrawiam.",
+  "created_at": "2026-09-30T16:23:06+00:00",
+  "true_issue_id": 7,
+  "true_category": "road_damage",
+  "lon": 21.022611,
+  "lat": 52.20443,
+  "street": "Puławska"
+ },
+ {
+  "text": "Rozwalony asfalt na Rondzie Dmowskiego, opona do wymiany. Prolbem jest od miesiaca. Ile monza czekac?! No bez jaj.",
+  "created_at": "2026-09-30T16:23:24+00:00",
+  "true_issue_id": 3,
+  "true_category": "road_damage",
+  "lon": 21.011408,
+  "lat": 52.230898,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "przy wyjściu z metra rondo daszyńskiego znowu dziura, tym razem jeszcze głębsza. wczoraj wieczorem było jeszcze gorzej. proszę o interwencję.",
+  "created_at": "2026-09-30T16:26:55+00:00",
+  "true_issue_id": 17,
+  "true_category": "road_damage",
+  "lon": 20.983184,
+  "lat": 52.230155,
+  "street": "Rondo Daszyńskiego"
+ },
+ {
+  "text": "Halo, latarnia nie swieci kolo stacji benzynowej przy Okopowej. Strach wracac wieczorem. Kto za to odpowiada?",
+  "created_at": "2026-09-30T17:04:34+00:00",
+  "true_issue_id": 21,
+  "true_category": "streetlight",
+  "lon": 20.98135,
+  "lat": 52.241011,
+  "street": "Aleja Solidarności"
+ },
+ {
+  "text": "Szanowni Państwo, wywa w asfalcie na skrzyżowaniu Puławskiej i Madalińskiego, z każdym dniem większa. W nocy jej w ogóle nie widać. Bardzo proszę o szybką reakcję.",
+  "created_at": "2026-09-30T17:57:43+00:00",
+  "true_issue_id": 7,
+  "true_category": "road_damage",
+  "lon": 21.022533,
+  "lat": 52.204664,
+  "street": "Puławska"
+ },
+ {
+  "text": "Dzien dobry. Al. Jerozolimskie rog Emilii Plater znowu dziura, tym razzem jeszcze glebsza. Autobusy zjezdzaja na drugi pas. Problem jest od miesiaca. Ile mozna czekac?!",
+  "created_at": "2026-09-30T18:36:58+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.003913,
+  "lat": 52.228819,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Ludzie, zwrotnica na Puławskiej koło metra Wilanowska chyba uszkodzona, tramwaje zwalniają do zera. Ludzie w tramwaju lecą na siebie. Od wczoraj. Bardzo proszę o szybką reakcję.",
+  "created_at": "2026-09-30T18:48:54+00:00",
+  "true_issue_id": 8,
+  "true_category": "tram_track",
+  "lon": 21.022562,
+  "lat": 52.18121,
+  "street": "Puławska"
+ },
+ {
+  "text": "Głęboka dziura przy Dworcu Centralnym, w deszczu jej w ogóle nie widać. Od wczoraj. Zróbcie coś z tym!",
+  "created_at": "2026-09-30T19:09:00+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.004002,
+  "lat": 52.228812,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Pilne! Głłośne walenie tramwajów na skrzyżowaniu Alej Jerozolimskich z Grójecką, coś jest nie tak z torowiskiem. Hałas słychać na całym osiedlu. Od wczoraj.",
+  "created_at": "2026-09-30T19:18:48+00:00",
+  "true_issue_id": 16,
+  "true_category": "tram_track",
+  "lon": 20.989656,
+  "lat": 52.224086,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Szanowni Państwo, zgasły wszystkie lampy na Puławskiej koło Malczewskiego, strach chodzić po zmroku. Kierowcy nie widzą ludzi na pasach. Dziękuję.",
+  "created_at": "2026-09-30T19:27:06+00:00",
+  "true_issue_id": 9,
+  "true_category": "streetlight",
+  "lon": 21.023293,
+  "lat": 52.190004,
+  "street": "Puławska"
+ },
+ {
+  "text": "Pilne! Po każdym deszczu niedaleko kościoła zalana jezdnia, woda po kostki. Smród nie do wytrzymania. Zróbcie coś z tym!",
+  "created_at": "2026-09-30T20:24:08+00:00",
+  "true_issue_id": 15,
+  "true_category": "flooding",
+  "lon": 20.966003,
+  "lat": 52.219488,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Szanowni Państwo, ogromna dziura w jezdni koło biurowców przy Rondzie Daszyńskiego.",
+  "created_at": "2026-09-30T20:50:36+00:00",
+  "true_issue_id": 17,
+  "true_category": "road_damage",
+  "lon": 20.982955,
+  "lat": 52.230419,
+  "street": "Rondo Daszyńskiego"
+ },
+ {
+  "text": "Znwou to samo w Aeljach Jerozolimskich przy Emilii Plater – dziura",
+  "created_at": "2026-09-30T20:59:18+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.004123,
+  "lat": 52.228776,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Zgłaszam: Latarnia nie świeci na Puławskiej koło Malczewskiego. Proszę o pilną naprawę. Masakra.",
+  "created_at": "2026-09-30T21:05:11+00:00",
+  "true_issue_id": 9,
+  "true_category": "streetlight",
+  "lon": 21.023184,
+  "lat": 52.190063,
+  "street": "Puławska"
+ },
+ {
+  "text": "Halo, na Grójeckiej koło Akademika szyny wystają ponad asfalt. Zgłaszam już drugi raz!!",
+  "created_at": "2026-09-30T21:07:13+00:00",
+  "true_issue_id": 10,
+  "true_category": "tram_track",
+  "lon": 20.984582,
+  "lat": 52.219497,
+  "street": "Grójecka"
+ },
+ {
+  "text": "Szanowni Państwo, na jezdin tam gdzie zawsze zrobił się ubyytek na pół pasa. Trwa to od tygodnia. Masakra.",
+  "created_at": "2026-09-30T21:09:01+00:00",
+  "true_issue_id": 17,
+  "true_category": "road_damage",
+  "lon": 20.983063,
+  "lat": 52.230275,
+  "street": "Rondo Daszyńskiego"
+ },
+ {
+  "text": "dzien dobry, gleboka dziura na skrzyzowaniu pulawskiej i madalinskiego, w deszczu jej w ogole nie widac. dziekuje.",
+  "created_at": "2026-09-30T21:48:56+00:00",
+  "true_issue_id": 7,
+  "true_category": "road_damage",
+  "lon": 21.022725,
+  "lat": 52.204541,
+  "street": "Puławska"
+ },
+ {
+  "text": "Znowu to samo na Rondzie Daszyńskiego – dziura",
+  "created_at": "2026-09-30T22:03:40+00:00",
+  "true_issue_id": 17,
+  "true_category": "road_damage",
+  "lon": 20.983156,
+  "lat": 52.230276,
+  "street": "Rondo Daszyńskiego"
+ },
+ {
+  "text": "Gleboka dziura kolo Zabki, w deszczu jej w ogole nie widac. Zglaszam juz drugi raz. Kto za to odpowiada? Serio.",
+  "created_at": "2026-09-30T22:05:22+00:00",
+  "true_issue_id": 3,
+  "true_category": "road_damage",
+  "lon": 21.011772,
+  "lat": 52.230851,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Pilne! Latarnai przy Królikarni nie świeci od tygodnia. Piesi na przejściu są niewidoczni. Pozdrawiam.",
+  "created_at": "2026-09-30T22:36:54+00:00",
+  "true_issue_id": 9,
+  "true_category": "streetlight",
+  "lon": 21.023373,
+  "lat": 52.189977,
+  "street": "Puławska"
+ },
+ {
+  "text": "Znowu to samo na Puławskiej koło metra Wilanowska – tory",
+  "created_at": "2026-09-30T22:42:40+00:00",
+  "true_issue_id": 8,
+  "true_category": "tram_track",
+  "lon": 21.022822,
+  "lat": 52.180969,
+  "street": "Puławska"
+ },
+ {
+  "text": "pilne! na gorczewskiej przy prymasa tysialcecia stoi ogromna kaluza, auta chlapia na ludzi. proosze o interwencje.",
+  "created_at": "2026-09-30T22:49:31+00:00",
+  "true_issue_id": 33,
+  "true_category": "flooding",
+  "lon": 20.945885,
+  "lat": 52.238518,
+  "street": "Górczewska"
+ },
+ {
+  "text": "Kolejne zgłoszenie: Dziura na dziurze w Alejach Jerozolimskich przy Emilii Plater, jezdnia cała rozwalona. Bardzo proszę o szybką reakcję.",
+  "created_at": "2026-09-30T23:01:24+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.00399,
+  "lat": 52.228827,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Pilne! Torowisko na skrzyżowaniu Alej Jerozolimskich z Grójecką się zapada, między szynami dziury. Zróbcie coś z tym!",
+  "created_at": "2026-09-30T23:05:22+00:00",
+  "true_issue_id": 16,
+  "true_category": "tram_track",
+  "lon": 20.989644,
+  "lat": 52.224078,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Masakra, the tram tracks on Marszałkowska are broken, trams are very loud.",
+  "created_at": "2026-09-30T23:25:32+00:00",
+  "true_issue_id": 4,
+  "true_category": "tram_track",
+  "lon": 21.013689,
+  "lat": 52.226422,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Halo, dziura w drodze na Rnodzie Dmowskiego jak krater. Zauważyłem dziś rano. Dziękuję.",
+  "created_at": "2026-09-30T23:31:02+00:00",
+  "true_issue_id": 3,
+  "true_category": "road_damage",
+  "lon": 21.011617,
+  "lat": 52.230868,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Halo, koleiny i dziury ul. Pulawska rog Madalinskiego, nie da sie normalnie jechac. Serio, ile jeszcze?",
+  "created_at": "2026-09-30T23:35:58+00:00",
+  "true_issue_id": 7,
+  "true_category": "road_damage",
+  "lon": 21.022855,
+  "lat": 52.204479,
+  "street": "Puławska"
+ },
+ {
+  "text": "Ludzie, przy przejściu dla pieszycch znowu dziura, tym razem jeszcze głębsza. Zarraz będzie wypadek. Serio, ile jeszcze?",
+  "created_at": "2026-09-30T23:37:39+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.004088,
+  "lat": 52.228632,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Hej, przy Dworcu Centralnym asfalt się kruszy i robi się głęboka wyrwa. Zróbcie coś z tym!",
+  "created_at": "2026-09-30T23:38:20+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.004018,
+  "lat": 52.228769,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Na jezdni na Rondzie Daszynskiego zrobil sie ubytek na pol pasa. Niebezpiecznie dla motocyklistow. Problem jest od miesiaca. Dziekuje. Porazka.",
+  "created_at": "2026-09-30T23:48:35+00:00",
+  "true_issue_id": 17,
+  "true_category": "road_damage",
+  "lon": 20.982928,
+  "lat": 52.230151,
+  "street": "Rondo Daszyńskiego"
+ },
+ {
+  "text": "Halo, uszkodzony chodnik w Alejach Jerozolimskich przy Emilii Plater, plyty powyrywane. Autobusy zjezdzaja na drugi pas. Pozdrawiam.",
+  "created_at": "2026-10-01T00:10:18+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.003986,
+  "lat": 52.228733,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Uszkodzone tory przy przystanku Plac Zawiszy, slychac metaliczne uderzenia. Pozdrawiam.",
+  "created_at": "2026-10-01T00:10:40+00:00",
+  "true_issue_id": 16,
+  "true_category": "tram_track",
+  "lon": 20.9896,
+  "lat": 52.223846,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Szczelina przy szynie tramwajowej przy przystanku Plac Zawiszy, koło roweru wpada. Ludzie w tramwaju lecą na siebie. Zróbcie coś z tym!",
+  "created_at": "2026-10-01T00:19:19+00:00",
+  "true_issue_id": 16,
+  "true_category": "tram_track",
+  "lon": 20.98962,
+  "lat": 52.223922,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Pilne! Rozwalony asfalt na Puławskiej przy Madalińskiego, opona do wymiany. Masakra.",
+  "created_at": "2026-10-01T00:41:14+00:00",
+  "true_issue_id": 7,
+  "true_category": "road_damage",
+  "lon": 21.022773,
+  "lat": 52.204442,
+  "street": "Puławska"
+ },
+ {
+  "text": "Woda wybija ze studzienki w tunelu pod Alejami Jerozolimskimi przy Zachodnim. Już trzeci dzień. Szok.",
+  "created_at": "2026-10-01T00:49:13+00:00",
+  "true_issue_id": 15,
+  "true_category": "flooding",
+  "lon": 20.965912,
+  "lat": 52.219478,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "szanowni państwo, uszkodzony chodnik koło złotych tarasów, płyty powyrywane. uszkodziłem felgę.",
+  "created_at": "2026-10-01T01:08:10+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.003991,
+  "lat": 52.228902,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "hej, wyrwa w asfalcie przy dworcu centralnym, z każdym dniem większa. prawie urwałem koło. zróbcie coś z tym!",
+  "created_at": "2026-10-01T01:55:37+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.004174,
+  "lat": 52.228693,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Witam, przy Dworcu Centralnym znowu dziura, tym razem jeszcze głębsza. Dzieci tędy chodzą do szkoły. Proszę o pilną naprawę!!",
+  "created_at": "2026-10-01T02:04:25+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.004275,
+  "lat": 52.228872,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Zgłaszam: Ogrommna dziura w jezdni na Marszałkowskiej przy Rondzie Dmowskiego.",
+  "created_at": "2026-10-01T02:04:29+00:00",
+  "true_issue_id": 3,
+  "true_category": "road_damage",
+  "lon": 21.011436,
+  "lat": 52.230922,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Serio, dzień dobry. Przy przystanku Muranowska szyny wystają ponad asfalt. Hałas słychać na całym osiedlu. Proszę o pilną naprawę.",
+  "created_at": "2026-10-01T02:16:11+00:00",
+  "true_issue_id": 30,
+  "true_category": "tram_track",
+  "lon": 20.99793,
+  "lat": 52.251004,
+  "street": "Andersa"
+ },
+ {
+  "text": "dzien dobry, glosne walenie tramwajow niedaleko kosciola, cos jest nie tak z torowiskiem. masakra.",
+  "created_at": "2026-10-01T02:20:17+00:00",
+  "true_issue_id": 8,
+  "true_category": "tram_track",
+  "lon": 21.022428,
+  "lat": 52.180925,
+  "street": "Puławska"
+ },
+ {
+  "text": "hej, woda wybija ze studzienki przy szkole.",
+  "created_at": "2026-10-01T02:25:53+00:00",
+  "true_issue_id": 15,
+  "true_category": "flooding",
+  "lon": 20.966078,
+  "lat": 52.219417,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Zglaszam: Nie dziala oswietlenie uliczne kolo SGH. Ktos sie juz przewrocil po ciemku. Prosze o interwencje.",
+  "created_at": "2026-10-01T02:59:48+00:00",
+  "true_issue_id": 34,
+  "true_category": "streetlight",
+  "lon": 21.006539,
+  "lat": 52.206415,
+  "street": "Rakowiecka"
+ },
+ {
+  "text": "Kolejne zgłoszenie: Zwrotnica na Grójeckiej przy Placu Narutowicza chyba uszkodzona, tramwaje zwalniają do zera. Nikt nic z tym nie robi od tygodni. Bardzo proszę o szybką reakcję.",
+  "created_at": "2026-10-01T03:51:33+00:00",
+  "true_issue_id": 10,
+  "true_category": "tram_track",
+  "lon": 20.98453,
+  "lat": 52.219664,
+  "street": "Grójecka"
+ },
+ {
+  "text": "Dzień dobry. Dziura w drodze na skrzyżowaniu Protsej i Towarowej jak krater. Proszę o pilną naprawę!!",
+  "created_at": "2026-10-01T04:27:36+00:00",
+  "true_issue_id": 17,
+  "true_category": "road_damage",
+  "lon": 20.983406,
+  "lat": 52.230206,
+  "street": "Rondo Daszyńskiego"
+ },
+ {
+  "text": "Szanowni Państwo, wyrwa w asfalcie przy Rondzie Daszyńskiego od strony Prostej, z każdym dniem większa. Dzieci tędy chodzą do szkoły. Zauważyłem dziś rano. Masakra.",
+  "created_at": "2026-10-01T04:40:48+00:00",
+  "true_issue_id": 17,
+  "true_category": "road_damage",
+  "lon": 20.983182,
+  "lat": 52.23015,
+  "street": "Rondo Daszyńskiego"
+ },
+ {
+  "text": "Pilne! Szczelina przy szynie tramwajowej na Placu Zawiszy, koło roweru wpada. Problem jest od miesiąca. Masakra.",
+  "created_at": "2026-10-01T04:47:29+00:00",
+  "true_issue_id": 16,
+  "true_category": "tram_track",
+  "lon": 20.98969,
+  "lat": 52.223824,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Płyty torowiska koło Empiku na Marszałkowskiej ruszają się pod kołami tramwaju. Bardzo proszę o szybką reakcję.",
+  "created_at": "2026-10-01T05:01:00+00:00",
+  "true_issue_id": 4,
+  "true_category": "tram_track",
+  "lon": 21.013954,
+  "lat": 52.226539,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Latarnia nie świeci pl. Konstytucji od strony Marszałkowskiej",
+  "created_at": "2026-10-01T05:39:21+00:00",
+  "true_issue_id": 5,
+  "true_category": "streetlight",
+  "lon": 21.015775,
+  "lat": 52.221951,
+  "street": "Plac Konstytucji"
+ },
+ {
+  "text": "Na Placu Zawiszy szyny wystają ponad asfalt. Tramwaje jeżdżą tu bardzo wolno!!",
+  "created_at": "2026-10-01T05:55:58+00:00",
+  "true_issue_id": 16,
+  "true_category": "tram_track",
+  "lon": 20.989712,
+  "lat": 52.223972,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "halo, brak oświetlenia na przejściu dla pieszych obok apteki. od wczoraj. zróbcie coś z tym!",
+  "created_at": "2026-10-01T05:58:09+00:00",
+  "true_issue_id": 5,
+  "true_category": "streetlight",
+  "lon": 21.015617,
+  "lat": 52.221737,
+  "street": "Plac Konstytucji"
+ },
+ {
+  "text": "WITAM, LATARNIA NA MARSZAŁKOWSKIEJ PRZY PLACU KONSTYTUCJI NIE ŚWIECI OD TYGODNIA. KTO ZA TO ODPOWIADA?!!!",
+  "created_at": "2026-10-01T06:10:55+00:00",
+  "true_issue_id": 5,
+  "true_category": "streetlight",
+  "lon": 21.015813,
+  "lat": 52.22184,
+  "street": "Plac Konstytucji"
+ },
+ {
+  "text": "Dzień dobry, na skrzyżowaniu Solidarności i Jana Pawła tramwaj mocno szarpnął na torach. Masakra!!",
+  "created_at": "2026-10-01T06:31:33+00:00",
+  "true_issue_id": 20,
+  "true_category": "tram_track",
+  "lon": 20.993361,
+  "lat": 52.242917,
+  "street": "Aleja Solidarności"
+ },
+ {
+  "text": "Halo, koleiny i dziury w Alejcah Jerozolimskich przy Emilii Plater, nie da się normalnie jechać. Niebezpieczie dla motocyklistów. Ile można czekać?!",
+  "created_at": "2026-10-01T06:39:42+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.004149,
+  "lat": 52.228843,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "halo, na jezdni na rondzie dmowskiego zrobil sie ubytek na pol pasa. rowerzysta sie dzis przewrocil. pozdrawiam.",
+  "created_at": "2026-10-01T06:42:17+00:00",
+  "true_issue_id": 3,
+  "true_category": "road_damage",
+  "lon": 21.011516,
+  "lat": 52.230916,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "No bez jaj, dzień dobry, na jezdni przy Rotundzie zrobił się ubytek na pół pasa. Zgłaszam już drugi raz. Serio, ile jeszcze?",
+  "created_at": "2026-10-01T08:12:52+00:00",
+  "true_issue_id": 3,
+  "true_category": "road_damage",
+  "lon": 21.011507,
+  "lat": 52.231057,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "przy przystanku ookpowa latarnai nie świeci!!",
+  "created_at": "2026-10-01T08:27:09+00:00",
+  "true_issue_id": 21,
+  "true_category": "streetlight",
+  "lon": 20.981836,
+  "lat": 52.241006,
+  "street": "Aleja Solidarności"
+ },
+ {
+  "text": "Kolejne zgłoszenie: Uszkodzony chodnik na osiedlu, płyty powyrywane. Masakra.",
+  "created_at": "2026-10-01T08:55:13+00:00",
+  "true_issue_id": 3,
+  "true_category": "road_damage",
+  "lon": 21.011516,
+  "lat": 52.230914,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Dzień dobry. Zgasły wszystkie lampy koło przystanku Królikarnia, strach chodzić po zmroku. Serio, ile jeszcze?",
+  "created_at": "2026-10-01T09:15:24+00:00",
+  "true_issue_id": 9,
+  "true_category": "streetlight",
+  "lon": 21.023354,
+  "lat": 52.189988,
+  "street": "Puławska"
+ },
+ {
+  "text": "Hej, uszkodzony chodnik u nas na ulicy, płyty powyrywane. Autobusy zjeżdżają na drugi pas. Proszę o interwencję.",
+  "created_at": "2026-10-01T09:31:43+00:00",
+  "true_issue_id": 23,
+  "true_category": "road_damage",
+  "lon": 21.039767,
+  "lat": 52.250694,
+  "street": "Targowa"
+ },
+ {
+  "text": "Hej, torowisko w Alejach Jerozolimskich przy Placu Zawiszy się zapada, między szynami dziury. Trwa to od tygodnia.",
+  "created_at": "2026-10-01T09:48:47+00:00",
+  "true_issue_id": 16,
+  "true_category": "tram_track",
+  "lon": 20.989826,
+  "lat": 52.22402,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Szanowni Panstwo, torowisko przy przystanku Hoza sie zapada, miedzy szynami dziury. W tramwaju wszystko sie trzesie. Zrobcie cos z tym!",
+  "created_at": "2026-10-01T09:53:25+00:00",
+  "true_issue_id": 4,
+  "true_category": "tram_track",
+  "lon": 21.013709,
+  "lat": 52.226511,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Ludzie, kolo przystanku Centrum jest wielka dziura, auta wpadaja w nia kolami. Wczoraj wieczorem bylo jeszcze gorzej. Dramat.",
+  "created_at": "2026-10-01T10:34:17+00:00",
+  "true_issue_id": 3,
+  "true_category": "road_damage",
+  "lon": 21.011545,
+  "lat": 52.230998,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Streetlight on Plac Konstytucji is out, it is very dark at night.",
+  "created_at": "2026-10-01T10:40:04+00:00",
+  "true_issue_id": 5,
+  "true_category": "streetlight",
+  "lon": 21.015735,
+  "lat": 52.221991,
+  "street": "Plac Konstytucji"
+ },
+ {
+  "text": "HUGE POTHOLLE ON TARGOWA, PLESAE FIX IT!!!",
+  "created_at": "2026-10-01T11:03:50+00:00",
+  "true_issue_id": 23,
+  "true_category": "road_damage",
+  "lon": 21.039824,
+  "lat": 52.250772,
+  "street": "Targowa"
+ },
+ {
+  "text": "zgasly wszystkie lampy na rakowieckiej przy alei niepodleglosci, strach chodzic po zmroku. zrobcie cos z tym!",
+  "created_at": "2026-10-01T11:27:42+00:00",
+  "true_issue_id": 34,
+  "true_category": "streetlight",
+  "lon": 21.006638,
+  "lat": 52.206394,
+  "street": "Rakowiecka"
+ },
+ {
+  "text": "No bez jaj, uszkodzony chodnik na Targowej przy Ząbkowskiej, płyty powyrywane. Niebezpiecznie dla motocyklistów. Ile można czekać?!",
+  "created_at": "2026-10-01T11:41:05+00:00",
+  "true_issue_id": 23,
+  "true_category": "road_damage",
+  "lon": 21.039814,
+  "lat": 52.250899,
+  "street": "Targowa"
+ },
+ {
+  "text": "no bez jaj, huge ptohole on marszalkowska, pleae fix it.",
+  "created_at": "2026-10-01T11:48:11+00:00",
+  "true_issue_id": 3,
+  "true_category": "road_damage",
+  "lon": 21.011549,
+  "lat": 52.2309,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Ludzie, tory tarmwajowe na Alei Solidarnosci przy Jana Pawla II sa w fatalnym stanie, tramwaj strasznie stuka. W tarmwaju wszystko sie trzesie. Pozdrawiam.",
+  "created_at": "2026-10-01T12:04:07+00:00",
+  "true_issue_id": 20,
+  "true_category": "tram_track",
+  "lon": 20.993559,
+  "lat": 52.24267,
+  "street": "Aleja Solidarności"
+ },
+ {
+  "text": "kolejne zgłoszenie: wyrwany krawężnik i dziura przy przejściu przy dworcu centralnym. proszę o interwencję.",
+  "created_at": "2026-10-01T12:13:57+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.004067,
+  "lat": 52.228712,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "No bez jaj, halo, nie działa oświetlenie uliczne pl. Konstytucji od strony Marszałkowskiej. Bardzo proszę o szybką reakcję.",
+  "created_at": "2026-10-01T12:18:01+00:00",
+  "true_issue_id": 5,
+  "true_category": "streetlight",
+  "lon": 21.015868,
+  "lat": 52.221831,
+  "street": "Plac Konstytucji"
+ },
+ {
+  "text": "Nie działa oświetlenie ulicczne na Rakowieckiej przy Alei Niepodległości. Dzieci wracają tędy z treningów po ciemku. Proszę o pillną naprawę.",
+  "created_at": "2026-10-01T12:24:00+00:00",
+  "true_issue_id": 34,
+  "true_category": "streetlight",
+  "lon": 21.006428,
+  "lat": 52.206231,
+  "street": "Rakowiecka"
+ },
+ {
+  "text": "Pilne! Zwrotnica na skrzyzowaniu Solidarnosci i Jana Pawla chyba uszkodzona, tramwaje zwalniaja do zera. Juz trzeci dzien. Masakra!!",
+  "created_at": "2026-10-01T12:28:53+00:00",
+  "true_issue_id": 20,
+  "true_category": "tram_track",
+  "lon": 20.993549,
+  "lat": 52.242839,
+  "street": "Aleja Solidarności"
+ },
+ {
+  "text": "szanowni państwo, latarnia nie świeci niedlekko kościoła. zauważyłem dziś rano. kto za to odpowiada? szok.",
+  "created_at": "2026-10-01T12:48:42+00:00",
+  "true_issue_id": 5,
+  "true_category": "streetlight",
+  "lon": 21.015768,
+  "lat": 52.221967,
+  "street": "Plac Konstytucji"
+ },
+ {
+  "text": "dzień dobry. rozjazd tramwajowy al. solidarności róg jana pawła ii hałasuje całą noc. hałas słychać na całym osiedlu.",
+  "created_at": "2026-10-01T13:30:03+00:00",
+  "true_issue_id": 20,
+  "true_category": "tram_track",
+  "lon": 20.993368,
+  "lat": 52.242831,
+  "street": "Aleja Solidarności"
+ },
+ {
+  "text": "Ludzie, koeliny i dziury przy Rotundzie, nie da sie normalnie jechac. Zarza bedzie wypadek. Prosze o pilna naprawe.",
+  "created_at": "2026-10-01T13:50:00+00:00",
+  "true_issue_id": 3,
+  "true_category": "road_damage",
+  "lon": 21.011656,
+  "lat": 52.230895,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "szanowni państwo, brak oświetlenia na przejściu dla pieszych przy przystanku. problem jest od miesiąca. dramat. porażka.",
+  "created_at": "2026-10-01T14:18:31+00:00",
+  "true_issue_id": 34,
+  "true_category": "streetlight",
+  "lon": 21.006644,
+  "lat": 52.20649,
+  "street": "Rakowiecka"
+ },
+ {
+  "text": "Dzień dobry. Nie działa oświetlenie uliczne przy przystanku. Kierowcy nie widzą ludzi na pasach. Trwa to od tygodnia. Dramat.",
+  "created_at": "2026-10-01T14:25:20+00:00",
+  "true_issue_id": 40,
+  "true_category": "streetlight",
+  "lon": 20.984451,
+  "lat": 52.268987,
+  "street": "Słowackiego"
+ },
+ {
+  "text": "Dzień dobry, brak oświetlenia na przejścu dla piesszych na Rakowieckiej przy Alei Niepodległości. Problem jest od miesiąca!!",
+  "created_at": "2026-10-01T14:25:53+00:00",
+  "true_issue_id": 34,
+  "true_category": "streetlight",
+  "lon": 21.006337,
+  "lat": 52.206326,
+  "street": "Rakowiecka"
+ },
+ {
+  "text": "Kolejnne zgłoszenie: Na jezdni koło metra Dworzec Wileński zroibł się ubytek na pół pasa. Zaraz będzie wypadek. Wczoraj wieczorem było jeszcze gorzej. Dziękuję.",
+  "created_at": "2026-10-01T14:31:51+00:00",
+  "true_issue_id": 23,
+  "true_category": "road_damage",
+  "lon": 21.03958,
+  "lat": 52.250853,
+  "street": "Targowa"
+ },
+ {
+  "text": "Kolejne zgloszenie: Na skrzyzowaniu Targowej i Zabkowskiej jest wielka dziura, auta wpadaja w nia kolami. Od wczoraj. Prosze o pilna naprawe.",
+  "created_at": "2026-10-01T14:38:39+00:00",
+  "true_issue_id": 23,
+  "true_category": "road_damage",
+  "lon": 21.039678,
+  "lat": 52.250872,
+  "street": "Targowa"
+ },
+ {
+  "text": "Zgłaszam: Pęknięta szyna na Placu Narutowicza?? Tramwaj podskakuje. Kto za to odpowiada?",
+  "created_at": "2026-10-01T14:39:17+00:00",
+  "true_issue_id": 10,
+  "true_category": "tram_track",
+  "lon": 20.984677,
+  "lat": 52.219449,
+  "street": "Grójecka"
+ },
+ {
+  "text": "Ludzie, od kilku dni pl. Konstytucji od strony Marszałkowskiej kompletnie ciemno, latarnie nie działają. Od wczoraj. Kto za to odpowiada?",
+  "created_at": "2026-10-01T14:59:19+00:00",
+  "true_issue_id": 5,
+  "true_category": "streetlight",
+  "lon": 21.015687,
+  "lat": 52.221861,
+  "street": "Plac Konstytucji"
+ },
+ {
+  "text": "Dzień dobry, al. Jerozolimskie przy Tunelowej po ulewie wielkie rozlewisko, kratki nie odbierają wody. Od wczoraj. Masakra. Masakra.",
+  "created_at": "2026-10-01T15:32:15+00:00",
+  "true_issue_id": 15,
+  "true_category": "flooding",
+  "lon": 20.966046,
+  "lat": 52.219441,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Szanowni Państwo, nie świeci się żadna latarnia na Marszałkowskiej przy Placu Konstytucji. Dzieci wracają tędy z treningów po ciemku. Kto za to odpowiada?",
+  "created_at": "2026-10-01T15:51:29+00:00",
+  "true_issue_id": 5,
+  "true_category": "streetlight",
+  "lon": 21.015569,
+  "lat": 52.221903,
+  "street": "Plac Konstytucji"
+ },
+ {
+  "text": "Pl. Konstytucji od strony Marszałkowskiej lampa uliczna wisi krzywo i nie świeci. Dramat!!",
+  "created_at": "2026-10-01T16:19:43+00:00",
+  "true_issue_id": 5,
+  "true_category": "streetlight",
+  "lon": 21.015779,
+  "lat": 52.221895,
+  "street": "Plac Konstytucji"
+ },
+ {
+  "text": "Streetlight at the bus stop is out, it is very dark at night!!",
+  "created_at": "2026-10-01T16:29:40+00:00",
+  "true_issue_id": 34,
+  "true_category": "streetlight",
+  "lon": 21.006515,
+  "lat": 52.206338,
+  "street": "Rakowiecka"
+ },
+ {
+  "text": "Szanowni Państwo, koło metra Dworzec Wileński asfalt się kruszy i robi się głęboka wyrwa. Zgłaszam już drugi raz.",
+  "created_at": "2026-10-01T16:43:32+00:00",
+  "true_issue_id": 23,
+  "true_category": "road_damage",
+  "lon": 21.039804,
+  "lat": 52.250827,
+  "street": "Targowa"
+ },
+ {
+  "text": "NO BEZ JAJ, ZNOWU TO SAMO NA MARSZAŁKOWSKIEJ PRZY PLACU KONSTYTUCJI – LATARNIA NIE ŚWIECI!!!",
+  "created_at": "2026-10-01T17:15:36+00:00",
+  "true_issue_id": 5,
+  "true_category": "streetlight",
+  "lon": 21.015764,
+  "lat": 52.221974,
+  "street": "Plac Konstytucji"
+ },
+ {
+  "text": "halo, dizura w drodze na targowej przy zabkowskiej jak krater. prsze o interwencje.",
+  "created_at": "2026-10-01T17:43:34+00:00",
+  "true_issue_id": 23,
+  "true_category": "road_damage",
+  "lon": 21.039624,
+  "lat": 52.250759,
+  "street": "Targowa"
+ },
+ {
+  "text": "pilne! na jezdni al. jerozolimskie róg emilii plater zroobł się ubytek na pół pasa.",
+  "created_at": "2026-10-01T17:52:08+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.003842,
+  "lat": 52.228762,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Halo, ogromna dziura w jezdni kolo metra Dworzec Wilenski. Niebezpiecznie dla motocyklistow. Prosze o pilna naprawe.",
+  "created_at": "2026-10-01T18:05:30+00:00",
+  "true_issue_id": 23,
+  "true_category": "road_damage",
+  "lon": 21.039696,
+  "lat": 52.250682,
+  "street": "Targowa"
+ },
+ {
+  "text": "Kolejne zgłoszenie: Torowisko na Placu Zawiszy się zapada, między szynami dziury. Serio.",
+  "created_at": "2026-10-01T18:10:30+00:00",
+  "true_issue_id": 16,
+  "true_category": "tram_track",
+  "lon": 20.989771,
+  "lat": 52.224021,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Ludzie, zapadnieta nawierzchnia tam gdzie zawsze. Prawie urwalem kolo. Ile mozna czekac?!",
+  "created_at": "2026-10-01T18:28:07+00:00",
+  "true_issue_id": 23,
+  "true_category": "road_damage",
+  "lon": 21.039954,
+  "lat": 52.250782,
+  "street": "Targowa"
+ },
+ {
+  "text": "hej, dziura w drodze obok apteki jak krater. w nocy jej w ogóle nie widać. już trzeci dzień. dramat.",
+  "created_at": "2026-10-01T19:47:14+00:00",
+  "true_issue_id": 23,
+  "true_category": "road_damage",
+  "lon": 21.039873,
+  "lat": 52.25089,
+  "street": "Targowa"
+ },
+ {
+  "text": "Znwu to samo na Placcu Narutowicza – tory",
+  "created_at": "2026-10-01T20:07:37+00:00",
+  "true_issue_id": 10,
+  "true_category": "tram_track",
+  "lon": 20.984545,
+  "lat": 52.219464,
+  "street": "Grójecka"
+ },
+ {
+  "text": "Witam, brak oswietlenia na przejsciu dla pieszych na Marszalkowskiej przy Placu Konstytucji. Kierowcy nie widza ludzi na pasach. Nikt nic z tym nie robi od tygodni. Zrobcie cos z tym!",
+  "created_at": "2026-10-01T21:05:25+00:00",
+  "true_issue_id": 5,
+  "true_category": "streetlight",
+  "lon": 21.015882,
+  "lat": 52.22188,
+  "street": "Plac Konstytucji"
+ },
+ {
+  "text": "Płyty torowiska Al. Jerozolimskie róg Nowego Światu ruszają się pod kołami tramwaju. Jakby zaraz miał się wykoleić. Dziękuję.",
+  "created_at": "2026-10-01T21:50:54+00:00",
+  "true_issue_id": 14,
+  "true_category": "tram_track",
+  "lon": 21.021911,
+  "lat": 52.231791,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Hej, na jezdni koło przystanku Centrum zrobił się ubytek na pół pasa. Dzieci tędy chodzą do szkoły. Serio, ile jeszcze?",
+  "created_at": "2026-10-01T21:56:15+00:00",
+  "true_issue_id": 3,
+  "true_category": "road_damage",
+  "lon": 21.011492,
+  "lat": 52.230811,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "ZGŁASZAM: RZWALONY ASSFALT KOŁO SKLEPU, OPONA DO WYMIANY!!!",
+  "created_at": "2026-10-01T22:23:20+00:00",
+  "true_issue_id": 3,
+  "true_category": "road_damage",
+  "lon": 21.011482,
+  "lat": 52.230836,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Witam, od kilku dni na Placu Konstytucji kompletnie ciemno, latarnie nie działają. Piesi na przeejjściu są niewidoczni. Trwa to od tygodnia. Kto za to odpowiada?",
+  "created_at": "2026-10-01T22:26:18+00:00",
+  "true_issue_id": 5,
+  "true_category": "streetlight",
+  "lon": 21.01584,
+  "lat": 52.221909,
+  "street": "Plac Konstytucji"
+ },
+ {
+  "text": "No ludzie, witam, brak oświetlenia na przejściu dla pieszych przy parkingu na Placu Konstytucji. Piesi na przejściu są niewidoczni. Wczoraj wieczorem było jeszcze gorzej. Ile można czekać?!",
+  "created_at": "2026-10-01T22:44:34+00:00",
+  "true_issue_id": 5,
+  "true_category": "streetlight",
+  "lon": 21.015786,
+  "lat": 52.221811,
+  "street": "Plac Konstytucji"
+ },
+ {
+  "text": "zwrotnica na rondzie de gaulle'a chyba uszkodzona, tramwaje zwalniają do zera. bardzo proszę o szybką reakcję.",
+  "created_at": "2026-10-01T22:51:48+00:00",
+  "true_issue_id": 14,
+  "true_category": "tram_track",
+  "lon": 21.021804,
+  "lat": 52.23182,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "dzien dobry, uszkodzone tory w alejach jerozolimskich przy nowym swiecie, slychac metaliczne uderzenia. ile mozna czekac?!",
+  "created_at": "2026-10-01T23:04:31+00:00",
+  "true_issue_id": 14,
+  "true_category": "tram_track",
+  "lon": 21.021752,
+  "lat": 52.231883,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Pilne! Trawaje na Rondzie de Gaulle'a tręzsą jak pralka, tory do remontu. Masakra.",
+  "created_at": "2026-10-01T23:17:39+00:00",
+  "true_issue_id": 14,
+  "true_category": "tram_track",
+  "lon": 21.021909,
+  "lat": 52.231802,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "halo, torowisko al. jerozoimskie róg noewgo światu się zapada, między szynami dziury. kto za to odpowiada?",
+  "created_at": "2026-10-02T00:36:13+00:00",
+  "true_issue_id": 14,
+  "true_category": "tram_track",
+  "lon": 21.021799,
+  "lat": 52.231832,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Halo, al. Jerozolimskie przy Tunelowej po ulewie wielkie rozlewisko, kratki nie odbierają wody. Piesi muszą chodzić jezdnią. Proszę o pilną naprawę.",
+  "created_at": "2026-10-02T00:44:42+00:00",
+  "true_issue_id": 15,
+  "true_category": "flooding",
+  "lon": 20.965767,
+  "lat": 52.21945,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Dzień dobry. Głęboka dziura koło metra Dworzec Wileński, w deszczu jej w ogóle nie widać. Prawie urwałem koło. Problem jest od miesiąca.",
+  "created_at": "2026-10-02T01:14:25+00:00",
+  "true_issue_id": 23,
+  "true_category": "road_damage",
+  "lon": 21.039777,
+  "lat": 52.250886,
+  "street": "Targowa"
+ },
+ {
+  "text": "Kolejne zgloszenie: Plyty torowiska ul. Marszalkowska rog Hozej ruszaja sie pod kolami tramwaju. Ludzie w tramwaju leca na siebie. Problem jest od miesiaca. Ile mozna czekac?!",
+  "created_at": "2026-10-02T02:14:52+00:00",
+  "true_issue_id": 4,
+  "true_category": "tram_track",
+  "lon": 21.013778,
+  "lat": 52.226566,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "tramwaje w alejach jerozolimskich przy nowym świecie trzęsą jak pralka, tory do remontu. tramwaje jeżdżą tu bradzo wolno. od wczoraj. ile można czekać?!",
+  "created_at": "2026-10-02T02:22:29+00:00",
+  "true_issue_id": 14,
+  "true_category": "tram_track",
+  "lon": 21.021755,
+  "lat": 52.231733,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Na skrzyżowaniu Tragowej i Ząbkowskiej dziura!!",
+  "created_at": "2026-10-02T02:37:33+00:00",
+  "true_issue_id": 23,
+  "true_category": "road_damage",
+  "lon": 21.039773,
+  "lat": 52.250886,
+  "street": "Targowa"
+ },
+ {
+  "text": "Hej, peknieta szyna na Rondzie de Gaulle'a?? Tramwaj podskakuje. Bardzo prosze o szybka reakcje.",
+  "created_at": "2026-10-02T03:40:18+00:00",
+  "true_issue_id": 14,
+  "true_category": "tram_track",
+  "lon": 21.021757,
+  "lat": 52.231837,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "serio, hej, na marszałkowskiej przy alejach jerozolimskich asfalt się kruszy i robi się głęboka wyrwa. trwa to od tygodnia.",
+  "created_at": "2026-10-02T03:46:10+00:00",
+  "true_issue_id": 3,
+  "true_category": "road_damage",
+  "lon": 21.011629,
+  "lat": 52.230895,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "DRAMAT JAKIS, HEJ, NIE SWIECI SIE ZADNA LATARNIA PL. KONSTYYTUCJI OD STRONY MARSZALKOWSKIEJ. DZIECI WRAAJA TEDY Z TRENINGOW PO CIEMKU. DZIEKUJE!!!",
+  "created_at": "2026-10-02T03:57:07+00:00",
+  "true_issue_id": 5,
+  "true_category": "streetlight",
+  "lon": 21.015709,
+  "lat": 52.221896,
+  "street": "Plac Konstytucji"
+ },
+ {
+  "text": "Halo, latarnia nie świeci przy parkingu na Placu Konstytucji. Ktoś się już przewrócił po ciemku. Proszę o pilną naprawę.",
+  "created_at": "2026-10-02T04:52:22+00:00",
+  "true_issue_id": 5,
+  "true_category": "streetlight",
+  "lon": 21.015743,
+  "lat": 52.221922,
+  "street": "Plac Konstytucji"
+ },
+ {
+  "text": "Ludzie, na Marszałkowskiej przy Rondzie Dmowskiego asfalt się kruszy i robi się głęboka wyrwa. Problem jest od miesiąca. Bardzo proszę o szybką reakcję.",
+  "created_at": "2026-10-02T05:05:30+00:00",
+  "true_issue_id": 3,
+  "true_category": "road_damage",
+  "lon": 21.011532,
+  "lat": 52.23083,
+  "street": "Marszałkowska"
+ },
+ {
+  "text": "Rozjazd trramwajowy pod blokiem hałasuje całą noc. Ludzie w trawaju lecą na siebie. Od wczoraj. Masakra.",
+  "created_at": "2026-10-02T06:56:16+00:00",
+  "true_issue_id": 10,
+  "true_category": "tram_track",
+  "lon": 20.984589,
+  "lat": 52.219598,
+  "street": "Grójecka"
+ },
+ {
+  "text": "Szanowni Panstwo, uszkodzone tory na Rondzie de Gaulle'a, slychac metaliczne uderzenia. Ludzie w tramwaju leca na siebie. Prosze o pilna naprawe.",
+  "created_at": "2026-10-02T06:58:51+00:00",
+  "true_issue_id": 14,
+  "true_category": "tram_track",
+  "lon": 21.021854,
+  "lat": 52.231814,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Na osieldu syny wystają ponad asfalt. Zróbcie coś z tym!",
+  "created_at": "2026-10-02T07:07:01+00:00",
+  "true_issue_id": 14,
+  "true_category": "tram_track",
+  "lon": 21.021761,
+  "lat": 52.231663,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Pilne! Dziura w drodze na osiedllu jak krater. W nocy jej w ogóle nie widać. Bardzo proszę o szykbą reakcję.",
+  "created_at": "2026-10-02T09:25:08+00:00",
+  "true_issue_id": 13,
+  "true_category": "road_damage",
+  "lon": 21.004099,
+  "lat": 52.228814,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Rozjazd tramwajowy Al. Jerozolimskie rog Nowego Swiatu halasuje cala noc. Nikt nic z tym nie robi od tygodni. Bardzo prosze o szybka reakcje.",
+  "created_at": "2026-10-02T11:53:50+00:00",
+  "true_issue_id": 14,
+  "true_category": "tram_track",
+  "lon": 21.021885,
+  "lat": 52.232025,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "tory tramwajowe pod blokiem są w fatalnym stanie, tramwaj strasznie stuka. jakby zaraz miał się wykoleić. dramat.",
+  "created_at": "2026-10-02T16:02:26+00:00",
+  "true_issue_id": 14,
+  "true_category": "tram_track",
+  "lon": 21.021898,
+  "lat": 52.231897,
+  "street": "Aleje Jerozolimskie"
+ },
+ {
+  "text": "Pilne! Koleiny i dziury obok apteki, nie da się normalnie jechać. W nocy jej w ogóle nie widać. Nikt nic z tym nie robi od tygodni.",
+  "created_at": "2026-10-02T16:32:27+00:00",
+  "true_issue_id": 3,
+  "true_category": "road_damage",
+  "lon": 21.011528,
+  "lat": 52.230967,
+  "street": "Marszałkowska"
+ }
+]
