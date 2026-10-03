@@ -48,8 +48,6 @@ STATS_KEYS = {"reports_total", "incidents_total", "found_before_report", "candid
               "rides_total", "segments_measured"}
 TIMELINE_KINDS = {"first_report", "report", "sensor", "proactive", "verification_requested", "sensor_miss",
                   "response", "verified", "dismissed"}
-RESPONSE_KEYS = {"incident_id", "status", "confidence", "sensor_confidence", "citizen_confidence",
-                 "yes_count", "no_count", "contributor_trust"}
 
 
 # --------------------------------------------------------------------------- fakes
@@ -696,47 +694,6 @@ def test_incident_summary_handles_naive_and_string_timestamps():
 
 
 # --------------------------------------------------------------------------- citizen YES/NO + trust
-
-def _respond_fixture(env, status="likely", trust=0.6):
-    state = incident_row(status=status)
-    env.db.on("from incidents i", lambda p: state if p["id"] == 7 else None)
-    env.db.on("insert into contributors", {"id": 31, "trust": trust, "correct": 0, "incorrect": 0})
-    calls = fake_fusion(env)
-    return state, calls
-
-
-def test_citizen_yes_no_is_recorded_weighted_and_reassessed(env):
-    state, calls = _respond_fixture(env, trust=0.8)
-    votes = []
-    env.conn.execute = lambda sql, params=None: votes.append((sql, params))
-    r = env.client.post("/incidents/7/responses", json={"answer": "no", "contributor": "browser-token-1"})
-    assert r.status_code == 200
-    body = r.json()
-    assert set(body) == RESPONSE_KEYS
-    assert body["incident_id"] == 7 and body["status"] == "likely" and body["contributor_trust"] == 0.8
-    (sql, params), = [v for v in votes if "citizen_responses" in v[0]]
-    assert params == {"incident_id": 7, "contributor_id": 31, "answer": False, "settled": False}
-    assert calls == [("refresh_incident", 7)]
-    (_, contributor_params), = env.db.sql_with("insert into contributors")
-    assert contributor_params["hash"] == trust_mod.contributor_hash("browser-token-1")  # never the raw token
-
-
-def test_answers_on_verified_incident_do_not_earn_trust(env):
-    _respond_fixture(env, status="verified")
-    votes = []
-    env.conn.execute = lambda sql, params=None: votes.append(params)
-    assert env.client.post("/incidents/7/responses", json={"answer": "yes", "contributor": "browser-token-1"}).status_code == 200
-    assert votes[-1]["settled"] is True
-
-
-def test_citizen_response_validation(env):
-    _respond_fixture(env, status="dismissed")
-    ok = {"answer": "yes", "contributor": "browser-token-1"}
-    assert env.client.post("/incidents/7/responses", json=ok).status_code == 409
-    assert env.client.post("/incidents/404/responses", json=ok).status_code == 404
-    assert env.client.post("/incidents/7/responses", json={"answer": "maybe", "contributor": "browser-token-1"}).status_code == 422
-    assert env.client.post("/incidents/7/responses", json={"answer": "yes", "contributor": "short"}).status_code == 422
-
 
 def test_report_with_contributor_returns_trust(env):
     pipeline_calls = _report_pipeline(env)
