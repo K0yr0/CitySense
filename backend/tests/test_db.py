@@ -304,7 +304,7 @@ def test_real_db_roundtrip():
     init_db = _load_script("init_db")
     conn = psycopg.connect(settings.database_url, row_factory=dict_row)
     try:
-        init_db.apply_sql(conn)
+        init_db.migrate(conn)  # schema + functions + migrations, like a real database
         ids = [
             db.fetch_one(conn, "insert into segments (geom, mode) values "
                                "(ST_GeomFromText(%s, 4326), %s) returning id", (wkt, mode))["id"]
