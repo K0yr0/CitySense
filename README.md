@@ -46,8 +46,6 @@ The database is also reachable from your computer at `postgresql://cityecho:city
 
 **Mobile** runs outside Docker with Expo: `cd mobile && npx expo start`, with the API URL set to `http://<your-LAN-IP>:8000` (your computer's Wi-Fi IP, not `localhost`, because the phone is a different device).
 
-**Türkçe kısa not:** Docker Desktop'ı kur ve aç. İsteğe bağlı: `cp .env.example .env` (API anahtarları). Sonra `docker compose up --build` çalıştır; web http://localhost:3000, API http://localhost:8000/docs adresinde açılır. Demo verisi için `docker compose --profile seed run --rm seed`. Durdurmak: `docker compose down`; veritabanı dahil her şeyi silmek: `docker compose down -v`. Mobil uygulama Docker dışında çalışır: `cd mobile && npx expo start`, API adresi `http://<bilgisayarının-LAN-IP'si>:8000`.
-
 ## Quick start (without Docker)
 
 ### 1. Backend

@@ -1,155 +1,157 @@
-# CityEcho: Claude için proje kuralları
+# CityEcho: project rules for Claude
 
-Bu dosya her Claude Code oturumunda otomatik okunur. Ekipteki herkesin Claude'u aynı kuralları uygular.
+This file is read automatically at the start of every Claude Code session. Everyone's Claude on the team follows the same rules.
 
-**Proje:** Varşova akıllı şehir projesi. Otobüs ve tramvay sensörlerinden gelen veri (**tamamen simülasyon**) ile vatandaş şikayetleri aynı "kanıt"a dönüşür. Bir füzyon motoru bunları olaylara (incident) çevirir, güven motoru (confidence engine) durumunu belirler: aday (candidate) → muhtemel (likely) → doğrulandı (verified).
+**Project:** a Warsaw smart-city project. Data from bus and tram sensors (**entirely simulated**) and citizen complaints become the same kind of "evidence". A fusion engine turns them into incidents, and the confidence engine sets their status: candidate → likely → verified.
 
-Ayrıntılar:
-- Tam plan ve görev dağılımı: [docs/ROADMAP.md](docs/ROADMAP.md)
-- Dosya sahipliği (makinenin uyguladığı): [OWNERS](OWNERS)
-- Mimari ve API sözleşmeleri: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- Neyin yapılıp test edildiği: [BUILD_REPORT.md](BUILD_REPORT.md)
+Details:
+- Full plan and task split: [docs/ROADMAP.md](docs/ROADMAP.md)
+- File ownership (enforced by the machine): [OWNERS](OWNERS)
+- Architecture and API contracts: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- What has been built and tested: [BUILD_REPORT.md](BUILD_REPORT.md)
 
-## 1. Oturumun başında: kiminle çalışıyorsun?
+## 1. At the start of a session: who are you working with?
 
-Üç kişi, her biri **kendi bilgisayarında** çalışıp aynı repoya push ediyor. Görevler **kesinlikle çakışmamalı**.
+Three people, each working **on their own computer** and pushing to the same repo. Tasks **must never overlap**.
 
-| | Kişi A: 📱 Mobil (kullanıcı) | Kişi B: 🖥️ Web admin (belediye) | Kişi C: 📡 Sensör simülasyonu ve veri |
+| | Person A: 📱 Mobile (citizens) | Person B: 🖥️ Web admin (city) | Person C: 📡 Sensor simulation and data |
 |---|---|---|---|
-| Ana klasörler | `mobile/` (kod `mobile/src/`) | `web-admin/` | `backend/sensor/`, sensör scriptleri |
-| Görev kodları | M0–M7 | W0–W5 | S0–S5 |
-| Migration numaraları | 100–199 | 200–299 | 300–399 |
+| Main folders | `mobile/` (code in `mobile/src/`) | `web-admin/` | `backend/sensor/`, sensor scripts |
+| Task codes | M0–M7 | W0–W5 | S0–S5 |
+| Migration numbers | 100–199 | 200–299 | 300–399 |
 
-**İlk iş:** `git config --get cityecho.role` komutunu çalıştır.
-- Boş çıkarsa: kullanıcıya A, B ya da C olduğunu sor ve kurulumu yap (bölüm 3).
-- Doluysa: yalnızca o rolün dosyalarına yaz.
+**First thing:** run `git config --get cityecho.role`.
+- If it is empty: ask the user whether they are A, B or C and do the setup (section 3).
+- If it is set: write only to that role's files.
 
-## 2. Kesin kurallar (ihlal etme)
+## 2. Hard rules (never break them)
 
-1. **Her dosyanın tek sahibi var.** Sahiplik `OWNERS` dosyasında. Bir dosyaya yalnızca sahibi yazar; okumak serbest.
-2. **Başkasının dosyasında değişiklik gerekiyorsa:** kodu kendin değiştirme. Kullanıcıya ne gerektiğini tam olarak yaz (dosya, fonksiyon, neden); o da sahibine iletsin.
-3. **Ortak (SHARED) dosyalar dondurulmuş.** Bunlar `OWNERS` içinde `SHARED` diye işaretli: `backend/main.py`, `db/schema.sql`, `backend/config.py`, `backend/models.py`, `backend/db.py`, `requirements*.txt`, `.env.example`, `scripts/init_db.py`, `CLAUDE.md`, `docs/**`, `OWNERS`. Değiştirmek gerekirse:
-   1. Önce grupta duyur, bir kişi yapar.
-   2. `git pull --rebase` ile güncellen.
-   3. **Yalnızca** ortak dosyaları içeren ayrı bir commit at: `CITYECHO_SHARED=1 git commit -m "..."`
-   4. Hemen push et ve "çektim" demeyen olmadan bir sonrakine geçme.
-4. **Veritabanı değişiklikleri** `db/schema.sql`'e değil `db/migrations/`'a gider: A `1xx_*.sql`, B `2xx_*.sql`, C `3xx_*.sql`. Push edilmiş bir migration bir daha **düzenlenmez**; düzeltme yeni bir migration ile yapılır.
-5. **Yeni dosya** `OWNERS`'taki bir desene uymuyorsa commit engellenir. Önce `OWNERS`'a (SHARED commit'iyle) eklenmeli.
-6. **Sözleşmeler** (kişiler arasındaki fonksiyon, sütun ve endpoint isimleri) `docs/ROADMAP.md` → "Sözleşmeler" bölümünde sabit. Tek taraflı değiştirilmez.
-7. **OpenAPI ve otomatik üretilen tipler commit edilmez.**
-8. **Gizli anahtarlar:** yalnızca `.env` dosyasına (gitignored). Asla commit etme, ekrana yazdırma.
-9. **Commit mesajlarına** `Co-Authored-By: Claude` veya "Generated with Claude Code" satırı **ekleme**.
-10. **Hook'u atlama.** `--no-verify` kullanma; hook bir şeyi engelliyorsa sebebini çöz.
+1. **Every file has exactly one owner.** Ownership is in the `OWNERS` file. Only the owner writes to a file; reading is free.
+2. **If someone else's file needs a change:** don't change the code yourself. Tell the user exactly what is needed (file, function, why); they pass it on to the owner.
+3. **Shared (SHARED) files are frozen.** They are marked `SHARED` in `OWNERS`: `backend/main.py`, `db/schema.sql`, `backend/config.py`, `backend/models.py`, `backend/db.py`, `requirements*.txt`, `.env.example`, `scripts/init_db.py`, `CLAUDE.md`, `docs/**`, `OWNERS`. If one must change:
+   1. Announce it in the group first; one person does it.
+   2. Update with `git pull --rebase`.
+   3. Make a separate commit containing **only** shared files: `CITYECHO_SHARED=1 git commit -m "..."`
+   4. Push right away, and don't move on to the next one until everyone has said "pulled".
+4. **Database changes** go to `db/migrations/`, not `db/schema.sql`: A `1xx_*.sql`, B `2xx_*.sql`, C `3xx_*.sql`. A pushed migration is **never edited** again; fixes go in a new migration.
+5. **A new file** that matches no pattern in `OWNERS` is blocked at commit. Add it to `OWNERS` first (in a SHARED commit).
+6. **Contracts** (function, column and endpoint names between people) are fixed in `docs/ROADMAP.md` → "Contracts". They are never changed by one side alone.
+7. **OpenAPI and generated types are not committed.**
+8. **Secrets:** only in the `.env` file (gitignored). Never commit them, never print them.
+9. **Commit messages** must **not** contain a `Co-Authored-By: Claude` or "Generated with Claude Code" line.
+10. **Don't skip the hook.** Don't use `--no-verify`; if the hook blocks something, fix the cause.
 
-## 3. Kurulum (her bilgisayarda bir kez)
+## 3. Setup (once per computer)
 
 ```bash
 git clone https://github.com/K0yr0/cityecho.git && cd cityecho
-git config core.hooksPath .githooks       # sahiplik kontrolü her commit'te çalışır
-git config cityecho.role A                # kendi rolün: A, B ya da C
-git config pull.rebase true               # pull her zaman rebase yapar
-python3 scripts/check_owners.py --all     # "0 sahipsiz" demeli
+git config core.hooksPath .githooks       # the ownership check runs on every commit
+git config cityecho.role A                # your role: A, B or C
+git config pull.rebase true               # pull always rebases
+python3 scripts/check_owners.py --all     # should say "0 without an owner"
 ```
 
-Sonra backend kurulumu (bölüm 7).
+Then the backend setup (section 7).
 
-## 4. Günlük git akışı (herkes doğrudan main'e push eder)
+## 4. Daily git flow (everyone pushes directly to main)
 
 ```bash
-git pull                                  # 1. işe başlamadan önce
-# ... yalnızca kendi dosyalarında çalış ...
-.venv/bin/pytest                          # 2. testler geçmeden push yok
-git add <kendi dosyaların> && git commit  # 3. hook başkasının dosyasını engeller
-git pull && .venv/bin/python scripts/init_db.py   # 4. başkalarının migration'larını al
-git push                                  # 5. küçük ve sık push
+git pull                                  # 1. before starting work
+# ... work only in your own files ...
+.venv/bin/pytest                          # 2. no push until the tests pass
+git add <your files> && git commit        # 3. the hook blocks other people's files
+git pull && .venv/bin/python scripts/init_db.py   # 4. pick up other people's migrations
+git push                                  # 5. small, frequent pushes
 ```
 
-- **Asla** `git push --force` yapma, başkasının commit'ini geri alma.
-- Herkes yalnızca kendi dosyalarına yazdığı için `git pull` (rebase) çakışma üretmez. Çakışma çıkarsa bu bir kural ihlalidir: dosyanın sahibine sor, kendin çözme.
-- `main`'e yapılan her push Vercel'i yeniden yayınlar. Web'i bozan bir push herkesi etkiler, bu yüzden B web build'ini (`npm run build`) push'tan önce çalıştırır.
+- **Never** `git push --force`, never revert someone else's commit.
+- Because everyone writes only to their own files, `git pull` (rebase) produces no conflicts. A conflict means a rule was broken: ask the file's owner, don't resolve it yourself.
+- Every push to `main` redeploys Vercel. A push that breaks the web app affects everyone, so B runs the web build (`npm run build`) before pushing.
 
-## 5. Alınan kararlar (yeniden tartışma)
+## 5. Decisions already made (don't reopen them)
 
-- Kullanıcı tarafı **mobil uygulama** (Expo), admin tarafı **web** (Next.js).
-- **Gerçek sensör / ESP32 yok. Her şey simülasyon.** Kişi C, sanal otobüslerin sensör verisini üretir (`scripts/simulate_buses.py`) ve `/devices/stream` endpoint'ine gerçek bir cihaz gibi gönderir. Sunumda verinin simüle olduğu açıkça söylenir.
-- Web'deki `/ride` telefon kayıt sayfası **silinecek**.
-- Giriş öncesi kazanılan güven puanı, Google girişinde **hesaba taşınır**.
-- Admin **tüm departmanları** görür (ZDM, Tramwaje Warszawskie, MPWiK, Straż Miejska).
-- "Çevrende çukur görüyor musun?" sorusunun yarıçapı **25 m**. Yalnızca telefonun GPS isabeti ≤ 25 m olduğunda sorulur.
-- İki ayrı durum alanı var, karıştırma: **güven durumu** (candidate / likely / verified / dismissed, motor belirler) ve **iş durumu** `work_status` (yapılmadı / devam ediyor / yapıldı, belediye belirler).
-- **"Yapıldı" işaretlenince:** soru durur, güven puanları kapatılır, onarımdan sonra gelen HAYIR cevapları kimsenin aleyhine sayılmaz.
-- Kullanıcı sensör verisi, kanıt zaman çizelgesi ve olgular **görmez**; bunlar yalnızca adminde. Kullanıcı yol sağlığını **yalnızca renk** olarak görür.
+- The citizen side is a **mobile app** (Expo), the admin side is the **web** (Next.js).
+- **No real sensors / ESP32. Everything is simulated.** Person C generates the virtual buses' sensor data (`scripts/simulate_buses.py`) and sends it to the `/devices/stream` endpoint like a real device. The presentation says clearly that the data is simulated.
+- The web `/ride` phone recording page **will be deleted**.
+- Trust earned before signing in **carries over to the account** at Google sign-in.
+- The admin sees **all departments** (ZDM, Tramwaje Warszawskie, MPWiK, Straż Miejska).
+- The "do you see a pothole around you?" question has a **25 m** radius. It is asked only when the phone's GPS accuracy is ≤ 25 m.
+- There are two separate status fields; never mix them: the **confidence status** (candidate / likely / verified / dismissed, set by the engine) and the **work status** `work_status` (not started / in progress / done, set by the city).
+- **When "done" is set:** the question stops, trust scores are settled, and NO answers that arrive after the repair don't count against anyone.
+- Citizens **don't see** sensor data, the evidence timeline or facts; those are admin-only. Citizens see road health **only as a colour**.
+- The mobile app is in **English, Polish and Ukrainian** (no Turkish); the backend's citizen messages follow `Accept-Language`.
 
-## 6. Öncelik sırası
+## 6. Order of work
 
-**Gün 0 tamamlandı** (ortak temel, giriş iskeleti, migration'lar, Docker, harita verisi, mobil iskeleti, `web-admin/` taşıması). Üç kişi aynı anda başlar:
+**Day 0 is done** (shared foundation, sign-in skeleton, migrations, Docker, map data, mobile skeleton, `web-admin/` move). All three start at the same time:
 
 ```
 A → M0 → M1 → M2 → M3 → M4 → M5 → M6 (→ M7)
 B → W0 → W1 → W2 → W3 → W4 → W5
-C → S1 → S2 → S3 → S4 → S5        (S0 harita: bitti)
+C → S1 → S2 → S3 → S4 → S5        (S0 map: done)
 ```
 
-Görevlerin içeriği: `docs/ROADMAP.md`. Gün 0 sözleşmeleri (giriş, roller, `work_status`, `/devices/stream` formatı, kısa olay görünümü): `docs/ARCHITECTURE.md` §8.
+Task contents: `docs/ROADMAP.md`. Day 0 contracts (sign-in, roles, `work_status`, `/devices/stream` format, short incident view): `docs/ARCHITECTURE.md` §8.
 
-## 7. Çalıştırma
+## 7. Running
 
-**Kolay yol: Docker** (Docker Desktop kurulu olmalı; ayrıntı: `docker/README.md`):
+**Easy way: Docker** (Docker Desktop must be installed; details: `docker/README.md`):
 ```bash
-cp .env.example .env                              # isteğe bağlı anahtarlar
-docker compose up --build                         # veritabanı + backend + web admin
+cp .env.example .env                              # optional keys
+docker compose up --build                         # database + backend + web admin
 # http://localhost:3000  (web admin)   http://localhost:8000/docs  (API)
-docker compose --profile seed run --rm seed       # demo şikayetleri ve sürüşleri yükle
-docker compose down -v                            # her şeyi sıfırla
+docker compose --profile seed run --rm seed       # load the demo complaints and rides
+docker compose down -v                            # reset everything
 ```
-✅ Docker doğrulandı (Apple Silicon Mac, Colima): veritabanı, migration'lar, harita yükleme (saniyeler), API, canlı araçlar, web admin ve demo verisi (367 şikayet → 74 olay) uçtan uca çalışıyor.
+✅ Docker verified (Apple Silicon Mac, Colima): database, migrations, map loading (seconds), API, live vehicles, web admin and demo data (367 complaints → 74 incidents) work end to end.
 
-Docker Desktop yerine ücretsiz komut satırı sürümü (Mac): `brew install colima docker docker-compose && colima start --cpu 4 --memory 6`. Windows/Linux: Docker Desktop ya da Docker Engine.
+Free command-line alternative to Docker Desktop (Mac): `brew install colima docker docker-compose && colima start --cpu 4 --memory 6`. Windows/Linux: Docker Desktop or Docker Engine.
 
-**Neden yerelde test:** Vercel'in ücretsiz planında özel repoda yalnızca repo sahibinin (A) commit'leri yayınlanır. B ve C'nin push'ları repoya girer ama siteye çıkmaz. Herkes değişikliğini kendi bilgisayarında Docker ile test eder.
+**Why test locally:** on Vercel's free plan, only the repo owner's (A's) commits are deployed for a private repo. B's and C's pushes land in the repo but don't reach the site. Everyone tests their changes on their own computer with Docker.
 
-**Docker'sız yol:**
+**Without Docker:**
 ```bash
 python3.11 -m venv .venv && .venv/bin/pip install -r backend/requirements.txt
 cp .env.example .env
 brew install postgresql@18 postgis && createdb cityecho
-.venv/bin/python scripts/init_db.py                                                   # her git pull'dan sonra
-.venv/bin/python scripts/load_osm.py --from-geojson data/osm/segments_demo.geojson --skip-if-loaded   # harita, saniyeler
+.venv/bin/python scripts/init_db.py                                                   # after every git pull
+.venv/bin/python scripts/load_osm.py --from-geojson data/osm/segments_demo.geojson --skip-if-loaded   # map, seconds
 .venv/bin/uvicorn backend.main:app --reload                                           # http://localhost:8000/docs
 cd web-admin && npm install && npm run dev                                            # http://localhost:3000
 ```
 
-**Mobil** (A; Docker dışında): `cd mobile && npm install && npx expo start`, telefonda Expo Go. Telefon için `mobile/.env` içinde `EXPO_PUBLIC_API_URL=http://<bilgisayarın-LAN-IP'si>:8000`. Node 22 veya 24 önerilir (23 uyarı verir).
+**Mobile** (A; outside Docker): `cd mobile && npm install && npx expo start`, Expo Go on the phone. For the phone, set `EXPO_PUBLIC_API_URL=http://<your-computer's-LAN-IP>:8000` in `mobile/.env`. Node 22 or 24 recommended (23 prints a warning).
 
-`.env` içeriği (her kişinin kendi `.env`'i olur, paylaşılmaz):
+`.env` contents (everyone has their own `.env`; it is not shared):
 - `DATABASE_URL=postgresql://localhost:5432/cityecho`
-- `WARSAW_API_KEY`: api.um.warszawa.pl hesabındaki uzun `eyJ...` token (herkes kendi hesabından alır)
-- `NOMINATIM_USER_AGENT`: gerçek e-posta adresi
-- `ANTHROPIC_API_KEY`: isteğe bağlı; yoksa anahtar kelime yedeği çalışır
-- `GOOGLE_CLIENT_IDS`, `AUTH_SECRET`, `ADMIN_EMAILS`: Google girişi (A kurar). Yerelde Google olmadan denemek için `AUTH_DEV_LOGIN=1` → `POST /auth/dev {"email": ...}`
-- `DEVICE_KEYS`: sanal otobüs cihaz anahtarları (C)
+- `WARSAW_API_KEY`: the long `eyJ...` token from your api.um.warszawa.pl account (everyone uses their own account)
+- `NOMINATIM_USER_AGENT`: a real email address
+- `ANTHROPIC_API_KEY`: optional; without it the keyword fallback runs
+- `GOOGLE_CLIENT_IDS`, `AUTH_SECRET`, `ADMIN_EMAILS`: Google sign-in (set up by A). To try it locally without Google: `AUTH_DEV_LOGIN=1` → `POST /auth/dev {"email": ...}`
+- `DEVICE_KEYS`: the virtual buses' device keys (C)
 
-## 8. Mevcut durum (bu dosyayı güncel tut)
+## 8. Current status (keep this file up to date)
 
-- ✅ Backend: sensör hattı, şikayet triyajı, füzyon, güven motoru, güven puanı (trust), doğrulama döngüsü. 278 test geçiyor (`.venv/bin/pytest`; PostGIS testleri `CITYECHO_TEST_DB=1` ile).
-- ✅ Gün 0: tüm router'lar kayıtlı; giriş iskeleti (`backend/auth/`: `current_user`, `require_admin`, Google + dev girişi, güvenin hesaba taşınması); migration sistemi ve 100/200/300 migration'ları (`users`, `work_status`, `devices`); Docker; mobil iskeleti (Expo SDK 57).
-- ✅ Web arayüzü `web-admin/` içinde. Kullanıcı sayfaları hâlâ içinde; B, W0'da siler.
-- ✅ Herkese açık demo sitesi: https://cityecho-gules.vercel.app (demo verisiyle). Yalnızca A'nın push'larıyla güncellenir (bölüm 7).
-- ✅ Docker uçtan uca doğrulandı (bölüm 7).
-- ✅ Canlı Varşova araç konumları çalışıyor (yeni API, aşağıya bak).
-- ✅ Sahiplik kontrolü: `OWNERS` + `.githooks/pre-commit` + `scripts/check_owners.py`.
-- ✅ Harita (S0): 11.833 segment (9.057 yol, 2.776 ray), gerçek kırılganlık verisiyle; `data/osm/segments_demo.geojson` repoda, yükleme saniyeler sürer. Demo tramvay sürüşleri gerçek raylarla hizalı (%100).
-- ✅ Sensör simülasyonu (C, S1–S5): `/devices/stream` (`X-Device-Key`, cihaz başına tampon); `scripts/simulate_buses.py` sanal filo (cihaz adları `bus-MAR|JER|SWI-NN`, `tram-17-NN`; `docker compose --profile sim up simulator`); sabit ground truth `data/demo/sim_world.json`; yol sağlığı son 5 geçişin medyanı + `health_updated_at` (tazelik) + `health_weight` (301); doğruluk raporu `data/demo/sim_accuracy.md` (`--eval`, simülasyonda ölçüldü); sahne senaryoları `--scenario all` (temiz veritabanında ~15 sn).
-- ✅ Tramvay yol çukurunu doğrulayamaz (tasarım gereği); yol çukurlarını simüle otobüsler doğrular (MAR hattı tramvay 17'ye paralel).
-- ❌ Bilinen eksik (B ve C): tramvay hattı iki paralel raydan oluşuyor; bir sürüşün GPS'i iki ray arasında gidip geliyor. Füzyonun "≥ 2 sürüş aynı segmentte" kuralı iki rayı tek sayacak şekilde ele alınmalı.
-- ✅ Demo verisi hizalandı (S5): şikayet kümelerine kusur kondu (`ANCHORS`); Świętokrzyska'daki 40 "ray kusuru" şikayeti `seed_demo` sonrası %97 ile doğrulanıyor. Doğrulanmış olay temiz geçişle kapanmaz; onarımı B'nin `work_status = done` akışı kapatır.
-- ℹ️ `nearest_segment(...)` Marszałkowska'da en yakın yolu ~16 m'de, rayı ~24 m'de buluyor; yalnızca ray ararken 50 m yarıçap gerekebilir.
+- ✅ Backend: sensor pipeline, complaint triage, fusion, confidence engine, contributor trust, verification loop. 278 tests pass (`.venv/bin/pytest`; PostGIS tests with `CITYECHO_TEST_DB=1`).
+- ✅ Day 0: all routers registered; sign-in skeleton (`backend/auth/`: `current_user`, `require_admin`, Google + dev sign-in, trust carry-over); migration system and the 100/200/300 migrations (`users`, `work_status`, `devices`); Docker; mobile skeleton (Expo SDK 57).
+- ✅ The web interface is in `web-admin/`. The citizen pages are still in it; B deletes them in W0.
+- ✅ Public demo site: https://cityecho-gules.vercel.app (with demo data). Updated only by A's pushes (section 7).
+- ✅ Docker verified end to end (section 7).
+- ✅ Live Warsaw vehicle positions work (new API, see below).
+- ✅ Ownership check: `OWNERS` + `.githooks/pre-commit` + `scripts/check_owners.py`.
+- ✅ Map (S0): 11,833 segments (9,057 road, 2,776 rail) with real vulnerability data; `data/osm/segments_demo.geojson` is in the repo, loading takes seconds. Demo tram rides are aligned with the real rails (100%).
+- ✅ Mobile app (A, M0–M6): map with current location and road health as colour only, Google + demo sign-in with trust carry-over, reporting with photo and location, the 25 m question, favourite routes with "bad road ahead" warnings, short incident view. `/mobile/*` endpoints in `backend/api/mobile.py`, migration `101_favorite_routes.sql`. Languages: English, Polish, Ukrainian (`mobile/src/i18n/`). M7 (notifications) not started.
+- ✅ Sensor simulation (C, S1–S5): `/devices/stream` (`X-Device-Key`, one buffer per device); `scripts/simulate_buses.py` virtual fleet (device names `bus-MAR|JER|SWI-NN`, `tram-17-NN`; `docker compose --profile sim up simulator`); fixed ground truth `data/demo/sim_world.json`; road health = median of the last 5 passes + `health_updated_at` (freshness) + `health_weight` (301); accuracy report `data/demo/sim_accuracy.md` (`--eval`, measured in simulation); stage scenarios `--scenario all` (~15 s on a clean database).
+- ✅ Trams can't verify road potholes (by design); simulated buses verify road potholes (the MAR line runs parallel to tram 17).
+- ❌ Known gap (B and C): a tram line consists of two parallel rails; a ride's GPS jumps between them. Fusion's "≥ 2 rides on the same segment" rule must count the two rails as one.
+- ✅ Demo data aligned (S5): defects placed at the complaint clusters (`ANCHORS`); the 40 "track defect" complaints on Świętokrzyska are verified at 97% after `seed_demo`. A verified incident is not closed by clean passes; the repair is closed by B's `work_status = done` flow.
+- ℹ️ `nearest_segment(...)` finds the nearest road at ~16 m and the nearest rail at ~24 m on Marszałkowska; a 50 m radius may be needed when searching rails only.
 
-## 9. Tuzaklar
+## 9. Pitfalls
 
-- **Varşova canlı araç API'si değişti.** Adres: `POST https://dane.um.warszawa.pl/api/action/get_ztm_lokalizacja_pojazdow`, gövde `{"type": 1|2}` (1 = otobüs, 2 = tramvay), token `Authorization` başlığında. Eski `busestrams_get` + `apikey=` artık çalışmıyor. Kod bunu kullanıyor (`backend/fusion/verify.py`).
-- **Docker + Colima'da `--reload` dosya değişikliğini görmez:** kod değişince `docker compose restart api`, `.env` değişince `docker compose up -d --force-recreate api`.
-- **`seed_demo` ~8–9 dakika sürer** (367 şikayet triyajı). Sunumdan önce hazırlayın.
-- **Overpass (OpenStreetMap) yavaş** ve sık zaman aşımına uğruyor. İndirmeler `data/cache/osmnx` içinde önbelleğe alınıyor.
-- `frontend/AGENTS.md`: bu Next.js sürümünde API'ler değişmiş olabilir. Yeni Next özelliği yazmadan önce `node_modules/next/dist/docs/` belgelerine bak.
-- Doğruluk sayıları (kategori %97 vb.) **sentetik veriden** geliyor. Sunumda "simülasyonda ölçüldü" diye sun.
+- **Warsaw's live vehicle API changed.** Address: `POST https://dane.um.warszawa.pl/api/action/get_ztm_lokalizacja_pojazdow`, body `{"type": 1|2}` (1 = bus, 2 = tram), token in the `Authorization` header. The old `busestrams_get` + `apikey=` no longer works. The code uses the new one (`backend/fusion/verify.py`).
+- **With Docker + Colima, `--reload` doesn't see file changes:** after code changes run `docker compose restart api`; after `.env` changes run `docker compose up -d --force-recreate api`.
+- **`seed_demo` takes ~8–9 minutes** (triage of 367 complaints). Prepare it before the presentation.
+- **Overpass (OpenStreetMap) is slow** and often times out. Downloads are cached in `data/cache/osmnx`.
+- `frontend/AGENTS.md`: APIs may have changed in this Next.js version. Read the docs in `node_modules/next/dist/docs/` before writing a new Next feature.
+- Accuracy numbers (category 97% etc.) come from **synthetic data**. Present them as "measured in simulation".

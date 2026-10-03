@@ -1,13 +1,13 @@
-# CityEcho dosya sahipliği. scripts/check_owners.py (git pre-commit hook'u) bu dosyayı uygular.
+# CityEcho file ownership. scripts/check_owners.py (the git pre-commit hook) enforces this file.
 #
-# Biçim: <desen>  <sahip>     sahip = A | B | C | SHARED
-#   A = 📱 Mobil (kullanıcı)   B = 🖥️ Web admin (belediye)   C = 📡 Sensör ve veri
-#   SHARED = dondurulmuş ortak dosya: yalnızca CITYECHO_SHARED=1 ile, tek başına bir commit'te değişir
-# Desenler: ** = herhangi bir alt klasör, * = tek klasör içinde herhangi bir ad.
-# İLK eşleşen satır kazanır, bu yüzden özel desenler genel olanlardan önce gelir.
-# Hiçbir satıra uymayan yeni dosya engellenir: önce buraya (SHARED commit'iyle) eklenmesi gerekir.
+# Format: <pattern>  <owner>     owner = A | B | C | SHARED
+#   A = 📱 Mobile (citizens)   B = 🖥️ Web admin (city)   C = 📡 Sensors and data
+#   SHARED = frozen shared file: changes only with CITYECHO_SHARED=1, in a commit of its own
+# Patterns: ** = any subfolders, * = any name within one folder.
+# The FIRST matching line wins, so specific patterns come before general ones.
+# A new file that matches no line is blocked: add it here first (in a SHARED commit).
 
-# --- Ortak, dondurulmuş (her değişiklik grupta duyurulur, tek kişi yapar, hemen push edilir) ---
+# --- Shared, frozen (every change is announced in the group, made by one person, pushed at once) ---
 OWNERS                              SHARED
 CLAUDE.md                           SHARED
 README.md                           SHARED
@@ -42,7 +42,7 @@ backend/tests/test_init_db.py       SHARED
 backend/tests/test_routes_registered.py  SHARED
 pitch/**                            SHARED
 
-# --- A: 📱 Mobil + kullanıcı API'si ---
+# --- A: 📱 Mobile + citizen API ---
 mobile/**                           A
 backend/auth/**                     A
 backend/api/users.py                A
@@ -60,7 +60,7 @@ backend/tests/test_mobile*.py       A
 backend/tests/test_triage*.py       A
 backend/tests/test_confidence_trust.py  A
 
-# --- B: 🖥️ Web admin (olaylar, iş akışı, gösterim) ---
+# --- B: 🖥️ Web admin (incidents, work flow, display) ---
 web-admin/**                        B
 frontend/**                         B
 backend/api/admin.py                B
@@ -81,7 +81,7 @@ backend/tests/test_admin*.py        B
 backend/tests/test_fusion*.py       B
 backend/tests/test_api*.py          B
 
-# --- C: 📡 Sensör ve veri ---
+# --- C: 📡 Sensors and data ---
 firmware/**                         C
 backend/sensor/**                   C
 backend/api/devices.py              C

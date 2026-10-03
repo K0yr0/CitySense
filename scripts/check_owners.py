@@ -25,7 +25,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-ROLES = {"A": "📱 Mobil", "B": "🖥️ Web admin", "C": "📡 Sensör ve veri"}
+ROLES = {"A": "📱 Mobile", "B": "🖥️ Web admin", "C": "📡 Sensors and data"}
 
 
 def glob_to_regex(pattern: str) -> re.Pattern:
@@ -84,15 +84,15 @@ def main() -> int:
         files = sorted(set(git("ls-files")) | set(git("ls-files", "--others", "--exclude-standard")))
         missing = [f for f in files if owner_of(f, rules) is None]
         for f in missing:
-            print(f"  sahipsiz: {f}")
-        print(f"{len(files)} dosya, {len(missing)} sahipsiz")
+            print(f"  no owner: {f}")
+        print(f"{len(files)} files, {len(missing)} without an owner")
         return 1 if missing else 0
 
     configured = subprocess.run(["git", "config", "--get", "cityecho.role"], cwd=ROOT,
                                 capture_output=True, text=True).stdout  # exits 1 when unset
     role = (os.environ.get("CITYECHO_ROLE") or configured).strip().upper()
     if role not in ROLES:
-        print("✋ Rolün ayarlı değil. Bir kez çalıştır:  git config cityecho.role A   (A, B ya da C)")
+        print("✋ Your role is not set. Run once:  git config cityecho.role A   (A, B or C)")
         return 1
 
     paths = staged_paths()
@@ -108,22 +108,22 @@ def main() -> int:
     problems: list[str] = []
 
     if unknown:
-        problems.append("OWNERS dosyasında sahibi olmayan dosyalar (önce OWNERS'a eklenmeli, SHARED commit'iyle):")
+        problems.append("Files with no owner in OWNERS (add them to OWNERS first, in a SHARED commit):")
         problems += [f"    {p}" for p in unknown]
     if foreign:
-        problems.append(f"Bu dosyalar başkasına ait (sen {role} = {ROLES[role]}):")
+        problems.append(f"These files belong to someone else (you are {role} = {ROLES[role]}):")
         problems += [f"    {p}  →  {o} ({ROLES[o]})" for p, o in foreign]
     if shared and not shared_ok:
-        problems.append("Ortak (dondurulmuş) dosyalar. Grupta duyur, sonra tek başına bir commit'te:  CITYECHO_SHARED=1 git commit ...")
+        problems.append("Shared (frozen) files. Announce it in the group, then commit them on their own:  CITYECHO_SHARED=1 git commit ...")
         problems += [f"    {p}" for p in shared]
     if shared and shared_ok and own:
-        problems.append("Ortak dosyalar kendi dosyalarınla aynı commit'te olamaz. İki ayrı commit yap:")
-        problems += [f"    ortak: {p}" for p in shared] + [f"    senin: {p}" for p in own]
+        problems.append("Shared files can't be in the same commit as your own files. Make two separate commits:")
+        problems += [f"    shared: {p}" for p in shared] + [f"    yours: {p}" for p in own]
 
     if problems:
-        print("✋ Commit engellendi (CityEcho dosya sahipliği, OWNERS):")
+        print("✋ Commit blocked (CityEcho file ownership, OWNERS):")
         print("\n".join(problems))
-        print("Başkasına ait bir değişiklik gerekiyorsa sahibine söyle; kendin değiştirme.")
+        print("If someone else's file needs a change, tell its owner; don't change it yourself.")
         return 1
     return 0
 

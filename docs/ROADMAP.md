@@ -1,181 +1,182 @@
-# CityEcho Yol Haritası: Mobil + Web Admin + Sensör Simülasyonu (3 kişi)
+# CityEcho Roadmap: Mobile + Web Admin + Sensor Simulation (3 people)
 
-Kullanıcılar uygulamayı **mobilden**, belediye **web'den** kullanır; otobüs sensörlerinin **simülasyonu** ayrı bir kişide. Üç kişi, her biri kendi bilgisayarında çalışıp aynı repoya push ediyor. Görevler **hiç çakışmayacak** şekilde dosya sahipliğiyle ayrıldı ve bu kural her commit'te makine tarafından kontrol ediliyor (`OWNERS` + git hook). Claude için kısa kurallar kökteki `CLAUDE.md` dosyasında.
+Citizens use the **mobile** app, the city uses the **web**; the **simulation** of the bus sensors belongs to a separate person. Three people, each working on their own computer and pushing to the same repo. Tasks are split by file ownership so that they **never overlap**, and the machine checks this rule on every commit (`OWNERS` + git hook). Short rules for Claude are in `CLAUDE.md` at the repo root.
 
-| | Kişi A: 📱 Mobil | Kişi B: 🖥️ Web admin | Kişi C: 📡 Sensör simülasyonu ve veri |
+| | Person A: 📱 Mobile | Person B: 🖥️ Web admin | Person C: 📡 Sensor simulation and data |
 |---|---|---|---|
-| Ne yapar | Vatandaşın kullandığı uygulama | Belediyenin paneli; olaylar ve iş akışı | Sanal otobüslerin sensör verisini **üretir ve işler** |
-| Görevler | M0–M7 | W0–W5 | S0–S5 |
-| Dal | `mobile/...` | `admin/...` | `sensor/...` |
-| Migration numaraları | 100–199 | 200–299 | 300–399 |
+| What they build | The app citizens use | The city's panel; incidents and work flow | **Generates and processes** the virtual buses' sensor data |
+| Tasks | M0–M7 | W0–W5 | S0–S5 |
+| Branch | `mobile/...` | `admin/...` | `sensor/...` |
+| Migration numbers | 100–199 | 200–299 | 300–399 |
 
-## Alınan kararlar
+## Decisions made
 
-| Konu | Karar |
+| Topic | Decision |
 |---|---|
-| Platform | Kullanıcı: **mobil uygulama** (React Native + Expo). Admin: **web** (Next.js) |
-| Giriş öncesi güven puanı | Google girişinde **hesaba taşınır** |
-| Admin yetkisi | **Tüm departmanları** görür |
-| Sensör verisi | **Gerçek sensör / ESP32 yok, her şey simülasyon** (Kişi C). Simülatör, gerçek bir cihazın kullanacağı `/devices/stream` endpoint'ine aynı formatta veri gönderir. Web'deki `/ride` sayfası silinir |
-| "Çevrende çukur var mı?" yarıçapı | **25 m**; yalnızca GPS isabeti ≤ 25 m iken sorulur |
+| Platform | Citizens: **mobile app** (React Native + Expo). Admin: **web** (Next.js) |
+| Trust earned before sign-in | **Carries over to the account** at Google sign-in |
+| Admin access | Sees **all departments** |
+| Sensor data | **No real sensors / ESP32, everything is simulated** (person C). The simulator sends data in the same format to the `/devices/stream` endpoint a real device would use. The web `/ride` page is deleted |
+| "Is there a pothole around you?" radius | **25 m**; asked only while GPS accuracy is ≤ 25 m |
+| Mobile app languages | **English, Polish, Ukrainian** (no Turkish); the backend's citizen messages follow `Accept-Language` |
 
-## Proje yapısı
+## Project structure
 
 ```
-mobile/          → Kişi A   Kullanıcı uygulaması (Expo, iOS + Android)
-web-admin/       → Kişi B   Belediye paneli (mevcut frontend/ buraya taşınır)
-backend/sensor/  → Kişi C   Sensör hattı (algılama, harita eşleme, yol sağlığı)
-scripts/simulate_buses.py → Kişi C   Sanal otobüs filosu (sensör simülatörü)
-backend/ (geri kalanı) → A ve B, ama her dosyanın TEK sahibi var
+mobile/          → Person A   Citizen app (Expo, iOS + Android)
+web-admin/       → Person B   City panel (the old frontend/ moves here)
+backend/sensor/  → Person C   Sensor pipeline (detection, map matching, road health)
+scripts/simulate_buses.py → Person C   Virtual bus fleet (sensor simulator)
+backend/ (the rest) → A and B, but every file has ONE owner
 ```
 
-## Çakışmayı önleyen 3 kural
+## 3 rules that prevent conflicts
 
-1. **Her dosyanın tek sahibi var** (`OWNERS` dosyası). Okumak serbest, yazmak yalnızca sahibine ait. Başkasının dosyasına dokunan commit, bilgisayarda engellenir.
-2. **Ortak dosyalar Gün 0'da bir kez hazırlanıp donduruluyor.**
-3. **Kişiler birbirinin koduna değil, sözleşmesine dayanıyor.** Sözleşmeler aşağıdaki tabloda sabit.
+1. **Every file has one owner** (the `OWNERS` file). Reading is free; writing belongs to the owner only. A commit touching someone else's file is blocked on the computer.
+2. **Shared files are prepared once on Day 0 and then frozen.**
+3. **People depend on each other's contracts, not their code.** The contracts are fixed in the table below.
 
 ---
 
-## Gün 0: Ortak temel ✅ TAMAMLANDI (dondurulmuş)
+## Day 0: shared foundation ✅ DONE (frozen)
 
-Aşağıdakilerin hepsi yapıldı ve repoda. Ayrıca: Docker kurulumu (`docker-compose.yml`, `docker/`), harita dosyası `data/osm/segments_demo.geojson`, mobil iskeleti `mobile/` (Expo SDK 57). Sözleşmelerin ayrıntısı: `docs/ARCHITECTURE.md` §8.
+All of the following is done and in the repo. Also: Docker setup (`docker-compose.yml`, `docker/`), the map file `data/osm/segments_demo.geojson`, the mobile skeleton `mobile/` (Expo SDK 57). Contract details: `docs/ARCHITECTURE.md` §8.
 
-| İş | Yapan |
+| Work | Done by |
 |---|---|
-| `backend/main.py`: tüm router'lar baştan kaydedilir (`users`, `responses`, `mobile`, `admin`, `devices`) | A |
-| `backend/auth/`: Google token doğrulama, kendi oturum token'ımız, `current_user`, `require_admin` | A |
-| `db/schema.sql` dondurulur; `db/migrations/` açılır (**A 100–199, B 200–299, C 300–399**); `scripts/init_db.py` migration'ları sırayla uygular | A |
-| `requirements.txt` ve `.env.example`: tüm yeni bağımlılıklar ve değişkenler (google-auth, `GOOGLE_CLIENT_ID`, `ADMIN_EMAILS`, `DEVICE_KEYS`) | A |
-| `mobile/` iskeleti (`npx create-expo-app`) | A |
-| `frontend/` → `web-admin/` taşıması ve Vercel'de kök dizin güncellemesi | B |
-| **S0:** Varşova harita segmentlerini veritabanına yüklemek (`scripts/load_osm.py --bbox demo`) | C |
+| `backend/main.py`: every router registered up front (`users`, `responses`, `mobile`, `admin`, `devices`) | A |
+| `backend/auth/`: Google token verification, our own session token, `current_user`, `require_admin` | A |
+| `db/schema.sql` frozen; `db/migrations/` opened (**A 100–199, B 200–299, C 300–399**); `scripts/init_db.py` applies the migrations in order | A |
+| `requirements.txt` and `.env.example`: all new dependencies and variables (google-auth, `GOOGLE_CLIENT_ID`, `ADMIN_EMAILS`, `DEVICE_KEYS`) | A |
+| `mobile/` skeleton (`npx create-expo-app`) | A |
+| Move `frontend/` → `web-admin/` and update the root directory on Vercel | B |
+| **S0:** load the Warsaw map segments into the database (`scripts/load_osm.py --bbox demo`) | C |
 
-**OpenAPI ve otomatik üretilen tipler git'e commit edilmez.** Her uygulama tiplerini çalışan backend'den kendi klasörüne üretir.
+**OpenAPI and generated types are not committed to git.** Each app generates its types from the running backend into its own folder.
 
 ---
 
-## Dosya sahipliği
+## File ownership
 
-| Alan | 📱 **Kişi A** | 🖥️ **Kişi B** | 📡 **Kişi C** |
+| Area | 📱 **Person A** | 🖥️ **Person B** | 📡 **Person C** |
 |---|---|---|---|
-| Uygulama | `mobile/**` | `web-admin/**` (şimdilik `frontend/**`) | — |
-| Backend API | `auth/`, `api/users.py`, `api/responses.py`, `api/reports.py`, `api/mobile.py` | `api/admin.py`, `api/incidents.py`, `api/serializers.py`, `api/stats.py`, `api/vehicles.py`, `api/segments.py` (gösterim) | `api/devices.py` (yeni), `api/rides.py` |
-| Backend mantığı | `fusion/trust.py`, `triage/**` | `fusion/incidents.py`, `verify.py`, `confidence.py`, `score.py`, `routing.py` | `sensor/**` (ingest, detect, lights, mapmatch, track_score, pipeline) |
-| Veritabanı | `migrations/1xx_*` (users, favorite_routes, güven taşıma) | `migrations/2xx_*` (`work_status`) | `migrations/3xx_*` (devices, yol sağlığı zaman ağırlığı), `db/functions.sql` (`nearest_segment`, `recompute_segment_health`) |
-| Scriptler | `gen_complaints.py`, `eval_triage.py` | `seed_demo.py` | `simulate_buses.py` (yeni), `synth_ride.py`, `replay_ride.py`, `load_osm.py` |
-| Testler | `test_auth.py`, `test_mobile_*.py`, `test_triage_*.py`, `test_confidence_trust.py` | `test_admin_*.py`, `test_fusion.py`, `test_api.py` | `test_devices.py`, `test_sensor_*.py`, `test_db.py`, `test_load_osm.py` |
-| Veri | `data/complaints_synth.json` | `data/demo/ztm_snapshot.json` | `data/demo/*.csv`, `data/osm/`, simülatörün ground truth dosyaları |
+| App | `mobile/**` | `web-admin/**` (for now also `frontend/**`) | — |
+| Backend API | `auth/`, `api/users.py`, `api/responses.py`, `api/reports.py`, `api/mobile.py` | `api/admin.py`, `api/incidents.py`, `api/serializers.py`, `api/stats.py`, `api/vehicles.py`, `api/segments.py` (display) | `api/devices.py` (new), `api/rides.py` |
+| Backend logic | `fusion/trust.py`, `triage/**` | `fusion/incidents.py`, `verify.py`, `confidence.py`, `score.py`, `routing.py` | `sensor/**` (ingest, detect, lights, mapmatch, track_score, pipeline) |
+| Database | `migrations/1xx_*` (users, favorite_routes, trust carry-over) | `migrations/2xx_*` (`work_status`) | `migrations/3xx_*` (devices, time weighting of road health), `db/functions.sql` (`nearest_segment`, `recompute_segment_health`) |
+| Scripts | `gen_complaints.py`, `eval_triage.py` | `seed_demo.py` | `simulate_buses.py` (new), `synth_ride.py`, `replay_ride.py`, `load_osm.py` |
+| Tests | `test_auth.py`, `test_mobile_*.py`, `test_triage_*.py`, `test_confidence_trust.py` | `test_admin_*.py`, `test_fusion.py`, `test_api.py` | `test_devices.py`, `test_sensor_*.py`, `test_db.py`, `test_load_osm.py` |
+| Data | `data/complaints_synth.json` | `data/demo/ztm_snapshot.json` | `data/demo/*.csv`, `data/osm/`, the simulator's ground-truth files |
 
-**Okuma her zaman serbest.** Örneğin A'nın `api/mobile.py` dosyası `incidents` ve `segments` tablolarını okuyabilir; `incidents`'e yalnızca B'nin, `segments.health`'e yalnızca C'nin kodu yazar.
+**Reading is always free.** For example, A's `api/mobile.py` may read the `incidents` and `segments` tables; only B's code writes `incidents`, and only C's code writes `segments.health`.
 
-**Ortak (SHARED) dosyalar** (`OWNERS` içinde işaretli): `backend/main.py`, `db/schema.sql`, `backend/config.py`, `backend/models.py`, `backend/db.py`, `requirements*.txt`, `.env.example`, `scripts/init_db.py`, `CLAUDE.md`, `docs/**`, `OWNERS`. Değişiklik süreci aşağıdaki "Git iş akışı" bölümünde.
+**Shared (SHARED) files** (marked in `OWNERS`): `backend/main.py`, `db/schema.sql`, `backend/config.py`, `backend/models.py`, `backend/db.py`, `requirements*.txt`, `.env.example`, `scripts/init_db.py`, `CLAUDE.md`, `docs/**`, `OWNERS`. The change process is in the "Git workflow" section below.
 
-Tam ve kesin liste `OWNERS` dosyasıdır; bu tablo özetidir. İkisi çelişirse `OWNERS` geçerlidir.
+The complete, authoritative list is the `OWNERS` file; this table is a summary. If the two disagree, `OWNERS` wins.
 
-## Sözleşmeler (kişiler arasında, isimleri sabit)
+## Contracts (between people, names fixed)
 
-| Veren → kullanan | Sözleşme | Ne için |
+| Provider → consumer | Contract | Purpose |
 |---|---|---|
-| A → B | `require_admin` (FastAPI bağımlılığı) | Admin endpoint'lerini korumak |
-| A → B | `trust.settle(conn, incident_id, real=True)` (zaten var) | "Yapıldı" düğmesine basılınca güven puanlarını kapatmak |
-| B → A | `incidents.work_status` sütunu (`todo` / `in_progress` / `done`) | Mobil, `done` olaylarda 25 m sorusunu durdurur |
-| B → A | `incidents.confidence`, `incidents.status` sütunları | Mobildeki kısa olay görünümü |
-| B → C | `fusion.incidents.ingest_evidence(conn, evidence_ids)` ve `verify.check_ride_verifications(conn, ride_id)` (zaten var) | C'nin sensör kanıtını olaylara bağlamak; geçişleri doğrulama olarak saymak |
-| C → B ve A | `segments.health`, `segments.health_rides`, `segments.health_updated_at` (tazelik), `segments.health_weight` (zaman ağırlıklı veri miktarı) sütunları | B'nin canlı haritası, A'nın yol renkleri. Yalnızca C yazar |
-| C → B | `/devices/stream` veri formatı (`docs/ARCHITECTURE.md`'ye yazılır) | Simülatör, gerçek bir cihaz gibi bu formatta gönderir |
+| A → B | `require_admin` (FastAPI dependency) | Protect the admin endpoints |
+| A → B | `trust.settle(conn, incident_id, real=True)` (already exists) | Settle trust scores when "done" is pressed |
+| B → A | `incidents.work_status` column (`todo` / `in_progress` / `done`) | Mobile stops the 25 m question for `done` incidents |
+| B → A | `incidents.confidence`, `incidents.status` columns | The short incident view on mobile |
+| B → C | `fusion.incidents.ingest_evidence(conn, evidence_ids)` and `verify.check_ride_verifications(conn, ride_id)` (already exist) | Link C's sensor evidence to incidents; count passes as verifications |
+| C → B and A | `segments.health`, `segments.health_rides`, `segments.health_updated_at` (freshness), `segments.health_weight` (time-weighted amount of data) columns | B's live map, A's road colours. Only C writes them |
+| C → B | `/devices/stream` data format (written in `docs/ARCHITECTURE.md`) | The simulator sends in this format, like a real device |
 
-Sözleşme değişikliği gerekirse: grupta duyurulur, ilgili kişiler onaylar, değişiklik ayrı bir SHARED commit'iyle `docs/`'a yazılır.
+If a contract must change: announce it in the group, the people involved approve, and the change is written to `docs/` in a separate SHARED commit.
 
 ---
 
-## 📱 Kişi A: Mobil görevleri
+## 📱 Person A: mobile tasks
 
-| # | Görev | Ayrıntı |
+| # | Task | Details |
 |---|---|---|
-| M0 | Kurulum | Expo iskeleti, backend'e bağlantı, demo modu |
-| M1 | Harita | **Anlık konum** butonu (isabet halkasıyla); olaylar ve yol sağlığı **yalnızca renk** (iyi / orta / kötü / ölçülmedi) |
-| M2 | Giriş | Google ile tek dokunuş; cihazdaki güven puanı hesaba **taşınır**; bildirmek ve cevaplamak için giriş şart, haritaya bakmak serbest |
-| M3 | Sorun bildirme | Metin, kamera/fotoğraf, konum; sonrasında kısa durum ("23 kişi daha bildirdi", "belediye ilgileniyor", "yapıldı") |
-| M4 | 25 m sorusu | "25 m çevrende çukur görüyor musun? Evet / Hayır". Yerel GPS, isabet ≤ 25 m, olay başına bir kez, `work_status = done` ise sorulmaz, cevaplar güvene göre ağırlıklı |
-| M5 | Favori rotalar | Başlangıç/bitiş ya da otobüs/tramvay hattı; rota boyunca yol kalitesi renk olarak, "ileride kötü yol" uyarısı |
-| M6 | Kısa olay görünümü | Tür, adres, güven etiketi, belediyenin iş durumu. **Sensör verisi, zaman çizelgesi ve olgular yok** |
-| M7 | Bildirimler (opsiyonel) | "Bildirdiğin çukur onarıldı", "rotanda yeni sorun" |
+| M0 | Setup | Expo skeleton, connection to the backend, demo mode |
+| M1 | Map | **Current location** button (with an accuracy ring); incidents and road health **as colour only** (good / fair / poor / not measured) |
+| M2 | Sign-in | One tap with Google; the trust score on the device **carries over** to the account; signing in is required to report and answer, viewing the map is free |
+| M3 | Reporting a problem | Text, camera/photo, location; then a short status ("23 other people reported this", "the city is working on it", "fixed") |
+| M4 | 25 m question | "Do you see a pothole within 25 m of you? Yes / No". Local GPS, accuracy ≤ 25 m, once per incident, not asked when `work_status = done`, answers weighted by trust |
+| M5 | Favourite routes | Start/end or a bus/tram line; road quality along the route as colour, "bad road ahead" warning |
+| M6 | Short incident view | Type, address, confidence label, the city's work status. **No sensor data, timeline or facts** |
+| M7 | Notifications (optional) | "The pothole you reported was fixed", "new problem on your route" |
 
-## 🖥️ Kişi B: Web admin görevleri
+## 🖥️ Person B: web admin tasks
 
-| # | Görev | Ayrıntı |
+| # | Task | Details |
 |---|---|---|
-| W0 | Taşıma | `frontend/` → `web-admin/`; kullanıcı sayfalarını (`/report`, `/ride`, vatandaş EVET/HAYIR) sil; tüm site admin girişi ister; ana sayfadaki üst üste binen görselleri düzelt |
-| W1 | Olay kuyruğu | Departman, güven durumu ve iş durumu filtreleri; önceliğe göre sıralı; tüm departmanlar |
-| W2 | Tam olay detayı | Sensör sinyal grafiği, **kanıt zaman çizelgesi**, **olgular**, güven dökümü, tüm raporlar ve fotoğraflar, vatandaş cevapları |
-| W3 | İş akışı | **Yapılmadı → devam ediyor → yapıldı**, kim ve ne zaman değiştirdi. Güven durumundan ayrı alan. **Yapıldı** → `trust.settle` çağrılır, soru durur |
-| W4 | Canlı harita (gösterim) | C'nin yazdığı `segments.health` ve tazelik bilgisini gösterir; canlı otobüs/tramvay konumları (Varşova API'si zaten çalışıyor) |
-| W5 | İstatistikler | Rapor → olay → doğrulandı → yapıldı, ortalama onarım süresi, departman yükü |
+| W0 | Move | `frontend/` → `web-admin/`; delete the citizen pages (`/report`, `/ride`, citizen YES/NO); the whole site requires admin sign-in; fix the overlapping visuals on the home page |
+| W1 | Incident queue | Filters for department, confidence status and work status; sorted by priority; all departments |
+| W2 | Full incident detail | Sensor signal chart, **evidence timeline**, **facts**, confidence breakdown, all reports and photos, citizen answers |
+| W3 | Work flow | **Not started → in progress → done**, who changed it and when. A field separate from the confidence status. **Done** → `trust.settle` is called, the question stops |
+| W4 | Live map (display) | Shows the `segments.health` and freshness that C writes; live bus/tram positions (the Warsaw API already works) |
+| W5 | Statistics | Report → incident → verified → done, average repair time, department load |
 
-## 📡 Kişi C: Sensör simülasyonu ve veri görevleri
+## 📡 Person C: sensor simulation and data tasks
 
-Gerçek donanım yok; bütün sensör verisi simülasyondan gelir. Simülasyon, gerçek cihaz varmış gibi aynı endpoint'i ve aynı formatı kullanır.
+There is no real hardware; all sensor data comes from the simulation. The simulation uses the same endpoint and the same format as if a real device existed.
 
-| # | Görev | Ayrıntı |
+| # | Task | Details |
 |---|---|---|
-| S0 | Harita segmentleri | Varşova yol ve ray ağını veritabanına yüklemek (`scripts/load_osm.py --bbox demo`). Overpass sunucusu yavaş, terminalden çalıştırılmalı. Herkesin ihtiyacı olduğu için **ilk iş** |
-| S1 | Cihaz API'si | Sanal otobüs başına cihaz anahtarı, korumalı `/devices/stream`; gelen veriyi mevcut sensör hattına (`sensor/pipeline.py`) ve B'nin `ingest_evidence` fonksiyonuna bağlar. Veri formatı `docs/ARCHITECTURE.md`'ye yazılır |
-| S2 | **Sensör simülatörü** | `scripts/simulate_buses.py`: gerçek güzergahlar boyunca (OSM segmentleri; isteğe bağlı canlı ZTM konumları) birçok sanal otobüs ve tramvay sürer. `synth_ride.py` mantığıyla ivme, GPS ve ışık verisi üretir; sabit, bilinen noktalara çukur, ray kusuru ve sönük lamba koyar; `/devices/stream`'e gönderir; koyduğu kusurların listesini (ground truth) saklar |
-| S3 | Canlı yol sağlığı | Veri geldikçe `segments.health` yeniden hesaplanır, yeni ölçümler daha ağır basar (zaman ağırlığı); tazelik ve veri miktarı sütunları |
-| S4 | Doğruluk ölçümü | Simülatörün ground truth'una karşı isabet / duyarlılık raporu (gürültü, hız ve telefon konumu değiştirilerek); sunum için "simülasyonda ölçüldü" diye sunulacak sayılar |
-| S5 | Demo senaryoları | Sahnede tek komutla tetiklenen senaryolar: "yeni çukur oluştu → otobüsler buldu → şikayetten önce bulundu", "vatandaş bildirdi → sıradaki otobüs geçti → doğrulandı", "onarıldı → otobüs artık bir şey hissetmiyor". Tekrarlanabilir (sabit seed) |
+| S0 | Map segments | Load Warsaw's road and rail network into the database (`scripts/load_osm.py --bbox demo`). The Overpass server is slow; run it from a terminal. **First job**, because everyone needs it |
+| S1 | Device API | A device key per virtual bus, protected `/devices/stream`; connects incoming data to the existing sensor pipeline (`sensor/pipeline.py`) and to B's `ingest_evidence` function. The data format is written in `docs/ARCHITECTURE.md` |
+| S2 | **Sensor simulator** | `scripts/simulate_buses.py`: drives many virtual buses and trams along real routes (OSM segments; optionally live ZTM positions). Generates acceleration, GPS and light data with the `synth_ride.py` logic; places potholes, track defects and dark lamps at fixed, known points; sends to `/devices/stream`; keeps the list of defects it placed (ground truth) |
+| S3 | Live road health | `segments.health` is recomputed as data arrives, newer measurements weigh more (time weighting); freshness and data-amount columns |
+| S4 | Accuracy measurement | Precision / recall report against the simulator's ground truth (varying noise, speed and phone position); numbers for the presentation, presented as "measured in simulation" |
+| S5 | Demo scenarios | Scenarios triggered on stage with one command: "a new pothole appeared → buses found it → found before any complaint", "a citizen reported → the next bus passed → verified", "repaired → the bus no longer feels anything". Repeatable (fixed seed) |
 
 ---
 
-## Sıra ve beklemeler
+## Order and dependencies
 
 ```
-Gün 0:  A → backend temeli + giriş + mobile/ iskeleti   [SHARED commit'leri]
-        B → frontend/ → web-admin/ taşıması
-        C → S0 (harita segmentleri)
-Sonra:  A → M0 → M1 → M2 → M3 → M4 → M5 → M6 (→ M7)
+Day 0:  A → backend foundation + sign-in + mobile/ skeleton   [SHARED commits]
+        B → frontend/ → web-admin/ move
+        C → S0 (map segments)
+Then:   A → M0 → M1 → M2 → M3 → M4 → M5 → M6 (→ M7)
         B → W0 → W1 → W2 → W3 → W4 → W5
         C → S1 → S2 → S3 → S4 → S5
 ```
 
-- **M4 ↔ W3:** "Yapıldıysa sorma" kısmı `work_status` sütunu gelene kadar pasif kalır, sütun gelince kendiliğinden çalışır. A beklemek zorunda değil.
-- **M1/M5 ve W4 ↔ S2/S3:** Yol renkleri ve canlı harita, C'nin simülatörü çalışınca dolmaya başlar. O zamana kadar A ve B mevcut demo verisiyle çalışır, kimse beklemez.
-- **Gün 0:** B ve C, A'nın SHARED commit'leri push edilene kadar yalnızca kendi klasörlerinde çalışır; bu sırada çakışma imkânsızdır.
-- **S1 ↔ B:** C, B'nin mevcut `ingest_evidence` fonksiyonunu çağırır. Bu fonksiyon zaten var, B'yi beklemek gerekmez.
+- **M4 ↔ W3:** the "don't ask if done" part stays passive until the `work_status` column exists and starts working by itself once it does. A doesn't have to wait.
+- **M1/M5 and W4 ↔ S2/S3:** road colours and the live map start filling once C's simulator runs. Until then A and B work with the existing demo data; nobody waits.
+- **Day 0:** until A's SHARED commits are pushed, B and C work only in their own folders; conflicts are impossible meanwhile.
+- **S1 ↔ B:** C calls B's existing `ingest_evidence` function. It already exists; no need to wait for B.
 
-## Git iş akışı (herkes kendi bilgisayarında, doğrudan main'e push)
+## Git workflow (everyone on their own computer, pushing directly to main)
 
-**Bir kez kurulum (her bilgisayarda):**
+**One-time setup (on each computer):**
 ```bash
 git clone https://github.com/K0yr0/cityecho.git && cd cityecho
-git config core.hooksPath .githooks       # sahiplik kontrolü her commit'te çalışır
-git config cityecho.role A                # kendi rolün: A, B ya da C
+git config core.hooksPath .githooks       # the ownership check runs on every commit
+git config cityecho.role A                # your role: A, B or C
 git config pull.rebase true
-python3 scripts/check_owners.py --all     # "0 sahipsiz" demeli
+python3 scripts/check_owners.py --all     # should say "0 without an owner"
 ```
 
-**Her gün:**
-1. `git pull`: işe başlamadan önce.
-2. Yalnızca kendi dosyalarında çalış.
-3. Testler: `.venv/bin/pytest` (B ayrıca `npm run build`). Geçmeden push yok.
-4. `git commit`: hook, başkasının dosyasını ya da ortak dosyayı içeren commit'i engeller.
-5. `git pull` + `.venv/bin/python scripts/init_db.py`: başkalarının migration'larını al.
-6. `git push`: küçük ve sık.
+**Every day:**
+1. `git pull`: before starting work.
+2. Work only in your own files.
+3. Tests: `.venv/bin/pytest` (B also `npm run build`). No push until they pass.
+4. `git commit`: the hook blocks a commit containing someone else's file or a shared file.
+5. `git pull` + `.venv/bin/python scripts/init_db.py`: pick up other people's migrations.
+6. `git push`: small and frequent.
 
-**Neden çakışma çıkmaz:** iki kişi asla aynı dosyaya yazmadığı için `git pull --rebase` hiçbir zaman metin çakışması üretmez. Çakışma çıkarsa bu bir kural ihlalidir: dosyanın sahibine sorulur, kimse başkasının dosyasını kendisi "çözmez".
+**Why there are no conflicts:** since two people never write to the same file, `git pull --rebase` never produces a text conflict. A conflict means a rule was broken: ask the file's owner; nobody "resolves" someone else's file themselves.
 
-**Ortak (SHARED) dosya değişikliği:**
-1. Grupta duyurulur; aynı anda yalnızca bir kişi yapar.
-2. `git pull`, sonra yalnızca ortak dosyaları içeren ayrı bir commit: `CITYECHO_SHARED=1 git commit -m "..."`
-3. Hemen push edilir; diğerleri `git pull` yapar.
+**Changing a shared (SHARED) file:**
+1. Announce it in the group; only one person does it at a time.
+2. `git pull`, then a separate commit containing only shared files: `CITYECHO_SHARED=1 git commit -m "..."`
+3. Push right away; the others run `git pull`.
 
-**Yasaklar:** `git push --force`, `git commit --no-verify`, başkasının commit'ini geri almak, push edilmiş bir migration'ı düzenlemek, `.env` dosyasını commit etmek, commit mesajına Claude / Co-Authored-By satırı eklemek.
+**Forbidden:** `git push --force`, `git commit --no-verify`, reverting someone else's commit, editing a pushed migration, committing the `.env` file, adding a Claude / Co-Authored-By line to a commit message.
 
-## Riskler
+## Risks
 
-- **Simülasyon:** Bütün sensör verisi simülasyondan geliyor. Sunumda bunu açıkça söyleyin; doğruluk sayıları "simülasyonda ölçüldü" diye sunulur (S4).
-- **Kişisel veri (RODO/GDPR):** Google girişi ve konum kullanımı kişisel veri demek. Yalnızca e-posta ve kimlik saklanır, konum geçmişi tutulmaz, gizlilik bildirimi eklenir.
-- **Demo erişimi:** W0'dan sonra herkese açık Vercel sitesi admin girişi ister. Jüri için ya bir admin hesabı açılır ya da mobil uygulama Expo Go ile gösterilir.
-- **Tramvay ve yol çukuru:** Tramvay yol çukurunu doğrulayamıyor; C'nin simüle otobüsleri yol çukurlarını doğrular.
-- **main'e doğrudan push:** Her push Vercel'i yeniden yayınlar ve herkesi etkiler. Testleri çalıştırmadan push edilmez.
+- **Simulation:** all sensor data comes from the simulation. Say so clearly in the presentation; accuracy numbers are presented as "measured in simulation" (S4).
+- **Personal data (RODO/GDPR):** Google sign-in and location use mean personal data. Only email and identity are stored, no location history is kept, and a privacy notice is added.
+- **Demo access:** after W0 the public Vercel site requires admin sign-in. For the jury, either an admin account is created or the mobile app is shown with Expo Go.
+- **Trams and road potholes:** trams can't verify road potholes; C's simulated buses verify road potholes.
+- **Pushing directly to main:** every push redeploys Vercel and affects everyone. Never push without running the tests.
