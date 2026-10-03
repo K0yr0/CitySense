@@ -46,6 +46,85 @@ returning id
 """
 
 
+# --- W5 statistics ---------------------------------------------------------------------------
+# Repair time = first_seen -> the moment the city marked it done (work_status_changed_at while done).
+
+TREND_DAYS = 14
+
+SQL_STATS = """
+select
+  (select count(*) from reports)                                            as reports_total,
+  (select count(*) from incidents)                                          as incidents_total,
+  (select count(*) from incidents where status = 'verified')                as verified_total,
+  (select count(*) from incidents where work_status = 'in_progress')        as in_progress_total,
+  (select count(*) from incidents where work_status = 'done')               as done_total,
+  (select count(*) from incidents where found_before_report)                as found_before_report,
+  (select avg(extract(epoch from work_status_changed_at - first_seen)) / 3600.0
+     from incidents where work_status = 'done' and work_status_changed_at >= first_seen) as avg_repair_hours,
+  (select percentile_cont(0.5) within group (order by extract(epoch from work_status_changed_at - first_seen)) / 3600.0
+     from incidents where work_status = 'done' and work_status_changed_at >= first_seen) as median_repair_hours,
+  (select avg(extract(epoch from verified_at - verify_requested_at)) / 60.0
+     from incidents where verified_at is not null and verify_requested_at is not null
+      and verified_at >= verify_requested_at)                               as avg_verification_min
+"""
+
+# Open = still to do and not dismissed/closed by the confidence engine.
+SQL_STATS_DEPARTMENTS = """
+select coalesce(department, 'inne') as department,
+       count(*)                                                                as total,
+       count(*) filter (where work_status = 'todo' and status not in ('dismissed', 'closed')) as todo,
+       count(*) filter (where work_status = 'in_progress')                     as in_progress,
+       count(*) filter (where work_status = 'done')                            as done,
+       count(*) filter (where status = 'verified')                             as verified,
+       avg(extract(epoch from work_status_changed_at - first_seen)) filter (
+           where work_status = 'done' and work_status_changed_at >= first_seen) / 3600.0 as avg_repair_hours
+from incidents
+group by 1
+order by total desc, 1
+"""
+
+# Per UTC day for the last N days: incidents first seen, incidents marked done.
+SQL_STATS_DAILY = """
+select d.day,
+       (select count(*) from incidents i
+         where (i.first_seen at time zone 'UTC')::date = d.day)                               as new,
+       (select count(*) from incidents i
+         where i.work_status = 'done' and (i.work_status_changed_at at time zone 'UTC')::date = d.day) as done
+from (select generate_series((now() at time zone 'UTC')::date - (%(days)s - 1),
+                             (now() at time zone 'UTC')::date, interval '1 day')::date as day) d
+order by d.day
+"""
+
+
+def _hours(value) -> float | None:
+    return None if value is None else round(float(value), 1)
+
+
+@router.get("/stats")
+def stats(conn: DB) -> dict:
+    """Report -> incident -> verified -> done funnel, repair times, load per department, 14-day trend."""
+    from backend import db
+
+    row = db.fetch_one(conn, SQL_STATS) or {}
+    counts = ("reports_total", "incidents_total", "verified_total", "in_progress_total", "done_total", "found_before_report")
+    out: dict = {k: int(row.get(k) or 0) for k in counts}
+    out["avg_repair_hours"] = _hours(row.get("avg_repair_hours"))
+    out["median_repair_hours"] = _hours(row.get("median_repair_hours"))
+    avg_ver = row.get("avg_verification_min")
+    out["avg_verification_min"] = None if avg_ver is None else round(float(avg_ver), 1)
+    out["departments"] = [
+        {"department": d["department"], "total": int(d.get("total") or 0), "todo": int(d.get("todo") or 0),
+         "in_progress": int(d.get("in_progress") or 0), "done": int(d.get("done") or 0),
+         "verified": int(d.get("verified") or 0), "avg_repair_hours": _hours(d.get("avg_repair_hours"))}
+        for d in db.fetch_all(conn, SQL_STATS_DEPARTMENTS)
+    ]
+    out["daily"] = [
+        {"day": ser.iso(d["day"]), "new": int(d.get("new") or 0), "done": int(d.get("done") or 0)}
+        for d in db.fetch_all(conn, SQL_STATS_DAILY, {"days": TREND_DAYS})
+    ]
+    return out
+
+
 class WorkStatusIn(BaseModel):
     status: WorkStatus
     note: str | None = Field(None, max_length=500, description="optional, e.g. crew or work order number")

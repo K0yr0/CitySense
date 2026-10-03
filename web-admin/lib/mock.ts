@@ -2,8 +2,10 @@
 // Everything is deterministic (seeded PRNG); timestamps are relative to "now" so the demo stays fresh.
 import { assess, DEFAULT_TRUST, statusFor, type Vote } from "./confidence";
 import type {
+  AdminStats,
   CitizenResponse,
   Department,
+  DepartmentLoad,
   Evidence,
   IncidentDetail,
   IncidentReport,
@@ -689,6 +691,70 @@ export function mockStats(): Stats {
     segments_measured: SEGMENTS.filter((s) => s.health !== null).length,
   };
 }
+
+// ---------------------------------------------------------------- admin stats (W5)
+
+// Older incidents that are not among the seeds (63 in /stats minus the 17 seeds), per department:
+// [todo, in_progress, done, verified, sum of repair hours of the done ones].
+const HISTORIC: Partial<Record<Department, [number, number, number, number, number]>> = {
+  ZDM: [14, 4, 9, 8, 9 * 31],
+  "Tramwaje Warszawskie": [5, 2, 4, 4, 4 * 22],
+  MPWiK: [3, 0, 2, 1, 2 * 9],
+  "Straż Miejska": [2, 0, 1, 0, 1 * 40],
+};
+
+export function mockAdminStats(): AdminStats {
+  const live = SEEDS.map(summaryFromSeed);
+  const repairH = (i: IncidentSummary) =>
+    i.work_status === "done" && i.work_status_changed_at ? Math.max(0, (Date.parse(i.work_status_changed_at) - Date.parse(i.first_seen)) / 3_600_000) : null;
+
+  const departments: DepartmentLoad[] = DEPARTMENTS_ORDER.map((d) => {
+    const [todo0, ip0, done0, ver0, hours0] = HISTORIC[d] ?? [0, 0, 0, 0, 0];
+    const mine = live.filter((i) => i.department === d);
+    const open = (i: IncidentSummary) => i.work_status === "todo" && i.status !== "dismissed" && i.status !== "closed";
+    const repairs = mine.map(repairH).filter((h): h is number => h !== null);
+    const done = done0 + repairs.length;
+    const hours = hours0 + repairs.reduce((a, b) => a + b, 0);
+    return {
+      department: d,
+      total: todo0 + ip0 + done0 + mine.length,
+      todo: todo0 + mine.filter(open).length,
+      in_progress: ip0 + mine.filter((i) => i.work_status === "in_progress").length,
+      done,
+      verified: ver0 + mine.filter((i) => i.status === "verified").length,
+      avg_repair_hours: done ? Math.round((hours / done) * 10) / 10 : null,
+    };
+  })
+    .filter((d) => d.total > 0)
+    .sort((a, b) => b.total - a.total);
+
+  const done = departments.reduce((a, d) => a + d.done, 0);
+  const hours = departments.reduce((a, d) => a + (d.avg_repair_hours ?? 0) * d.done, 0);
+  const daily = Array.from({ length: 14 }, (_, k) => {
+    const day = new Date(BASE_TIME - (13 - k) * 86_400_000);
+    const r = mulberry32(day.getUTCDate() * 31 + 7);
+    return { day: day.toISOString().slice(0, 10), new: 2 + Math.floor(r() * 5), done: Math.floor(r() * 3) + (k > 9 ? 1 : 0) };
+  });
+  // Today's done count includes what was marked done in this session.
+  const today = new Date().toISOString().slice(0, 10);
+  daily[13].done += live.filter((i) => i.work_status === "done" && i.work_status_changed_at?.startsWith(today)).length;
+
+  return {
+    reports_total: 412,
+    incidents_total: departments.reduce((a, d) => a + d.total, 0),
+    verified_total: departments.reduce((a, d) => a + d.verified, 0),
+    in_progress_total: departments.reduce((a, d) => a + d.in_progress, 0),
+    done_total: done,
+    found_before_report: 9,
+    avg_repair_hours: done ? Math.round((hours / done) * 10) / 10 : null,
+    median_repair_hours: done ? 22.5 : null,
+    avg_verification_min: 7,
+    departments,
+    daily,
+  };
+}
+
+const DEPARTMENTS_ORDER: Department[] = ["ZDM", "Tramwaje Warszawskie", "MPWiK", "Straż Miejska", "inne"];
 
 // ---------------------------------------------------------------- write endpoints
 

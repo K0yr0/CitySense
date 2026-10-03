@@ -160,6 +160,32 @@ export interface Stats {
   segments_measured: number;
 }
 
+/** W5: load of one department (open = to do and not dismissed/closed). */
+export interface DepartmentLoad {
+  department: Department;
+  total: number;
+  todo: number;
+  in_progress: number;
+  done: number;
+  verified: number;
+  avg_repair_hours: number | null;
+}
+
+/** GET /admin/stats (admin only). Repair time = first seen -> marked done. */
+export interface AdminStats {
+  reports_total: number;
+  incidents_total: number;
+  verified_total: number;
+  in_progress_total: number;
+  done_total: number;
+  found_before_report: number;
+  avg_repair_hours: number | null;
+  median_repair_hours: number | null;
+  avg_verification_min: number | null;
+  departments: DepartmentLoad[];
+  daily: { day: string; new: number; done: number }[]; // last 14 UTC days, oldest first
+}
+
 /** GET /vehicles/live -> {"vehicles": Vehicle[]} */
 export interface Vehicle {
   id: string | number;

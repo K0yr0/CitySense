@@ -5,6 +5,7 @@ import { getSession, setSession, signOut, type Session } from "./auth";
 import { markFallback, markLive, USE_MOCK } from "./demo";
 import * as mock from "./mock";
 import type {
+  AdminStats,
   IncidentDetail,
   IncidentSummary,
   Mode,
@@ -155,6 +156,11 @@ export async function getIncidents(
 
 export async function getIncident(id: number): Promise<IncidentDetail | null> {
   return request(`incident`, `/incidents/${id}`, undefined, () => mock.mockIncidentDetail(id));
+}
+
+/** W5: funnel, repair times, department load and the 14-day trend (admin only). */
+export async function getAdminStats(): Promise<AdminStats> {
+  return request("admin-stats", "/admin/stats", undefined, mock.mockAdminStats);
 }
 
 /** W3: the city work status of an incident and who changed it (admin only). */

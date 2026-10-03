@@ -173,6 +173,14 @@ export function formatDateTime(iso: string | null | undefined): string {
   return d.toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
+/** Hours -> "45 min" / "18 h" / "2.5 d". */
+export function fmtDuration(hours: number | null | undefined): string {
+  if (typeof hours !== "number" || !Number.isFinite(hours)) return "—";
+  if (hours < 1) return `${Math.max(1, Math.round(hours * 60))} min`;
+  if (hours < 48) return `${Math.round(hours)} h`;
+  return `${(hours / 24).toFixed(1)} d`;
+}
+
 export function fmtScore(s: number | null | undefined): string {
   return typeof s === "number" && Number.isFinite(s) ? s.toFixed(2) : "—";
 }

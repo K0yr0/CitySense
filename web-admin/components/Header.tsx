@@ -9,6 +9,7 @@ import { IconLogout } from "./icons";
 const NAV = [
   { href: "/", label: "Map" },
   { href: "/incidents", label: "Incidents" },
+  { href: "/stats", label: "Stats" },
 ];
 
 export function Logo({ size = 30 }: { size?: number }) {
