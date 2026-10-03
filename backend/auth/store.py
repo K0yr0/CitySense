@@ -7,6 +7,7 @@ so trust earned anonymously stays with the account.
 """
 from __future__ import annotations
 
+import secrets
 from typing import Any
 
 from backend import config
@@ -41,6 +42,14 @@ update users set contributor_id = %(contributor_id)s
 where id = %(user_id)s and contributor_id is null
   and not exists (select 1 from users other where other.contributor_id = %(contributor_id)s)
 returning contributor_id
+"""
+
+
+SQL_USER_CONTRIBUTOR = """
+select c.id, c.trust, c.correct, c.incorrect
+from users u
+join contributors c on c.id = u.contributor_id
+where u.id = %(user_id)s
 """
 
 
@@ -84,6 +93,31 @@ def link_contributor(conn, user: dict[str, Any], contributor_token: str | None) 
         return user
     row = db.fetch_one(conn, SQL_LINK_CONTRIBUTOR, {"user_id": user["id"], "contributor_id": contributor["id"]})
     return {**user, "contributor_id": row["contributor_id"]} if row else user
+
+
+def contributor_for_user(conn, user_id: int, device_token: str | None = None) -> dict[str, Any]:
+    """The signed-in user's contributor row {id, trust, correct, incorrect}, created and linked on first use.
+
+    Signed-in users report and answer as their linked contributor, so trust stays with the account.
+    A user without one gets the contributor of `device_token` (if no other account owns it) or a
+    fresh random one. Raises LookupError if the user row does not exist (deleted account).
+    """
+    from backend import db
+    from backend.fusion import trust
+
+    params = {"user_id": user_id}
+    row = db.fetch_one(conn, SQL_USER_CONTRIBUTOR, params)
+    if row:
+        return row
+    for token in ([device_token] if device_token else []) + [secrets.token_urlsafe(32)]:
+        contributor = trust.contributor_for(conn, token)
+        if contributor and db.fetch_one(conn, SQL_LINK_CONTRIBUTOR,
+                                        {**params, "contributor_id": contributor["id"]}):
+            return contributor
+        row = db.fetch_one(conn, SQL_USER_CONTRIBUTOR, params)  # linked concurrently?
+        if row:
+            return row
+    raise LookupError(f"user {user_id} not found")
 
 
 def login(conn, *, email: str, name: str | None, google_sub: str | None = None,
