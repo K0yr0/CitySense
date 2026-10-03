@@ -1,8 +1,9 @@
-/** Compact card for the tapped incident. Public fields only: no sensor data, no evidence. */
+/** Compact card for the tapped incident: public fields, the Yes/No poll, a link to details. No sensor data. */
 import { router, type Href } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { TypeIcon } from '@/components/icon';
+import { IncidentPoll } from '@/components/map/incident-poll';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -62,6 +63,8 @@ export function IncidentCard({ incident, onClose }: { incident: PublicIncident; 
           {incident.report_count > 0 ? s.card.reportedBy(incident.report_count) : s.card.noReports}
         </ThemedText>
       </View>
+
+      <IncidentPoll key={incident.id} incident={incident} />
 
       <Pressable
         onPress={() => router.push(`/incident/${incident.id}` as Href)}
