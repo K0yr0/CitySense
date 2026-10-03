@@ -628,13 +628,75 @@ function buildSegments(): Segment[] {
 
 const SEGMENTS = buildSegments();
 
-export function mockSegments(params: { bbox?: string; mode?: string; measuredOnly?: boolean } = {}): Segment[] {
+// ---- the real Warsaw network for demo mode (public/demo/city.json, built by scripts/copy-demo-data.mjs
+// from C's data/osm/segments_demo.geojson and data/demo/sim_world.json).
+
+interface CityFile {
+  names: string[];
+  segments: number[][]; // [mode (1 tram, 0 road), name index, lon, lat, lon, lat, ...]
+  defects: { id: string; kind: string; mode: string; street: string | null; lon: number; lat: number }[];
+}
+
+// The corridors C's simulated fleet drives (data/mock/README.md): buses on three streets, tram 17's rails.
+const BUS_STREETS = new Set(["Marszałkowska", "Aleje Jerozolimskie", "Świętokrzyska"]);
+const TRAM17_STREETS = new Set(["Marszałkowska", "Plac Zbawiciela", "Puławska"]);
+const STALE_STREETS = new Set(["Świętokrzyska"]); // C's world: last rides there 11–12 days ago
+const DEFECT_RADIUS_M = 70;
+
+let cityPromise: Promise<Segment[] | null> | null = null;
+
+/** Spatially smooth wobble (no per-segment noise): neighbouring segments get similar health. */
+function wobble([lon, lat]: LonLat): number {
+  return 0.05 * Math.sin(lon * 2300) + 0.04 * Math.cos(lat * 3100) + 0.03 * Math.sin((lon + lat) * 5200);
+}
+
+function buildCity(city: CityFile): Segment[] {
+  const bumps = city.defects.filter((d) => d.kind === "bump").map((d) => ({ at: [d.lon, d.lat] as LonLat, tram: d.mode === "tram" }));
+  const spots = BAD_SPOTS.map((b) => ({ at: b.at, depth: b.depth }));
+  return city.segments.map((s, idx) => {
+    const tram = s[0] === 1;
+    const name = city.names[s[1]] || null;
+    const path: LonLat[] = [];
+    for (let k = 2; k + 1 < s.length; k += 2) path.push([s[k], s[k + 1]]);
+    const mid = lerp(path[0], path[path.length - 1], 0.5);
+    const nearBump = bumps.filter((b) => b.tram === tram).map((b) => dist(mid, b.at)).reduce((a, d) => Math.min(a, d), Infinity);
+    const measured = (tram ? TRAM17_STREETS : BUS_STREETS).has(name ?? "") || (tram && nearBump < 40);
+    if (!measured) return { id: idx + 1, mode: tram ? "tram" : "road", name, health: null, rides: 0, updated_at: null, path };
+    let h = 0.86 + wobble(mid);
+    h -= 0.62 * Math.exp(-((nearBump / DEFECT_RADIUS_M) ** 2));
+    for (const b of spots) h -= 0.5 * b.depth * Math.exp(-((dist(mid, b.at) / DEFECT_RADIUS_M) ** 2));
+    const stale = STALE_STREETS.has(name ?? "");
+    const ageMin = stale ? (11 + (idx % 2)) * 24 * 60 + (idx % 300) : 3 + (idx % 55);
+    return {
+      id: idx + 1,
+      mode: tram ? "tram" : "road",
+      name,
+      health: Math.round(Math.min(0.98, Math.max(0.05, h)) * 100) / 100,
+      rides: stale ? 2 + (idx % 3) : 4 + (idx % 9),
+      updated_at: minutesAgo(ageMin),
+      path,
+    };
+  });
+}
+
+/** The real network when public/demo/city.json is there, else null (then the two built-in streets are used). */
+function loadCity(): Promise<Segment[] | null> {
+  cityPromise ??= fetch("/demo/city.json")
+    .then((r) => (r.ok ? (r.json() as Promise<CityFile>) : null))
+    .then((c) => (c?.segments?.length ? buildCity(c) : null))
+    .catch(() => null);
+  return cityPromise;
+}
+
+export async function mockSegments(params: { bbox?: string; mode?: string; measuredOnly?: boolean } = {}): Promise<Segment[]> {
+  const all = (await loadCity()) ?? SEGMENTS;
   let box: number[] | null = null;
   if (params.bbox) {
     const b = params.bbox.split(",").map(Number);
     if (b.length === 4 && b.every(Number.isFinite)) box = b;
   }
-  return SEGMENTS.filter((s) => !params.mode || s.mode === params.mode)
+  return all
+    .filter((s) => !params.mode || s.mode === params.mode)
     .filter((s) => !params.measuredOnly || s.health !== null)
     .filter((s) => !box || s.path.some(([x, y]) => x >= box[0] && x <= box[2] && y >= box[1] && y <= box[3]));
 }

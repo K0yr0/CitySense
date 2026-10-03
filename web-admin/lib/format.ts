@@ -138,6 +138,24 @@ export function freshness(iso: string | null | undefined, now: number): Freshnes
 /** Map opacity per freshness: old measurements fade so the live picture stands out. */
 export const FRESHNESS_ALPHA: Record<Freshness, number> = { fresh: 235, today: 190, older: 120, stale: 70 };
 
+/** Map class of a segment: three readable colours instead of a gradient (same cut-offs as healthWord). */
+export type HealthClass = "good" | "worn" | "poor" | "unknown";
+
+export function healthClass(h: number | null | undefined): HealthClass {
+  if (h === null || h === undefined || Number.isNaN(h)) return "unknown";
+  return h >= 0.75 ? "good" : h >= 0.45 ? "worn" : "poor";
+}
+
+/** Deck.gl colour per health class (status ramp: good / warning / critical; grey = not measured). */
+export function healthClassRGBA(c: HealthClass, dark: boolean): RGBA {
+  const light = { good: [12, 163, 12, 235], worn: [240, 160, 0, 240], poor: [208, 59, 59, 245], unknown: [118, 117, 110, 150] } as const;
+  const night = { good: [46, 180, 46, 235], worn: [250, 178, 25, 240], poor: [232, 84, 84, 245], unknown: [150, 150, 144, 140] } as const;
+  const v = (dark ? night : light)[c];
+  return [v[0], v[1], v[2], v[3]];
+}
+
+export const HEALTH_CLASS_LABEL: Record<HealthClass, string> = { good: "Good", worn: "Worn", poor: "Poor", unknown: "Not measured" };
+
 export function healthWord(h: number | null | undefined): string {
   if (h === null || h === undefined) return "Not measured";
   if (h >= 0.75) return "Good";

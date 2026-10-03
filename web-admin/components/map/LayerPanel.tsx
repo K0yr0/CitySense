@@ -13,15 +13,23 @@ export interface LayerToggles {
   hideDone: boolean; // hide incidents the city already marked done
 }
 
+// Same three classes as the map (lib/format healthClass), plus "not measured".
+const HEALTH_KEY: { label: string; color: string; thin?: boolean }[] = [
+  { label: "Good", color: "var(--good)" },
+  { label: "Worn", color: "var(--warn)" },
+  { label: "Poor", color: "var(--crit)" },
+  { label: "Not measured", color: "var(--line-strong)", thin: true },
+];
+
 function Row({ checked, onToggle, title, count, children }: { checked: boolean; onToggle: () => void; title: string; count?: number; children: ReactNode }) {
   return (
-    <div className="border-t border-line py-3 first:border-t-0 first:pt-0 last:pb-0">
-      <label className="flex cursor-pointer items-center gap-3">
-        <input type="checkbox" checked={checked} onChange={onToggle} className="h-5 w-5 accent-[var(--accent)]" />
-        <span className="flex-1 text-base font-semibold">{title}</span>
-        {count !== undefined && <span className="tabular text-sm text-muted">{count.toLocaleString("en-US")}</span>}
+    <div className="border-t border-line py-2.5 first:border-t-0 first:pt-0 last:pb-0">
+      <label className="flex cursor-pointer items-center gap-2.5">
+        <input type="checkbox" checked={checked} onChange={onToggle} className="h-4 w-4 accent-[var(--accent)]" />
+        <span className="flex-1 text-[0.95rem] font-semibold">{title}</span>
+        {count !== undefined && <span className="tabular text-xs text-muted">{count.toLocaleString("en-US")}</span>}
       </label>
-      <div className={`mt-2 pl-8 text-sm text-ink-2 ${checked ? "" : "opacity-40"}`}>{children}</div>
+      <div className={`mt-1.5 pl-[1.6rem] text-sm text-ink-2 ${checked ? "" : "opacity-40"}`}>{children}</div>
     </div>
   );
 }
@@ -64,39 +72,33 @@ export default function LayerPanel({
   }
 
   return (
-    <aside className="absolute left-3 top-3 z-10 w-[19rem] max-w-[calc(100%-1.5rem)] rounded-2xl border border-line bg-surface p-4 shadow-sm" aria-label="Map layers">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Layers</h2>
+    <aside
+      className="absolute left-3 top-3 z-10 max-h-[calc(100%-1.5rem)] w-[16.5rem] max-w-[calc(100%-1.5rem)] overflow-y-auto rounded-2xl border border-line bg-surface/95 p-3.5 shadow-sm backdrop-blur"
+      aria-label="Map layers"
+    >
+      <div className="mb-2 flex items-center justify-between">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">Layers</h2>
         <button type="button" onClick={() => setOpen(false)} className="rounded-md p-1 text-muted hover:bg-surface-2" aria-label="Hide layer panel">
-          <IconX width={18} height={18} />
+          <IconX width={16} height={16} />
         </button>
       </div>
 
       <Row checked={toggles.segments} onToggle={() => flip("segments")} title="Road & track health" count={counts.segments}>
-        <div className="h-2.5 rounded-full" style={{ background: "linear-gradient(90deg, var(--crit), var(--warn), var(--good))" }} />
-        <div className="mt-1 flex justify-between text-xs text-muted">
-          <span>Poor</span>
-          <span>Good</span>
-        </div>
-        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
-          <span className="flex items-center gap-1.5 whitespace-nowrap">
-            <span className="inline-block h-1.5 w-5 rounded-full bg-line-strong" /> Not measured
-          </span>
-          <span className="flex items-center gap-1.5 whitespace-nowrap">
-            <span className="inline-block h-2 w-5 rounded-full bg-muted" /> Tram
-          </span>
-          <span className="flex items-center gap-1.5 whitespace-nowrap">
-            <span className="inline-block h-1 w-5 rounded-full bg-muted" /> Road
-          </span>
-        </div>
+        <ul className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+          {HEALTH_KEY.map((k) => (
+            <li key={k.label} className="flex items-center gap-1.5 whitespace-nowrap">
+              <span className={`inline-block w-4 rounded-full ${k.thin ? "h-1" : "h-1.5"}`} style={{ background: k.color }} /> {k.label}
+            </li>
+          ))}
+        </ul>
         <p className="mt-1.5 text-xs text-muted">
-          Faded = measured long ago. Latest measurement {latestMeasurement ? timeAgo(latestMeasurement, now) : "—"}.
+          Thicker = tram track. Faded = measured long ago. Latest: {latestMeasurement ? timeAgo(latestMeasurement, now) : "—"}.
         </p>
       </Row>
 
       <Row checked={toggles.incidents} onToggle={() => flip("incidents")} title="Incidents" count={counts.incidents}>
         {filter && (
-          <div className="mb-2.5 rounded-lg bg-accent-soft px-2.5 py-2 text-accent">
+          <div className="mb-2 rounded-lg bg-accent-soft px-2.5 py-2 text-accent">
             <div className="text-xs font-semibold uppercase tracking-wide">From the queue</div>
             <div className="font-medium text-ink">{filter.label}</div>
             <div className="mt-1 flex gap-3 text-sm font-semibold">
@@ -109,23 +111,23 @@ export default function LayerPanel({
             </div>
           </div>
         )}
-        <ul className="space-y-1">
+        <ul className="space-y-0.5 text-xs">
           {(["report", "sensor", "both"] as SourceKind[]).map((k) => (
             <li key={k} className="flex items-center gap-2">
-              <span className="inline-block h-3.5 w-3.5 rounded-full ring-2 ring-surface" style={{ background: SOURCE_VAR[k] }} />
+              <span className="inline-block h-3 w-3 rounded-full" style={{ background: SOURCE_VAR[k] }} />
               {SOURCE_LABEL[k]}
             </li>
           ))}
         </ul>
-        <p className="mt-1.5 text-xs text-muted">Larger dot = higher priority score</p>
-        <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm">
-          <input type="checkbox" checked={toggles.hideDone} onChange={() => flip("hideDone")} className="h-4 w-4 accent-[var(--accent)]" />
+        <p className="mt-1.5 text-xs text-muted">The icon shows the type; larger = higher priority.</p>
+        <label className="mt-1.5 flex cursor-pointer items-center gap-2 text-xs">
+          <input type="checkbox" checked={toggles.hideDone} onChange={() => flip("hideDone")} className="h-3.5 w-3.5 accent-[var(--accent)]" />
           Hide finished work
         </label>
       </Row>
 
       <Row checked={toggles.vehicles} onToggle={() => flip("vehicles")} title="Live ZTM vehicles" count={counts.vehicles}>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 text-xs">
           <span className="flex items-center gap-1.5">
             <span className="inline-block h-2.5 w-2.5 rounded-full bg-ink" /> Tram
           </span>
@@ -133,7 +135,7 @@ export default function LayerPanel({
             <span className="inline-block h-2 w-2 rounded-full bg-muted" /> Bus
           </span>
         </div>
-        <p className="mt-1.5 text-xs text-muted">Refreshed every 15 s{ago !== null ? ` · updated ${ago} s ago` : ""}</p>
+        <p className="mt-1 text-xs text-muted">Zoom in for line numbers. Every 15 s{ago !== null ? ` · ${ago} s ago` : ""}.</p>
       </Row>
     </aside>
   );

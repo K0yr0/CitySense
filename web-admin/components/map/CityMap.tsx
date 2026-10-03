@@ -1,22 +1,24 @@
 "use client";
 
 import type { PickingInfo } from "@deck.gl/core";
-import { PathLayer, ScatterplotLayer } from "@deck.gl/layers";
+import { IconLayer, PathLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Map, { NavigationControl, type MapRef, type ViewStateChangeEvent } from "react-map-gl/maplibre";
 import { getIncidents, getSegments, getVehicles } from "@/lib/api";
 import { type Filters, filtersQuery, hasFilters, matches } from "@/lib/filters";
-import { deptLabel, fmtScore, freshness, FRESHNESS_ALPHA, healthRGBA, healthWord, sourceKind, sourceRGBA, statusLabel, timeAgo, typeLabel, workLabel } from "@/lib/format";
+import { deptLabel, fmtScore, freshness, FRESHNESS_ALPHA, healthClass, healthClassRGBA, healthWord, sourceKind, statusLabel, timeAgo, typeLabel, workLabel } from "@/lib/format";
 import { useApi, useNow, usePrefersDark } from "@/lib/hooks";
 import { MAP_STYLE, MAPLIBRE_WORKER_URL, WARSAW_VIEW } from "@/lib/map";
+import { incidentIconUrl } from "@/lib/mapIcons";
 import type { IncidentSummary, Segment, Vehicle } from "@/lib/types";
 import DeckOverlay from "./DeckOverlay";
 import IncidentPanel from "./IncidentPanel";
 import LayerPanel, { type LayerToggles } from "./LayerPanel";
 
 type Box = [number, number, number, number];
+type RGBA = [number, number, number, number];
 
 const INITIAL_BOX: Box = [20.95, 52.2, 21.075, 52.265];
 
@@ -54,10 +56,12 @@ export default function CityMap({ focusId = null, filters = NO_FILTERS }: { focu
   const now = useNow(60_000);
   const [box, setBox] = useState<Box>(INITIAL_BOX);
   const [zoomedOut, setZoomedOut] = useState(false);
+  const [zoom, setZoom] = useState(WARSAW_VIEW.zoom);
   const [selectedId, setSelectedId] = useState<number | null>(focusId);
   const [hovering, setHovering] = useState(false);
   // The map only renders in the browser (MapShell: ssr false), so window is available here.
-  const [layersOpen, setLayersOpen] = useState(() => window.innerWidth >= 768);
+  // Open by default only where it leaves most of the map free.
+  const [layersOpen, setLayersOpen] = useState(() => window.innerWidth >= 1280);
 
   // Below lg both panels do not fit side by side: opening an incident folds the layer panel.
   const select = (id: number | null) => {
@@ -113,6 +117,7 @@ export default function CityMap({ focusId = null, filters = NO_FILTERS }: { focu
     const b = map.getBounds();
     const view: Box = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()];
     const out = map.getZoom() < 12.5;
+    setZoom(map.getZoom());
     if (!contains(box, view) || out !== zoomedOut) {
       setBox(padded(view));
       setZoomedOut(out);
@@ -120,22 +125,52 @@ export default function CityMap({ focusId = null, filters = NO_FILTERS }: { focu
   };
 
   const layers = useMemo(() => {
-    const ring: [number, number, number, number] = dark ? [26, 26, 25, 255] : [255, 255, 255, 255];
-    const accent: [number, number, number, number] = dark ? [144, 133, 233, 255] : [74, 58, 167, 255];
+    const ring: RGBA = dark ? [26, 26, 25, 255] : [255, 255, 255, 255];
+    const accent: RGBA = dark ? [144, 133, 233, 255] : [74, 58, 167, 255];
+    const casing: RGBA = dark ? [0, 0, 0, 200] : [255, 255, 255, 235];
+    const all = segments.data ?? [];
+    const measured = all.filter((d) => d.health != null);
+    const unmeasured = all.filter((d) => d.health == null);
+    // Old measurements fade; no timestamp = age unknown (pipeline may not write it yet): not faded.
+    const fade = (d: Segment, a: number) => (d.updated_at ? Math.round((a * FRESHNESS_ALPHA[freshness(d.updated_at, now)]) / 235) : a);
+    // Highest priority drawn last, so it sits on top where markers overlap.
+    const byScore = [...shownIncidents].sort((a, b) => (a.score ?? 0) - (b.score ?? 0));
     return [
       toggles.segments &&
         new PathLayer<Segment>({
+          id: "segments-unmeasured",
+          data: unmeasured,
+          getPath: (d) => d.path,
+          getColor: healthClassRGBA("unknown", dark),
+          getWidth: (d) => (d.mode === "tram" ? 2 : 1.5),
+          widthUnits: "pixels",
+          pickable: true,
+          updateTriggers: { getColor: [dark] },
+        }),
+      // A light (dark-mode: black) casing under the measured lines keeps them readable on any basemap.
+      toggles.segments &&
+        new PathLayer<Segment>({
+          id: "segments-casing",
+          data: measured,
+          getPath: (d) => d.path,
+          getColor: (d) => [casing[0], casing[1], casing[2], fade(d, casing[3])],
+          getWidth: (d) => (d.mode === "tram" ? 9.5 : 8),
+          widthUnits: "pixels",
+          capRounded: true,
+          jointRounded: true,
+          updateTriggers: { getColor: [dark, now] },
+        }),
+      toggles.segments &&
+        new PathLayer<Segment>({
           id: "segments",
-          data: segments.data ?? [],
+          data: measured,
           getPath: (d) => d.path,
           getColor: (d) => {
-            const c = healthRGBA(d.health, dark);
-            // No timestamp = age unknown (the pipeline may not write health_updated_at yet): do not fade.
-            return d.health == null || !d.updated_at ? c : [c[0], c[1], c[2], FRESHNESS_ALPHA[freshness(d.updated_at, now)]];
+            const c = healthClassRGBA(healthClass(d.health), dark);
+            return [c[0], c[1], c[2], fade(d, c[3])];
           },
-          getWidth: (d) => (d.mode === "tram" ? 7 : 4.5),
+          getWidth: (d) => (d.mode === "tram" ? 6 : 5),
           widthUnits: "pixels",
-          widthMinPixels: 2,
           capRounded: true,
           jointRounded: true,
           pickable: true,
@@ -159,22 +194,41 @@ export default function CityMap({ focusId = null, filters = NO_FILTERS }: { focu
           transitions: { getPosition: 1200 },
           updateTriggers: { getFillColor: [dark], getLineColor: [dark] },
         }),
-      toggles.incidents &&
-        new ScatterplotLayer<IncidentSummary>({
-          id: "incidents",
-          data: shownIncidents,
+      // Line numbers once the map is close enough to read them.
+      toggles.vehicles &&
+        zoom >= 15 &&
+        new TextLayer<Vehicle>({
+          id: "vehicle-lines",
+          data: vehicles.data ?? [],
           getPosition: (d) => [d.lon, d.lat],
-          getRadius: incidentRadius,
-          radiusUnits: "pixels",
-          getFillColor: (d) => sourceRGBA(sourceKind(d), dark),
-          stroked: true,
-          getLineColor: ring,
-          getLineWidth: 2,
-          lineWidthUnits: "pixels",
+          getText: (d) => d.line,
+          getSize: 12,
+          getPixelOffset: [0, -15],
+          getColor: dark ? [240, 240, 235, 255] : [11, 11, 11, 255],
+          background: true,
+          getBackgroundColor: dark ? [26, 26, 25, 230] : [255, 255, 255, 230],
+          backgroundPadding: [4, 1],
+          fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+          fontWeight: 600,
+          characterSet: "auto",
+          transitions: { getPosition: 1200 },
+          updateTriggers: { getColor: [dark], getBackgroundColor: [dark] },
+        }),
+      toggles.incidents &&
+        new IconLayer<IncidentSummary>({
+          id: "incidents",
+          data: byScore,
+          getPosition: (d) => [d.lon, d.lat],
+          getIcon: (d) => {
+            const source = sourceKind(d);
+            return { url: incidentIconUrl(d.type, source, dark), id: `${d.type}:${source}:${dark ? 1 : 0}`, width: 64, height: 64 };
+          },
+          getSize: (d) => incidentRadius(d) * 2 + 4,
+          sizeUnits: "pixels",
           pickable: true,
           autoHighlight: true,
-          highlightColor: [255, 255, 255, 70],
-          updateTriggers: { getFillColor: [dark], getLineColor: [dark] },
+          highlightColor: [255, 255, 255, 60],
+          updateTriggers: { getIcon: [dark] },
         }),
       toggles.incidents &&
         selected &&
@@ -182,7 +236,7 @@ export default function CityMap({ focusId = null, filters = NO_FILTERS }: { focu
           id: "selected",
           data: [selected],
           getPosition: (d) => [d.lon, d.lat],
-          getRadius: (d) => incidentRadius(d) + 6,
+          getRadius: (d) => incidentRadius(d) + 7,
           radiusUnits: "pixels",
           filled: false,
           stroked: true,
@@ -192,12 +246,12 @@ export default function CityMap({ focusId = null, filters = NO_FILTERS }: { focu
           updateTriggers: { getLineColor: [dark] },
         }),
     ];
-  }, [toggles, segments.data, vehicles.data, shownIncidents, selected, dark, now]);
+  }, [toggles, segments.data, vehicles.data, shownIncidents, selected, dark, now, zoom]);
 
   const getTooltip = ({ object, layer }: PickingInfo) => {
     if (!object || !layer) return null;
     let text = "";
-    if (layer.id === "segments") {
+    if (layer.id === "segments" || layer.id === "segments-unmeasured") {
       const s = object as Segment;
       const where = `${s.name ? `${s.name} · ` : ""}${s.mode === "tram" ? "tram track" : "road"}`;
       text =

@@ -74,7 +74,7 @@ async function request<T>(
   endpoint: string,
   path: string,
   init: RequestInit | undefined,
-  fallback: () => T,
+  fallback: () => T | Promise<T>,
   timeoutMs = 8000,
 ): Promise<T> {
   if (USE_MOCK) return fallback();
@@ -143,7 +143,7 @@ export async function getStats(): Promise<Stats> {
 
 export async function getSegments(params: { bbox?: string; mode?: Mode; measuredOnly?: boolean } = {}): Promise<Segment[]> {
   const q = query({ bbox: params.bbox, mode: params.mode, measured_only: params.measuredOnly ? "true" : undefined });
-  const r = await request("segments", `/segments${q}`, undefined, () => ({ segments: mock.mockSegments(params) }), 15000);
+  const r = await request("segments", `/segments${q}`, undefined, async () => ({ segments: await mock.mockSegments(params) }), 15000);
   return r.segments ?? [];
 }
 

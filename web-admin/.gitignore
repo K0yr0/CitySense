@@ -43,3 +43,6 @@ next-env.d.ts
 
 # maplibre worker copied from node_modules by scripts/copy-maplibre-worker.mjs
 /public/maplibre/
+
+# demo map data generated from data/osm and data/demo (scripts/copy-demo-data.mjs)
+/public/demo/
