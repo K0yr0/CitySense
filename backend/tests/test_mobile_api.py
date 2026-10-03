@@ -417,12 +417,12 @@ def test_routes_crud(env):
 
     env.db.on("insert into favorite_routes", lambda p: route_row(kind=p["kind"], line=p["line"], mode=p["mode"],
                                                                  start_lon=p["start_lon"], start_lat=p["start_lat"]))
-    r = post({"name": " Tramvay ", "kind": "line", "line": "17", "mode": "tram", "start": [21, 52]})
+    r = post({"name": " Tram 17 ", "kind": "line", "line": "17", "mode": "tram", "start": [21, 52]})
     assert r.status_code == 200
     body = r.json()
     assert set(body) == ROUTE_KEYS and body["kind"] == "line" and body["line"] == "17" and body["start"] is None
     params = env.db.sql_with("insert into favorite_routes")[-1][1]
-    assert params["user_id"] == 1 and params["name"] == "Tramvay" and params["start_lon"] is None
+    assert params["user_id"] == 1 and params["name"] == "Tram 17" and params["start_lon"] is None
 
     env.db.on("count(*) as n", {"n": mobile.MAX_ROUTES_PER_USER})
     assert post({"name": "x", "kind": "line", "line": "4"}).status_code == 409
