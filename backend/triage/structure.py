@@ -55,7 +55,6 @@ road at night), 4 = likely injury or accident, 3 = clear functional problem, 2 =
 with house numbers, intersections, landmarks such as "przy Biedronce" or "przystanek Centrum"). \
 null when the complaint gives no usable place.
 - summary_en: one short English sentence describing the problem and place.
-- summary_tr: the same sentence in Turkish.
 - needs_clarification: true when the location or the problem is too vague to dispatch a crew."""
 
 
@@ -68,7 +67,6 @@ class _TriageOut(BaseModel):
     hazard_to_people: bool
     department: Department
     summary_en: str
-    summary_tr: str
     needs_clarification: bool
 
 
@@ -302,12 +300,12 @@ def classify(text: str) -> tuple[IssueType, float]:
 
 
 _LABELS = {
-    IssueType.ROAD_DAMAGE: ("Road surface damage (pothole)", "Yol yüzeyi hasarı (çukur)"),
-    IssueType.TRAM_TRACK: ("Tram track defect", "Tramvay rayı arızası"),
-    IssueType.STREETLIGHT: ("Streetlight not working", "Sokak lambası çalışmıyor"),
-    IssueType.FLOODING: ("Flooding / drainage problem", "Su baskını / kanalizasyon sorunu"),
-    IssueType.WASTE: ("Waste / litter problem", "Çöp / atık sorunu"),
-    IssueType.OTHER: ("Citizen complaint", "Vatandaş şikayeti"),
+    IssueType.ROAD_DAMAGE: "Road surface damage (pothole)",
+    IssueType.TRAM_TRACK: "Tram track defect",
+    IssueType.STREETLIGHT: "Streetlight not working",
+    IssueType.FLOODING: "Flooding / drainage problem",
+    IssueType.WASTE: "Waste / litter problem",
+    IssueType.OTHER: "Citizen complaint",
 }
 
 
@@ -321,7 +319,7 @@ def heuristic_structure(text: str) -> TriageResult:
         life = bool(_LIFE_RE.search(folded))
         urgency = _BASE_URGENCY[category] + hazard + (2 if life else 0) + bool(_PRIORITY_RE.search(folded))
         urgency = max(1, min(5, urgency))
-        en, tr = _LABELS[category]
+        en = _LABELS[category]
         return TriageResult(
             category=category,
             location_text=location,
@@ -329,13 +327,11 @@ def heuristic_structure(text: str) -> TriageResult:
             hazard_to_people=hazard or life,
             department=ROUTING[category],
             summary_en=f"{en} reported" + (f" at {location}." if location else "."),
-            summary_tr=(f"{location} konumunda: " if location else "") + f"{tr} bildirildi.",
             needs_clarification=location is None or category == IssueType.OTHER,
         )
     except Exception as exc:  # pragma: no cover - defensive, the fallback must never fail
         log.error("heuristic triage failed: %s", exc)
-        return TriageResult(needs_clarification=True, summary_en="Citizen complaint.",
-                            summary_tr="Vatandaş şikayeti.")
+        return TriageResult(needs_clarification=True, summary_en="Citizen complaint.")
 
 
 if __name__ == "__main__":  # quick manual check: python -m backend.triage.structure "dziura na Puławskiej"

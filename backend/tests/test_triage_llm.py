@@ -128,7 +128,7 @@ def fake_claude(monkeypatch):
 GOOD = {"category": "tram_track", "location_text": "Marszałkowska róg Świętokrzyskiej", "urgency": 4,
         "hazard_to_people": True, "department": "ZDM",  # wrong on purpose: routing is enforced in code
         "summary_en": "Broken tram rail at Marszałkowska / Świętokrzyska.",
-        "summary_tr": "Marszałkowska / Świętokrzyska'da kırık tramvay rayı.", "needs_clarification": False}
+        "needs_clarification": False}
 
 
 def test_llm_structured_output_path(fake_claude):
@@ -136,13 +136,13 @@ def test_llm_structured_output_path(fake_claude):
     r = st.structure("szyna pęknięta na Marszałkowskiej przy Świętokrzyskiej!!")
     assert r.category == IssueType.TRAM_TRACK and r.urgency == 4 and r.hazard_to_people
     assert r.department == Department.TRAMWAJE
-    assert r.location_text == GOOD["location_text"] and r.summary_tr.endswith("rayı.")
+    assert r.location_text == GOOD["location_text"] and r.summary_tr == ""  # no Turkish output any more
     body, req = api.body(), api.requests[0]
     assert body["model"] == "claude-opus-5-5" and "temperature" not in body  # sampling params 400 on Opus 5.5
     assert body["output_config"]["effort"] == "low"
     fmt = body["output_config"]["format"]
     assert fmt["type"] == "json_schema" and fmt["schema"]["additionalProperties"] is False
-    assert set(fmt["schema"]["required"]) == set(TriageResult.model_fields)
+    assert set(fmt["schema"]["required"]) == set(TriageResult.model_fields) - {"summary_tr"}
     assert body["fallbacks"] == "default" and "server-side-fallback-2026-07-01" in req.headers["anthropic-beta"]
     assert "19115" in body["system"] and "Tramwaje Warszawskie" in body["system"]
 

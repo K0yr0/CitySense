@@ -41,5 +41,5 @@ yarn-error.*
 /ios
 /android
 
-# CityEcho: kişisel ortam değişkenleri (örnek: .env.example)
+# CityEcho: personal environment variables (template: .env.example)
 .env
