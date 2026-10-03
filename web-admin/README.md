@@ -18,12 +18,10 @@ every request falls back to the fixtures and the header shows a **Demo data** ba
 | `/` | City health map: segment health, incidents (blue report / green sensor / orange both), live ZTM vehicles, stats funnel |
 | `/incidents` | Priority queue with department and status filters |
 | `/incidents/[id]` | Reports, photo, sensor signal chart, evidence timeline, "Request verification" |
-| `/report` | Mobile citizen form (text, photo, location pin) |
-| `/ride` | Phone recorder: DeviceMotion + GPS streamed to `/rides/stream` every 2 s |
 
-## Phones (`/ride`, geolocation on `/report`)
+Citizen pages (reporting, YES/NO answers, ride recording) live in the mobile app (`mobile/`), not here.
 
-Motion sensors and GPS need HTTPS. Either run `npm run dev:https` (self-signed) or put the
-dev server behind a tunnel (ngrok / cloudflared). Set `NEXT_PUBLIC_API_URL=/api` so the phone
-reaches the backend through the built-in Next.js proxy (`BACKEND_URL`, default
-`http://localhost:8000`), which avoids CORS and mixed-content errors.
+## Backend proxy
+
+Set `NEXT_PUBLIC_API_URL=/api` to reach the backend through the built-in Next.js proxy
+(`BACKEND_URL`, default `http://localhost:8000`), which avoids CORS and mixed-content errors.

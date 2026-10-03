@@ -141,14 +141,6 @@ export default function IncidentQueue() {
                 <p className="mt-1 max-w-md text-lg text-ink-2">
                   {error ? "The backend could not be reached." : "Incidents appear as soon as a citizen reports a problem or a vehicle records one."}
                 </p>
-                <div className="mt-5 flex gap-3">
-                  <Link href="/report" className="rounded-xl bg-accent px-4 py-2 text-base font-semibold text-accent-ink hover:bg-accent-hover">
-                    Report a problem
-                  </Link>
-                  <Link href="/ride" className="rounded-xl border border-line-strong px-4 py-2 text-base font-semibold hover:bg-surface-2">
-                    Record a ride
-                  </Link>
-                </div>
               </>
             )}
           </div>

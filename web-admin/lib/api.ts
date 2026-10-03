@@ -1,19 +1,13 @@
 // Typed client for the CityEcho FastAPI backend (docs/ARCHITECTURE.md §6).
 // NEXT_PUBLIC_USE_MOCK=1 -> fixtures only. Otherwise every call falls back to fixtures when the
 // request fails, and the header shows a "Demo data" badge (see lib/demo.ts).
-import { contributorToken } from "./contributor";
+import { getSession, setSession, signOut, type Session } from "./auth";
 import { markFallback, markLive, USE_MOCK } from "./demo";
 import * as mock from "./mock";
 import type {
-  CitizenAnswer,
-  CitizenResponseResult,
   IncidentDetail,
   IncidentSummary,
   Mode,
-  ReportStatus,
-  RideResult,
-  RideStreamAck,
-  RideStreamRequest,
   Segment,
   Stats,
   Vehicle,
@@ -41,6 +35,37 @@ function query(params: Record<string, string | number | boolean | null | undefin
   return s ? `?${s}` : "";
 }
 
+/** FastAPI errors are {"detail": "..."}; fall back to the raw body or the status text. */
+async function errorMessage(res: Response): Promise<string> {
+  const text = await res.text().catch(() => "");
+  try {
+    const detail = (JSON.parse(text) as { detail?: unknown }).detail;
+    if (typeof detail === "string") return detail;
+  } catch {
+    /* not JSON */
+  }
+  return text || res.statusText;
+}
+
+/** fetch with the session token, a timeout and ApiError on non-2xx. A rejected token signs the admin out. */
+async function send<T>(path: string, init: RequestInit | undefined, timeoutMs: number): Promise<T> {
+  const token = getSession()?.token;
+  const headers = new Headers(init?.headers);
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${API_URL}${path}`, { ...init, headers, signal: ctrl.signal, cache: "no-store" });
+    if (!res.ok) {
+      if (res.status === 401 && token) signOut();
+      throw new ApiError(res.status, await errorMessage(res));
+    }
+    return (await res.json()) as T;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function request<T>(
   endpoint: string,
   path: string,
@@ -49,20 +74,55 @@ async function request<T>(
   timeoutMs = 8000,
 ): Promise<T> {
   if (USE_MOCK) return fallback();
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    const res = await fetch(`${API_URL}${path}`, { ...init, signal: ctrl.signal, cache: "no-store" });
-    if (!res.ok) throw new ApiError(res.status, (await res.text().catch(() => "")) || res.statusText);
-    const data = (await res.json()) as T;
+    const data = await send<T>(path, init, timeoutMs);
     markLive(endpoint);
     return data;
   } catch (err) {
     console.warn(`[cityecho] ${endpoint} failed, serving demo data`, err);
     markFallback(endpoint);
     return fallback();
-  } finally {
-    clearTimeout(timer);
+  }
+}
+
+// ---------------------------------------------------------------- admin login (docs/ARCHITECTURE.md §8)
+
+const MOCK_ADMIN: Session = { token: "mock", user: { id: 1, email: "admin@cityecho.demo", name: "Demo admin", role: "admin" } };
+
+function adminOnly(session: Session): Session {
+  if (session.user.role !== "admin") {
+    throw new ApiError(403, `${session.user.email} is not an admin. Ask the team to add it to ADMIN_EMAILS.`);
+  }
+  setSession(session);
+  return session;
+}
+
+function postJson<T>(path: string, body: unknown): Promise<T> {
+  return send<T>(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }, 15000);
+}
+
+/** Exchange a Google ID token (Google Identity Services) for our session. Throws ApiError; non-admins are rejected. */
+export async function loginWithGoogle(idToken: string): Promise<Session> {
+  if (USE_MOCK) return adminOnly(MOCK_ADMIN);
+  return adminOnly(await postJson<Session>("/auth/google", { id_token: idToken }));
+}
+
+/** Local testing without Google (backend AUTH_DEV_LOGIN=1). In mock mode any email signs in as the demo admin. */
+export async function loginDev(email: string): Promise<Session> {
+  if (USE_MOCK) return adminOnly({ ...MOCK_ADMIN, user: { ...MOCK_ADMIN.user, email } });
+  return adminOnly(await postJson<Session>("/auth/dev", { email }));
+}
+
+/**
+ * Re-check a stored session against GET /admin/ping: an expired token (401) or an email removed from
+ * ADMIN_EMAILS (403) signs the admin out. Network errors keep the session (the UI falls back to demo data).
+ */
+export async function checkSession(): Promise<void> {
+  if (USE_MOCK || !getSession()) return;
+  try {
+    await send("/admin/ping", undefined, 8000);
+  } catch (err) {
+    if (err instanceof ApiError && (err.status === 401 || err.status === 403)) signOut();
   }
 }
 
@@ -97,33 +157,6 @@ export async function requestVerification(id: number): Promise<VerifyResult> {
   return request("verify", `/incidents/${id}/verify`, { method: "POST" }, () => mock.mockVerify(id), 15000);
 }
 
-export async function submitReport(input: { text: string; lon?: number | null; lat?: number | null; photo?: File | null }): Promise<ReportStatus> {
-  const form = new FormData();
-  form.set("text", input.text);
-  if (input.lon != null && input.lat != null) {
-    form.set("lon", String(input.lon));
-    form.set("lat", String(input.lat));
-  }
-  if (input.photo) form.set("photo", input.photo, input.photo.name || "photo.jpg");
-  form.set("contributor", contributorToken());
-  return request("reports", "/reports", { method: "POST", body: form }, () => mock.mockSubmitReport(input.text, input.lon, input.lat), 45000);
-}
-
-/** Citizen answer to "Is this problem still there?", weighted by this browser's trust. */
-export async function respondToIncident(id: number, answer: CitizenAnswer): Promise<CitizenResponseResult | null> {
-  return request(
-    "responses",
-    `/incidents/${id}/responses`,
-    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ answer, contributor: contributorToken() }) },
-    () => mock.mockRespond(id, answer),
-    15000,
-  );
-}
-
-export async function getReportStatus(id: number): Promise<ReportStatus | null> {
-  return request("report-status", `/reports/${id}/status`, undefined, () => null);
-}
-
 export async function getVehicles(kind?: VehicleKind): Promise<Vehicle[]> {
   if (!kind) {
     const [trams, buses] = await Promise.all([getVehicles("tram"), getVehicles("bus")]);
@@ -131,14 +164,4 @@ export async function getVehicles(kind?: VehicleKind): Promise<Vehicle[]> {
   }
   const r = await request(`vehicles-${kind}`, `/vehicles/live${query({ kind })}`, undefined, () => ({ vehicles: mock.mockVehicles(kind) }));
   return (r.vehicles ?? []).map((v) => ({ ...v, kind: v.kind ?? kind }));
-}
-
-export async function streamRide(body: RideStreamRequest): Promise<RideStreamAck | RideResult> {
-  return request(
-    "rides",
-    "/rides/stream",
-    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
-    () => mock.mockRideStream(body),
-    body.final ? 120000 : 10000,
-  );
 }

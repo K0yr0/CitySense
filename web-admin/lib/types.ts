@@ -6,7 +6,6 @@ export type Mode = "road" | "tram";
 export type Department = "ZDM" | "Tramwaje Warszawskie" | "MPWiK" | "Straż Miejska" | "inne";
 /** Confidence-driven lifecycle: candidate -> likely -> verified (or dismissed); closed = handled by the city. */
 export type IncidentStatus = "candidate" | "likely" | "verified" | "dismissed" | "closed";
-export type CitizenAnswer = "yes" | "no";
 export type VehicleKind = "tram" | "bus";
 
 /** GET /segments -> {"segments": Segment[]} */
@@ -110,34 +109,6 @@ export interface VerifyResult {
   eta_min: number | null;
 }
 
-/** POST /reports, GET /reports/{id}/status */
-export interface ReportStatus {
-  report_id: number;
-  incident_id: number | null;
-  status: IncidentStatus | null;
-  category: IssueType;
-  department: Department;
-  others_count: number;
-  sensor_confirmed: boolean;
-  verify_vehicle: string | null;
-  verify_eta_min: number | null;
-  confidence: number | null;
-  contributor_trust: number | null; // the reporter's current trust (0–1)
-  message: string;
-}
-
-/** POST /incidents/{id}/responses body {answer, contributor} -> */
-export interface CitizenResponseResult {
-  incident_id: number;
-  status: IncidentStatus;
-  confidence: number;
-  sensor_confidence: number | null;
-  citizen_confidence: number | null;
-  yes_count: number;
-  no_count: number;
-  contributor_trust: number | null;
-}
-
 /** GET /stats */
 export interface Stats {
   reports_total: number;
@@ -161,46 +132,4 @@ export interface Vehicle {
   lat: number;
   ts: string;
   kind: VehicleKind;
-}
-
-/** One accelerometer sample streamed by the /ride recorder. */
-export interface RideSample {
-  t: number; // seconds since start
-  ax: number; // m/s², accelerationIncludingGravity
-  ay: number;
-  az: number;
-  lat: number;
-  lon: number;
-  speed_kmh: number;
-  lux?: number;
-}
-
-/** POST /rides/stream body */
-export interface RideStreamRequest {
-  session_id: string;
-  vehicle_line: string;
-  mode: Mode;
-  samples: RideSample[];
-  final: boolean;
-}
-
-/** POST /rides/stream (non-final) */
-export interface RideStreamAck {
-  session_id: string;
-  buffered: number;
-}
-
-/** POST /rides/upload and the final /rides/stream chunk */
-export interface RideResult {
-  ride_id: number;
-  bumps: number;
-  dark_gaps: number;
-  segments_covered: number;
-  evidence_ids: number[];
-  incident_ids: number[];
-  verified_incident_ids: number[];
-}
-
-export function isRideResult(r: RideStreamAck | RideResult): r is RideResult {
-  return (r as RideResult).ride_id !== undefined;
 }

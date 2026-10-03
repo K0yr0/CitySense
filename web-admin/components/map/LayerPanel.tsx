@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { SOURCE_LABEL, SOURCE_VAR, type SourceKind } from "@/lib/format";
 import { useNow } from "@/lib/hooks";
 import { IconLayers, IconX } from "../icons";
@@ -29,13 +29,16 @@ export default function LayerPanel({
   onChange,
   counts,
   vehiclesUpdatedAt,
+  open,
+  setOpen,
 }: {
   toggles: LayerToggles;
   onChange: (t: LayerToggles) => void;
   counts: { segments?: number; incidents?: number; vehicles?: number };
   vehiclesUpdatedAt: number;
+  open: boolean;
+  setOpen: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(() => typeof window === "undefined" || window.innerWidth >= 768);
   const now = useNow(5000);
   const flip = (k: keyof LayerToggles) => onChange({ ...toggles, [k]: !toggles[k] });
   const ago = vehiclesUpdatedAt ? Math.max(0, Math.round((now - vehiclesUpdatedAt) / 1000)) : null;
@@ -45,7 +48,7 @@ export default function LayerPanel({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="absolute left-3 top-3 flex items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2 text-base font-semibold shadow-sm"
+        className="absolute left-3 top-3 z-10 flex items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2 text-base font-semibold shadow-sm"
       >
         <IconLayers /> Layers
       </button>
@@ -53,7 +56,7 @@ export default function LayerPanel({
   }
 
   return (
-    <aside className="absolute left-3 top-3 w-[19rem] max-w-[calc(100%-1.5rem)] rounded-2xl border border-line bg-surface p-4 shadow-sm" aria-label="Map layers">
+    <aside className="absolute left-3 top-3 z-10 w-[19rem] max-w-[calc(100%-1.5rem)] rounded-2xl border border-line bg-surface p-4 shadow-sm" aria-label="Map layers">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Layers</h2>
         <button type="button" onClick={() => setOpen(false)} className="rounded-md p-1 text-muted hover:bg-surface-2" aria-label="Hide layer panel">

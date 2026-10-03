@@ -23,7 +23,7 @@ export default function StatsBar() {
   return (
     <div className="border-b border-line bg-surface">
       <div className="flex flex-col gap-2 px-4 py-3 lg:flex-row lg:items-center lg:gap-6 lg:px-6">
-        <ol className="grid flex-1 grid-cols-2 gap-x-4 gap-y-2 md:flex md:items-center md:gap-3" aria-label="City-wide funnel">
+        <ol className="grid flex-1 grid-cols-3 gap-x-4 gap-y-2 md:flex md:items-center md:gap-3" aria-label="City-wide funnel">
           {steps.map((s, idx) => (
             <Fragment key={s.label}>
               {idx > 0 && (
@@ -32,8 +32,8 @@ export default function StatsBar() {
                 </li>
               )}
               <li className={`min-w-0 md:flex-1 ${s.strong ? "md:border-l-4 md:border-accent md:pl-3" : ""}`} title={s.hint}>
-                <div className="text-[2rem] font-semibold leading-none tracking-tight">{data ? s.value : "…"}</div>
-                <div className="mt-1 truncate text-sm font-medium text-ink-2">{s.label}</div>
+                <div className="text-[1.6rem] font-semibold leading-none tracking-tight md:text-[2rem]">{data ? s.value : "…"}</div>
+                <div className="mt-1 text-sm font-medium leading-snug text-ink-2">{s.label}</div>
               </li>
             </Fragment>
           ))}

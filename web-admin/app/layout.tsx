@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
+import AuthGate from "@/components/auth/AuthGate";
 import Header from "@/components/Header";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "CityEcho · Warsaw city health", template: "%s · CityEcho" },
+  title: { default: "CityEcho admin · Warsaw city health", template: "%s · CityEcho admin" },
   description: "Warsaw's buses verify its citizens — and its citizens verify its buses. Sensor rides and 19115 reports fused into verified incidents.",
   applicationName: "CityEcho",
 };
@@ -22,7 +23,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en">
       <body className="flex min-h-dvh flex-col">
         <Header />
-        {children}
+        <AuthGate>{children}</AuthGate>
       </body>
     </html>
   );

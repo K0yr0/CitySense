@@ -8,7 +8,6 @@ import { useApi, useNow } from "@/lib/hooks";
 import type { IncidentDetail, VerifyResult } from "@/lib/types";
 import { IconAlert, IconArrowLeft, IconCamera } from "../icons";
 import { Card, IncidentBadges, ScoreBar, SourceTag, StatusChip, verificationText } from "../ui";
-import CitizenCheck from "./CitizenCheck";
 import ConfidenceBreakdown from "./ConfidenceBreakdown";
 import SignalChart from "./SignalChart";
 import Timeline from "./Timeline";
@@ -185,9 +184,6 @@ export default function IncidentDetailView({ id }: { id: number }) {
         <div className="flex min-w-0 flex-col gap-5">
           <Card title="Confidence">
             <ConfidenceBreakdown incident={inc} />
-          </Card>
-          <Card title="Citizen check">
-            <CitizenCheck incident={inc} onDone={reload} />
           </Card>
           <VerificationCard incident={inc} onDone={reload} />
           <Card title="Evidence timeline">

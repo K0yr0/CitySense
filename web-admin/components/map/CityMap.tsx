@@ -35,6 +35,14 @@ export default function CityMap() {
   const [zoomedOut, setZoomedOut] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [hovering, setHovering] = useState(false);
+  // The map only renders in the browser (MapShell: ssr false), so window is available here.
+  const [layersOpen, setLayersOpen] = useState(() => window.innerWidth >= 768);
+
+  // Below lg both panels do not fit side by side: opening an incident folds the layer panel.
+  const select = (id: number | null) => {
+    setSelectedId(id);
+    if (id !== null && window.innerWidth < 1024) setLayersOpen(false);
+  };
 
   const bbox = box.join(",");
   const segments = useApi(`segments:${bbox}:${zoomedOut}`, () => getSegments({ bbox, measuredOnly: zoomedOut }), 60_000);
@@ -172,7 +180,7 @@ export default function CityMap() {
           layers={layers}
           getTooltip={getTooltip}
           onHover={(info) => setHovering(Boolean(info.object))}
-          onClick={(info) => setSelectedId(info.layer?.id === "incidents" && info.object ? (info.object as IncidentSummary).id : null)}
+          onClick={(info) => select(info.layer?.id === "incidents" && info.object ? (info.object as IncidentSummary).id : null)}
         />
       </Map>
 
@@ -181,8 +189,10 @@ export default function CityMap() {
         onChange={setToggles}
         counts={{ segments: segments.data?.length, incidents: incidents.data?.length, vehicles: vehicles.data?.length }}
         vehiclesUpdatedAt={vehicles.updatedAt}
+        open={layersOpen}
+        setOpen={setLayersOpen}
       />
-      {selected && <IncidentPanel incident={selected} onClose={() => setSelectedId(null)} />}
+      {selected && <IncidentPanel incident={selected} onClose={() => select(null)} />}
     </div>
   );
 }

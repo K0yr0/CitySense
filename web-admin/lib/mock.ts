@@ -1,9 +1,7 @@
 // Demo fixtures in Warsaw city-centre coordinates. Shapes are identical to docs/ARCHITECTURE.md §6.
 // Everything is deterministic (seeded PRNG); timestamps are relative to "now" so the demo stays fresh.
-import { assess, DEFAULT_TRUST, statusFor, trustFromCounts, type Vote } from "./confidence";
+import { assess, DEFAULT_TRUST, statusFor, type Vote } from "./confidence";
 import type {
-  CitizenAnswer,
-  CitizenResponseResult,
   Department,
   Evidence,
   IncidentDetail,
@@ -12,10 +10,6 @@ import type {
   IncidentSummary,
   IssueType,
   Mode,
-  ReportStatus,
-  RideResult,
-  RideStreamAck,
-  RideStreamRequest,
   Segment,
   Signal,
   Stats,
@@ -294,65 +288,50 @@ function priorityScore(s: IncidentSeed): number {
 const BASE_TIME = Date.now();
 const minutesAgo = (m: number) => new Date(BASE_TIME - m * 60_000).toISOString();
 
-// Mutable demo state (verification requests, new reports) so the mock behaves like a backend.
+// Mutable demo state (verification requests) so the mock behaves like a backend.
 const overrides = new Map<number, Partial<IncidentSummary>>();
-const extraReports = new Map<number, number>();
-let submittedReports = 0;
-
-// This browser's YES/NO answers and its trust record (demo mode only; the backend keeps the real one).
-const myAnswers = new Map<number, CitizenAnswer>();
-let myCorrect = 0;
-let myIncorrect = 0;
-const myTrust = () => trustFromCounts(myCorrect, myIncorrect);
 
 function seedSeverities(s: IncidentSeed): number[] {
   return Array.from({ length: s.sensorRides }, (_, i) => (s.sev ?? 0.5) * (i === 0 ? 1 : 0.9));
 }
 
-function seedVotes(s: IncidentSeed, withMine: boolean): Vote[] {
-  const yes = s.reports + (extraReports.get(s.id) ?? 0) + (s.yes ?? 0);
-  const votes: Vote[] = [
-    ...Array.from({ length: yes }, () => ({ yes: true, trust: DEFAULT_TRUST })),
+function seedVotes(s: IncidentSeed): Vote[] {
+  return [
+    ...Array.from({ length: s.reports + (s.yes ?? 0) }, () => ({ yes: true, trust: DEFAULT_TRUST })),
     ...Array.from({ length: s.no ?? 0 }, () => ({ yes: false, trust: DEFAULT_TRUST })),
   ];
-  const mine = myAnswers.get(s.id);
-  if (withMine && mine) votes.push({ yes: mine === "yes", trust: myTrust() });
-  return votes;
 }
 
-/** Status the confidence engine gives a seed; verified / dismissed / closed are sticky. */
+/** Status the confidence engine gives a seed (closed seeds stay closed). */
 function seedStatus(s: IncidentSeed): { status: IncidentStatus; a: ReturnType<typeof assess> } {
-  const a = assess(seedSeverities(s), s.misses ?? 0, seedVotes(s, true));
-  if (s.closed) return { status: "closed", a };
-  const before = statusFor(assess(seedSeverities(s), s.misses ?? 0, seedVotes(s, false)).confidence);
-  return { status: before === "verified" || before === "dismissed" ? before : statusFor(a.confidence), a };
+  const a = assess(seedSeverities(s), s.misses ?? 0, seedVotes(s));
+  return { status: s.closed ? "closed" : statusFor(a.confidence), a };
 }
 
 function summaryFromSeed(s: IncidentSeed): IncidentSummary {
   const [lon, lat] = seedPosition(s);
-  const added = extraReports.get(s.id) ?? 0;
   const { status, a } = seedStatus(s);
-  const votes = seedVotes(s, true);
+  const votes = seedVotes(s);
   const base: IncidentSummary = {
     id: s.id,
     type: s.type,
     status,
-    score: priorityScore({ ...s, reports: s.reports + added }),
+    score: priorityScore(s),
     department: s.department,
     lon,
     lat,
     address: s.address,
-    report_count: s.reports + added,
+    report_count: s.reports,
     sensor_count: s.sensorCount,
     sensor_rides: s.sensorRides,
     sensor_confirmed: s.sensorRides > 0 && s.reports > 0,
     found_before_report: s.foundBefore,
     has_sensor: s.sensorRides > 0,
-    has_report: s.reports + added > 0,
+    has_report: s.reports > 0,
     max_severity: s.sev,
     max_urgency: s.urg,
     first_seen: minutesAgo(s.firstMin),
-    last_seen: added ? new Date().toISOString() : minutesAgo(s.lastMin),
+    last_seen: minutesAgo(s.lastMin),
     verify_vehicle: s.vehicle,
     verify_eta_min: s.vehicle ? s.eta : null,
     confidence: Math.round(a.confidence * 1000) / 1000,
@@ -535,12 +514,8 @@ export function mockIncidentDetail(id: number): IncidentDetail | null {
       label: `${vehicleName(inc.verify_vehicle)} passed: no anomaly measured, confidence down`,
     });
   }
-  for (let n = 0; n < inc.no_count - (myAnswers.get(id) === "no" ? 1 : 0); n++) {
+  for (let n = 0; n < inc.no_count; n++) {
     timeline.push({ ts: new Date(last - (n + 1) * 45 * 60_000).toISOString(), kind: "response", label: `Citizen answered NO, not there (trust ${DEFAULT_TRUST.toFixed(2)})` });
-  }
-  const mine = myAnswers.get(id);
-  if (mine) {
-    timeline.push({ ts: new Date().toISOString(), kind: "response", label: `You answered ${mine === "yes" ? "YES, still there" : "NO, not there"} (trust ${myTrust().toFixed(2)})` });
   }
   const pct = `confidence ${Math.min(99, Math.round(inc.confidence * 100))}%`;
   const lastEvent = timeline.reduce((t, e) => Math.max(t, Date.parse(e.ts)), first);
@@ -644,14 +619,14 @@ export function mockVehicles(kind?: VehicleKind): Vehicle[] {
 
 export function mockStats(): Stats {
   return {
-    reports_total: 412 + submittedReports,
+    reports_total: 412,
     incidents_total: 63,
     found_before_report: 9,
     candidate_total: 20,
     likely_total: 18,
     verified_total: 21,
     awaiting_verification: 7,
-    contributors_total: 286 + (myAnswers.size || submittedReports ? 1 : 0),
+    contributors_total: 286,
     avg_verification_min: 7,
     rides_total: 38,
     segments_measured: SEGMENTS.filter((s) => s.health !== null).length,
@@ -659,85 +634,6 @@ export function mockStats(): Stats {
 }
 
 // ---------------------------------------------------------------- write endpoints
-
-const KEYWORDS: [IssueType, RegExp][] = [
-  ["road_damage", /dziur|wyrw|asfalt|koleina|pothole/i],
-  ["tram_track", /tram|szyn|torowisk|tory\b|złącz/i],
-  ["streetlight", /latarn|lamp|ciemn|oświetl|streetlight|dark/i],
-  ["flooding", /zala|wod|powódź|flood|water/i],
-  ["waste", /śmie|smie|kosz|odpad|mebl|waste|trash|litter/i],
-  ["road_damage", /jezdni|drog|road/i],
-];
-
-function classify(text: string): IssueType {
-  for (const [type, re] of KEYWORDS) if (re.test(text)) return type;
-  return "road_damage";
-}
-
-const DEPT_FOR: Record<IssueType, Department> = {
-  road_damage: "ZDM",
-  streetlight: "ZDM",
-  tram_track: "Tramwaje Warszawskie",
-  flooding: "MPWiK",
-  waste: "Straż Miejska",
-  other: "inne",
-};
-
-export function buildStatusMessage(
-  r: Pick<ReportStatus, "others_count" | "sensor_confirmed" | "verify_vehicle" | "verify_eta_min" | "department" | "status" | "confidence">,
-): string {
-  const parts: string[] = [];
-  parts.push(r.others_count > 0 ? `${r.others_count} others reported this.` : "You are the first to report this.");
-  if (r.status === "verified") parts.push(r.sensor_confirmed ? "Verified by vehicle sensors." : "Verified.");
-  else if (r.verify_vehicle && !r.sensor_confirmed) parts.push(`${vehicleName(r.verify_vehicle)} will verify in ~${r.verify_eta_min ?? 5} min.`);
-  if ((r.status === "candidate" || r.status === "likely") && r.confidence != null) {
-    parts.push(`Status: ${r.status} (${Math.min(99, Math.round(r.confidence * 100))}% confidence).`);
-  }
-  parts.push(`Sent to ${r.department === "inne" ? "the city" : r.department}.`);
-  return parts.join(" ");
-}
-
-export function mockSubmitReport(text: string, lon?: number | null, lat?: number | null): ReportStatus {
-  submittedReports += 1;
-  const category = classify(text);
-  const candidates = SEEDS.filter((s) => s.type === category && !["closed", "dismissed"].includes(seedStatus(s).status));
-  let target: IncidentSeed | undefined;
-  if (candidates.length) {
-    if (lon != null && lat != null) {
-      target = [...candidates].sort((a, b) => dist(seedPosition(a), [lon, lat]) - dist(seedPosition(b), [lon, lat]))[0];
-      if (dist(seedPosition(target), [lon, lat]) > 400) target = undefined;
-    }
-    target ??= [...candidates].sort((a, b) => b.reports - a.reports)[0];
-  }
-  if (!target) {
-    const confidence = assess([], 0, [{ yes: true, trust: myTrust() }]).confidence;
-    const r = {
-      others_count: 0, sensor_confirmed: false, verify_vehicle: "tram 17", verify_eta_min: 6, department: DEPT_FOR[category],
-      status: statusFor(confidence), confidence,
-    };
-    return { report_id: 5000 + submittedReports, incident_id: null, category, ...r, contributor_trust: myTrust(), message: buildStatusMessage(r) };
-  }
-  const others = summaryFromSeed(target).report_count;
-  extraReports.set(target.id, (extraReports.get(target.id) ?? 0) + 1);
-  const inc = summaryFromSeed(target);
-  const r = {
-    others_count: others,
-    sensor_confirmed: inc.sensor_confirmed || inc.has_sensor,
-    verify_vehicle: inc.verify_vehicle ?? "tram 17",
-    verify_eta_min: inc.verify_eta_min ?? 6,
-    department: inc.department,
-    status: inc.status,
-    confidence: inc.confidence,
-  };
-  return {
-    report_id: 5000 + submittedReports,
-    incident_id: inc.id,
-    category,
-    ...r,
-    contributor_trust: myTrust(),
-    message: buildStatusMessage(r),
-  };
-}
 
 export function mockVerify(id: number): VerifyResult {
   const seed = SEEDS.find((s) => s.id === id);
@@ -748,58 +644,4 @@ export function mockVerify(id: number): VerifyResult {
   const eta = inc.verify_eta_min ?? 5;
   overrides.set(id, { verify_vehicle: vehicle, verify_eta_min: eta, awaiting_verification: true });
   return { incident_id: id, status: inc.status, vehicle, eta_min: eta };
-}
-
-/** Demo version of POST /incidents/{id}/responses: re-assess, and settle trust if it resolves. */
-export function mockRespond(id: number, answer: CitizenAnswer): CitizenResponseResult | null {
-  const seed = SEEDS.find((s) => s.id === id);
-  if (!seed) return null;
-  const before = seedStatus(seed).status;
-  myAnswers.set(id, answer);
-  const inc = summaryFromSeed(seed);
-  if (before !== inc.status && (inc.status === "verified" || inc.status === "dismissed")) {
-    const right = (answer === "yes") === (inc.status === "verified");
-    if (right) myCorrect += 1;
-    else myIncorrect += 1;
-  }
-  return {
-    incident_id: id,
-    status: inc.status,
-    confidence: inc.confidence,
-    sensor_confidence: inc.sensor_confidence,
-    citizen_confidence: inc.citizen_confidence,
-    yes_count: inc.yes_count,
-    no_count: inc.no_count,
-    contributor_trust: Math.round(myTrust() * 100) / 100,
-  };
-}
-
-const rideSessions = new Map<string, { samples: number; bumps: number; distM: number; last: LonLat | null; lastBumpT: number }>();
-
-export function mockRideStream(body: RideStreamRequest): RideStreamAck | RideResult {
-  const s = rideSessions.get(body.session_id) ?? { samples: 0, bumps: 0, distM: 0, last: null, lastBumpT: -10 };
-  for (const p of body.samples) {
-    const mag = Math.hypot(p.ax, p.ay, p.az) - 9.81;
-    if (Math.abs(mag) > 4 && p.t - s.lastBumpT > 0.5 && p.speed_kmh >= 5) {
-      s.bumps += 1;
-      s.lastBumpT = p.t;
-    }
-    const here: LonLat = [p.lon, p.lat];
-    if (s.last) s.distM += dist(s.last, here);
-    s.last = here;
-  }
-  s.samples += body.samples.length;
-  rideSessions.set(body.session_id, s);
-  if (!body.final) return { session_id: body.session_id, buffered: s.samples };
-  rideSessions.delete(body.session_id);
-  const evidence = Array.from({ length: s.bumps }, (_, i) => 9000 + i);
-  return {
-    ride_id: 900 + Math.floor(Math.random() * 99),
-    bumps: s.bumps,
-    dark_gaps: 0,
-    segments_covered: Math.round(s.distM / 25),
-    evidence_ids: evidence,
-    incident_ids: s.bumps ? [102] : [],
-    verified_incident_ids: s.bumps && body.mode === "tram" ? [102] : [],
-  };
 }

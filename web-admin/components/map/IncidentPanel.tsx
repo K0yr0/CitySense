@@ -6,7 +6,6 @@ import { deptLabel, timeAgo, typeLabel } from "@/lib/format";
 import { useNow } from "@/lib/hooks";
 import type { IncidentSummary } from "@/lib/types";
 import { IconArrowRight, IconX } from "../icons";
-import CitizenCheck from "../incidents/CitizenCheck";
 import { ConfidenceMeter, IncidentBadges, ScoreBar, SourceTag, StatusChip, verificationText } from "../ui";
 
 function Fact({ label, children }: { label: string; children: ReactNode }) {
@@ -22,7 +21,7 @@ export default function IncidentPanel({ incident: i, onClose }: { incident: Inci
   const now = useNow();
   return (
     <aside
-      className="absolute inset-x-3 bottom-3 max-h-[70%] overflow-y-auto rounded-2xl border border-line bg-surface p-5 shadow-lg md:inset-x-auto md:bottom-auto md:right-3 md:top-3 md:max-h-[calc(100%-7rem)] md:w-[25rem]"
+      className="absolute inset-x-3 bottom-3 z-10 max-h-[70%] overflow-y-auto rounded-2xl border border-line bg-surface p-5 shadow-lg md:inset-x-auto md:bottom-auto md:right-3 md:top-3 md:max-h-[calc(100%-7rem)] md:w-[25rem]"
       aria-label="Selected incident"
     >
       <div className="flex items-start justify-between gap-3">
@@ -60,11 +59,6 @@ export default function IncidentPanel({ incident: i, onClose }: { incident: Inci
       <div className="mt-4 rounded-xl bg-surface-2 px-3.5 py-2.5 text-base">
         <span className="text-muted">Verification: </span>
         <span className="font-medium">{verificationText(i)}</span>
-      </div>
-
-      <div className="mt-4">
-        <div className="mb-2 text-base font-medium">Is this problem still there?</div>
-        <CitizenCheck key={i.id} incident={i} compact />
       </div>
 
       <Link
