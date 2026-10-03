@@ -7,7 +7,9 @@ import { ActionButton } from '@/components/report/action-button';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { reportText } from '@/i18n/report';
 import type { NewReport } from '@/lib/api';
+import { useText } from '@/lib/i18n';
 
 export type ReportPhoto = NonNullable<NewReport['photo']>;
 
@@ -27,6 +29,7 @@ type Props = {
 /** Optional photo: take one with the camera or pick from the gallery; shows a thumbnail. */
 export function PhotoPicker({ photo, onChange, disabled = false }: Props) {
   const theme = useTheme();
+  const s = useText(reportText);
   const [error, setError] = useState<string | null>(null);
 
   const accept = (result: ImagePicker.ImagePickerResult) => {
@@ -41,12 +44,12 @@ export function PhotoPicker({ photo, onChange, disabled = false }: Props) {
       const current = await ImagePicker.getCameraPermissionsAsync();
       const permission = current.granted ? current : await ImagePicker.requestCameraPermissionsAsync();
       if (!permission.granted) {
-        setError('Kamera izni verilmedi. Ayarlardan izin verebilir ya da galeriden seçebilirsin.');
+        setError(s.cameraDenied);
         return;
       }
       accept(await ImagePicker.launchCameraAsync(PICK_OPTIONS));
     } catch (e) {
-      setError(`Kamera açılamadı: ${e instanceof Error ? e.message : String(e)}`);
+      setError(s.cameraFailed(e instanceof Error ? e.message : String(e)));
     }
   };
 
@@ -55,24 +58,24 @@ export function PhotoPicker({ photo, onChange, disabled = false }: Props) {
     try {
       accept(await ImagePicker.launchImageLibraryAsync(PICK_OPTIONS));
     } catch (e) {
-      setError(`Galeri açılamadı: ${e instanceof Error ? e.message : String(e)}`);
+      setError(s.galleryFailed(e instanceof Error ? e.message : String(e)));
     }
   };
 
   return (
     <View style={styles.container}>
-      <ThemedText type="smallBold">Fotoğraf (isteğe bağlı)</ThemedText>
+      <ThemedText type="smallBold">{s.photoLabel}</ThemedText>
       {photo ? (
         <View style={styles.previewRow}>
           <Image
             source={{ uri: photo.uri }}
             style={[styles.thumbnail, { backgroundColor: theme.backgroundElement }]}
             contentFit="cover"
-            accessibilityLabel="Eklenen fotoğraf"
+            accessibilityLabel={s.photoA11y}
           />
           <View style={styles.previewActions}>
             <ThemedText type="small" themeColor="textSecondary">
-              Fotoğraf eklendi.
+              {s.photoAdded}
             </ThemedText>
             <Pressable
               accessibilityRole="button"
@@ -81,7 +84,7 @@ export function PhotoPicker({ photo, onChange, disabled = false }: Props) {
               hitSlop={8}
               style={({ pressed }) => ({ opacity: disabled ? 0.5 : pressed ? 0.6 : 1 })}>
               <ThemedText type="smallBold" style={{ color: theme.danger }}>
-                Fotoğrafı kaldır
+                {s.removePhoto}
               </ThemedText>
             </Pressable>
           </View>
@@ -89,7 +92,7 @@ export function PhotoPicker({ photo, onChange, disabled = false }: Props) {
       ) : (
         <View style={styles.buttons}>
           <ActionButton
-            label="Fotoğraf çek"
+            label={s.takePhoto}
             variant="secondary"
             compact
             disabled={disabled}
@@ -97,7 +100,7 @@ export function PhotoPicker({ photo, onChange, disabled = false }: Props) {
             style={styles.flex}
           />
           <ActionButton
-            label="Galeriden seç"
+            label={s.pickPhoto}
             variant="secondary"
             compact
             disabled={disabled}

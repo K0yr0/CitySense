@@ -1,0 +1,8 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "CityEcho",
+    "NSLocationWhenInUseUsageDescription": "CityEcho використовує вашу геолокацію, щоб показати вас на мапі, додати її до повідомлень і запитати про проблеми в радіусі 25 м. Історія геолокації не зберігається.",
+    "NSPhotoLibraryUsageDescription": "Дозволяє додати до повідомлення фото з галереї.",
+    "NSCameraUsageDescription": "Дозволяє сфотографувати проблему для повідомлення."
+  }
+}

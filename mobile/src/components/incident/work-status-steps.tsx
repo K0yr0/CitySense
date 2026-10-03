@@ -1,13 +1,15 @@
 /**
- * "Belediye": the city's work on the incident as a 3-step progress
- * (Yapılmadı → Belediye ilgileniyor → Yapıldı). Independent of the confidence status.
+ * "City": the city's work on the incident as a 3-step progress
+ * (Not started → City is working on it → Fixed). Independent of the confidence status.
  */
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { incidentText } from '@/i18n/incident';
 import type { WorkStatus } from '@/lib/api';
+import { useText } from '@/lib/i18n';
 import { WORK_STATUS_COLORS, workStatusLabel } from '@/lib/labels';
 
 export const WORK_STEPS: WorkStatus[] = ['todo', 'in_progress', 'done'];
@@ -18,6 +20,7 @@ const COLUMN = 100 / WORK_STEPS.length; // % width of one step column
 
 export function WorkStatusSteps({ workStatus }: { workStatus: WorkStatus }) {
   const theme = useTheme();
+  const s = useText(incidentText);
   const current = Math.max(0, WORK_STEPS.indexOf(workStatus));
   const active = WORK_STATUS_COLORS[WORK_STEPS[current]];
   const inactive = theme.backgroundSelected;
@@ -26,7 +29,7 @@ export function WorkStatusSteps({ workStatus }: { workStatus: WorkStatus }) {
     <View
       style={styles.container}
       accessible
-      accessibilityLabel={`Belediye durumu: ${workStatusLabel(WORK_STEPS[current])}`}>
+      accessibilityLabel={s.workA11y(workStatusLabel(WORK_STEPS[current]))}>
       {/* Connector lines between the dot centres, drawn behind the dots. */}
       {WORK_STEPS.slice(1).map((step, k) => (
         <View

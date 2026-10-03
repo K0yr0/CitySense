@@ -1,6 +1,6 @@
 /**
  * M5 · Favourite routes: the list. Each card shows the route's overall road colour and its
- * number of warnings; tap opens /route/[id], long-press or 🗑️ deletes, "Rota ekle" → /route/new.
+ * number of warnings; tap opens /route/[id], long-press or 🗑️ deletes, "Add route" → /route/new.
  */
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -14,17 +14,22 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { commonText } from '@/i18n/common';
+import { routesText } from '@/i18n/routes';
 import { ApiError, deleteRoute, getRoutes, type FavoriteRoute } from '@/lib/api';
+import { text, useText } from '@/lib/i18n';
 import { useSession } from '@/lib/session';
 
 function errorText(e: unknown): string {
-  if (e instanceof ApiError && e.status === 401) return 'Oturumun sona ermiş. Lütfen yeniden giriş yap.';
+  if (e instanceof ApiError && e.status === 401) return text(routesText).sessionExpired;
   return e instanceof Error ? e.message : String(e);
 }
 
 export default function RoutesScreen() {
   const { status } = useSession();
   const theme = useTheme();
+  const s = useText(routesText);
+  const c = useText(commonText);
   const [routes, setRoutes] = useState<FavoriteRoute[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -66,14 +71,15 @@ export default function RoutesScreen() {
   }, []);
 
   const onDelete = useCallback(async (route: FavoriteRoute) => {
-    const ok = await confirmAction('Rotayı sil', `"${route.name}" rotası silinsin mi?`, 'Sil');
+    const t = text(routesText);
+    const ok = await confirmAction(t.deleteRoute, t.deleteConfirm(route.name), text(commonText).delete);
     if (!ok) return;
     try {
       await deleteRoute(route.id);
       invalidateRouteQuality(route.id);
       setRoutes((list) => list?.filter((r) => r.id !== route.id) ?? list);
     } catch (e) {
-      showMessage('Silinemedi', errorText(e));
+      showMessage(t.deleteFailed, errorText(e));
     }
   }, []);
 
@@ -85,7 +91,7 @@ export default function RoutesScreen() {
       onPress={() => router.push('/route/new')}
       style={({ pressed }) => [styles.addButton, { backgroundColor: theme.tint }, pressed && styles.pressed]}>
       <ThemedText type="smallBold" style={styles.addText}>
-        ＋ Rota ekle
+        {s.addRoute}
       </ThemedText>
     </Pressable>
   );
@@ -102,11 +108,11 @@ export default function RoutesScreen() {
             {error && (
               <ThemedView type="backgroundElement" style={styles.errorBox}>
                 <ThemedText type="small" style={{ color: theme.danger }}>
-                  Rotalar yüklenemedi: {error}
+                  {s.loadFailed(error)}
                 </ThemedText>
                 <Pressable accessibilityRole="button" onPress={onRefresh}>
                   <ThemedText type="smallBold" style={{ color: theme.tint }}>
-                    Yeniden dene
+                    {c.retry}
                   </ThemedText>
                 </Pressable>
               </ThemedView>
@@ -125,12 +131,10 @@ export default function RoutesScreen() {
             <View style={styles.empty}>
               <ThemedText style={styles.emptyIcon}>🛣️</ThemedText>
               <ThemedText type="smallBold" style={styles.emptyTitle}>
-                Henüz kayıtlı rotan yok
+                {s.emptyTitle}
               </ThemedText>
               <ThemedText themeColor="textSecondary" style={styles.center}>
-                Sık kullandığın yolu (ör. Ev → İş) ya da bindiğin otobüs/tramvay hattını ekle. Rota
-                boyunca yolun durumunu renklerle görür, ileride kötü yol ya da bildirilmiş bir sorun
-                olduğunda uyarı alırsın.
+                {s.emptyText}
               </ThemedText>
               {addButton}
             </View>
@@ -148,7 +152,7 @@ export default function RoutesScreen() {
         ListFooterComponent={
           routes && routes.length > 0 ? (
             <ThemedText type="small" themeColor="textSecondary" style={[styles.center, styles.hint]}>
-              Silmek için rotaya basılı tut ya da 🗑️ simgesine dokun.
+              {s.deleteHint}
             </ThemedText>
           ) : null
         }

@@ -12,6 +12,8 @@ import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 
 import { ActionButton } from '@/components/profile/action-button';
+import { profileText } from '@/i18n/profile';
+import { text, useText } from '@/lib/i18n';
 
 // Read each variable literally: Expo inlines EXPO_PUBLIC_* only for static `process.env.X` access.
 const CLIENT_IDS = {
@@ -26,15 +28,15 @@ function platformClientId(): string | undefined {
   return CLIENT_IDS.web;
 }
 
-/** Why Google sign-in cannot run here (one Turkish line), or null when it can. */
+/** Why Google sign-in cannot run here (one line in the current language), or null when it can. */
 export function googleUnavailableReason(): string | null {
   if (Platform.OS !== 'web' && Constants.executionEnvironment === ExecutionEnvironment.StoreClient) {
-    return "Google girişi Expo Go'da çalışmaz; geliştirme derlemesi (development build) gerekir.";
+    return text(profileText).googleExpoGo;
   }
   if (!platformClientId()) {
     const name =
       Platform.OS === 'ios' ? 'IOS' : Platform.OS === 'android' ? 'ANDROID' : 'WEB';
-    return `Google girişi ayarlı değil (mobile/.env: EXPO_PUBLIC_GOOGLE_${name}_CLIENT_ID).`;
+    return text(profileText).googleNotConfigured(`EXPO_PUBLIC_GOOGLE_${name}_CLIENT_ID`);
   }
   return null;
 }
@@ -51,6 +53,7 @@ type Props = {
 };
 
 export function GoogleSignInButton({ disabled, loading, onStart, onCancel, onIdToken, onError }: Props) {
+  const s = useText(profileText);
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest(
     {
       webClientId: CLIENT_IDS.web,
@@ -70,9 +73,9 @@ export function GoogleSignInButton({ disabled, loading, onStart, onCancel, onIdT
     if (response.type === 'success') {
       const idToken = response.params.id_token || response.authentication?.idToken;
       if (idToken) onIdToken(idToken);
-      else onError('Google kimlik bilgisi (ID token) alınamadı.');
+      else onError(text(profileText).googleNoIdToken);
     } else if (response.type === 'error') {
-      onError(response.error?.message || response.params.error_description || 'Google girişi başarısız oldu.');
+      onError(response.error?.message || response.params.error_description || text(profileText).googleFailed);
     } else if (response.type === 'cancel' || response.type === 'dismiss') {
       onCancel();
     }
@@ -91,7 +94,7 @@ export function GoogleSignInButton({ disabled, loading, onStart, onCancel, onIdT
 
   return (
     <ActionButton
-      label="Google ile giriş yap"
+      label={s.googleButton}
       onPress={start}
       disabled={disabled || !request}
       loading={loading}

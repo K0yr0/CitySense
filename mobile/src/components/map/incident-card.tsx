@@ -15,9 +15,14 @@ import {
   WORK_STATUS_COLORS,
   workStatusLabel,
 } from '@/lib/labels';
+import { useText } from '@/lib/i18n';
+import { commonText } from '@/i18n/common';
+import { mapText } from '@/i18n/map';
 
 export function IncidentCard({ incident, onClose }: { incident: PublicIncident; onClose: () => void }) {
   const theme = useTheme();
+  const s = useText(mapText);
+  const c = useText(commonText);
 
   return (
     <View style={[styles.card, { backgroundColor: theme.background }]}>
@@ -26,14 +31,14 @@ export function IncidentCard({ incident, onClose }: { incident: PublicIncident; 
         <View style={styles.headerText}>
           <ThemedText type="smallBold">{typeLabel(incident.type)}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
-            {incident.address ?? 'Adres bilinmiyor'}
+            {incident.address ?? c.unknownAddress}
           </ThemedText>
         </View>
         <Pressable
           onPress={onClose}
           hitSlop={12}
           accessibilityRole="button"
-          accessibilityLabel="Kapat"
+          accessibilityLabel={c.close}
           style={({ pressed }) => [styles.close, { backgroundColor: theme.backgroundElement }, pressed && styles.pressed]}>
           <ThemedText type="smallBold" themeColor="textSecondary">
             ✕
@@ -45,24 +50,25 @@ export function IncidentCard({ incident, onClose }: { incident: PublicIncident; 
         <View style={styles.fact}>
           <View style={[styles.dot, { backgroundColor: STATUS_COLORS[incident.status] }]} />
           <ThemedText type="small">
-            Durum: {statusLabel(incident.status)} ({confidencePct(incident.confidence)})
+            {s.card.status(statusLabel(incident.status), confidencePct(incident.confidence))}
           </ThemedText>
         </View>
         <View style={styles.fact}>
           <View style={[styles.dot, { backgroundColor: WORK_STATUS_COLORS[incident.work_status] }]} />
-          <ThemedText type="small">Onarım: {workStatusLabel(incident.work_status)}</ThemedText>
+          <ThemedText type="small">{s.card.repair(workStatusLabel(incident.work_status))}</ThemedText>
         </View>
         <ThemedText type="small" themeColor="textSecondary">
-          {incident.report_count} kişi bildirdi
+          {s.card.reportedBy(incident.report_count)}
         </ThemedText>
       </View>
 
       <Pressable
         onPress={() => router.push(`/incident/${incident.id}` as Href)}
         accessibilityRole="button"
+        accessibilityLabel={s.card.openDetails}
         style={({ pressed }) => [styles.button, { backgroundColor: theme.tint }, pressed && styles.pressed]}>
         <ThemedText type="smallBold" style={styles.buttonText}>
-          Ayrıntılar
+          {c.details}
         </ThemedText>
       </Pressable>
     </View>

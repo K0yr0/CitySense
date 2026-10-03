@@ -1,5 +1,7 @@
 /** Geometry helpers. The backend uses (lon, lat); react-native-maps uses {latitude, longitude}. */
+import { commonText } from '@/i18n/common';
 import type { BBox, LonLat } from '@/lib/api';
+import { formatNumber, text } from '@/lib/i18n';
 
 export type LatLng = { latitude: number; longitude: number };
 
@@ -45,8 +47,9 @@ export function bboxOf(region: Region, pad = 0): BBox {
   ];
 }
 
-/** "120 m" / "1,4 km" */
+/** "120 m" / "1.4 km" (decimal separator and units follow the app language) */
 export function formatDistance(m: number): string {
-  if (m < 1000) return `${Math.round(m)} m`;
-  return `${(m / 1000).toFixed(1).replace('.', ',')} km`;
+  const units = text(commonText).units;
+  if (m < 1000) return `${Math.round(m)} ${units.m}`;
+  return `${formatNumber(Math.round(m / 100) / 10)} ${units.km}`;
 }

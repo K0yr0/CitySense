@@ -1,6 +1,6 @@
 /**
  * M5 · One favourite route: road quality along it as colours, warnings in order of distance,
- * and an "İleride kötü yol" banner when the user is on the route and a warning is close ahead.
+ * and a "Bad road ahead" banner when the user is on the route and a warning is close ahead.
  * Citizens only ever see colour classes here: no health numbers, no sensor data.
  */
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -19,17 +19,21 @@ import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useLocation } from '@/hooks/use-location';
 import { useTheme } from '@/hooks/use-theme';
+import { commonText } from '@/i18n/common';
+import { routesText } from '@/i18n/routes';
 import { ApiError, deleteRoute, type RouteQuality, type RouteWarning } from '@/lib/api';
 import { formatDistance } from '@/lib/geo';
-import { HEALTH_LABELS, healthColor } from '@/lib/labels';
+import { text, useText } from '@/lib/i18n';
+import { healthLabel, healthColor } from '@/lib/labels';
 import { useSession } from '@/lib/session';
 
 type Loaded = { key: string; quality: RouteQuality | null; error: string | null };
 
 function errorText(e: unknown): string {
   if (e instanceof ApiError) {
-    if (e.status === 404) return 'Bu rota bulunamadı. Silinmiş olabilir.';
-    if (e.status === 401) return 'Oturumun sona ermiş. Lütfen yeniden giriş yap.';
+    const t = text(routesText);
+    if (e.status === 404) return t.notFound;
+    if (e.status === 401) return t.sessionExpired;
   }
   return e instanceof Error ? e.message : String(e);
 }
@@ -44,6 +48,8 @@ export default function RouteScreen() {
   const { status } = useSession();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const s = useText(routesText);
+  const c = useText(commonText);
   const { coords } = useLocation({ watch: status === 'signedIn', requestOnMount: status === 'signedIn', distanceIntervalM: 10 });
 
   const [loaded, setLoaded] = useState<Loaded | null>(null);
@@ -70,7 +76,7 @@ export default function RouteScreen() {
   if (status !== 'signedIn') {
     return (
       <>
-        <Stack.Screen options={{ title: 'Rota' }} />
+        <Stack.Screen options={{ title: c.titles.route }} />
         <RoutesSignInGate status={status} />
       </>
     );
@@ -87,7 +93,7 @@ export default function RouteScreen() {
       setLoaded({ key, quality: await loadRouteQuality(id, true), error: null });
     } catch (e) {
       setLoaded((prev) => (prev?.key === key && prev.quality ? prev : { key, quality: null, error: errorText(e) }));
-      if (quality) showMessage('Yenilenemedi', errorText(e));
+      if (quality) showMessage(s.refreshFailed, errorText(e));
     } finally {
       setRefreshing(false);
     }
@@ -95,7 +101,8 @@ export default function RouteScreen() {
 
   const onDelete = async () => {
     if (!Number.isFinite(id)) return;
-    const ok = await confirmAction('Rotayı sil', `"${quality?.route.name ?? 'Bu rota'}" silinsin mi?`, 'Sil');
+    const name = quality?.route.name;
+    const ok = await confirmAction(s.deleteRoute, name ? s.deleteConfirm(name) : s.deleteConfirmUnnamed, c.delete);
     if (!ok) return;
     setDeleting(true);
     try {
@@ -105,20 +112,20 @@ export default function RouteScreen() {
       else router.replace('/routes');
     } catch (e) {
       setDeleting(false);
-      showMessage('Silinemedi', errorText(e));
+      showMessage(s.deleteFailed, errorText(e));
     }
   };
 
   if (!quality) {
     return (
       <ThemedView style={styles.center}>
-        <Stack.Screen options={{ title: 'Rota' }} />
+        <Stack.Screen options={{ title: c.titles.route }} />
         {error && !refreshing ? (
           <>
             <ThemedText style={[styles.centerText, { color: theme.danger }]}>{error}</ThemedText>
             <Pressable accessibilityRole="button" onPress={reload}>
               <ThemedText type="smallBold" style={{ color: theme.tint }}>
-                Yeniden dene
+                {c.retry}
               </ThemedText>
             </Pressable>
           </>
@@ -126,7 +133,7 @@ export default function RouteScreen() {
           <>
             <ActivityIndicator color={theme.tint} />
             <ThemedText type="small" themeColor="textSecondary">
-              Rota boyunca yol durumu hesaplanıyor…
+              {s.computing}
             </ThemedText>
           </>
         )}
@@ -150,17 +157,17 @@ export default function RouteScreen() {
             onPress={() => openWarning(alert.warning)}
             style={[styles.banner, { backgroundColor: theme.danger }]}>
             <ThemedText type="smallBold" style={styles.bannerTitle}>
-              ⚠️ İleride kötü yol
+              {s.badRoadAhead}
             </ThemedText>
             <ThemedText type="small" style={styles.bannerText}>
-              {formatDistance(alert.inM)} sonra: {alert.warning.message}
+              {s.inDistance(formatDistance(alert.inM), alert.warning.message)}
             </ThemedText>
           </Pressable>
         )}
         {ahead && !alert && (
           <ThemedView type="backgroundElement" style={styles.note}>
             <ThemedText type="small" style={{ color: theme.success }}>
-              ✓ Rotadasın. Önündeki {formatDistance(AHEAD_ALERT_M)} içinde uyarı yok.
+              {s.onRouteClear(formatDistance(AHEAD_ALERT_M))}
             </ThemedText>
           </ThemedView>
         )}
@@ -171,7 +178,7 @@ export default function RouteScreen() {
           <View style={styles.overall}>
             <HealthDot cls={summary.overall} size={16} />
             <ThemedText type="smallBold" style={styles.overallText}>
-              Genel durum: {HEALTH_LABELS[summary.overall]}
+              {s.overall(healthLabel(summary.overall))}
             </ThemedText>
           </View>
           <ThemedText type="small" themeColor="textSecondary">
@@ -183,17 +190,17 @@ export default function RouteScreen() {
 
         <View style={styles.section}>
           <ThemedText type="smallBold" style={styles.sectionTitle}>
-            Uyarılar
+            {s.warnings}
           </ThemedText>
           {!ahead && coords && (
             <ThemedText type="small" themeColor="textSecondary">
-              Rotada değilsin ({formatDistance(ON_ROUTE_M)} dışında); mesafeler rotanın başından ölçülüyor.
+              {s.offRoute(formatDistance(ON_ROUTE_M))}
             </ThemedText>
           )}
           {warnings.length === 0 ? (
             <ThemedView type="backgroundElement" style={styles.note}>
               <ThemedText type="small" style={{ color: theme.success }}>
-                ✓ Bu rota boyunca bilinen bir sorun ya da kötü yol yok.
+                {s.noWarnings}
               </ThemedText>
             </ThemedView>
           ) : (
@@ -202,7 +209,11 @@ export default function RouteScreen() {
               .map((w, i) => {
                 const passed = ahead ? w.distance_along_m <= ahead.userAlongM : false;
                 const dist = ahead ? w.distance_along_m - ahead.userAlongM : w.distance_along_m;
-                const where = passed ? 'Geride kaldı' : dist < 1 ? 'Başlangıçta' : `${formatDistance(dist)} ileride`;
+                const label = passed
+                  ? s.warningPassed(w.message)
+                  : dist < 1
+                    ? s.warningAtStart(w.message)
+                    : s.warningAhead(formatDistance(dist), w.message);
                 const tappable = w.kind === 'incident' && w.incident_id != null;
                 const isAlert = alert?.warning === w;
                 return (
@@ -225,12 +236,10 @@ export default function RouteScreen() {
                       ]}
                     />
                     <View style={styles.flex}>
-                      <ThemedText type="small">
-                        ⚠️ {where}: {w.message}
-                      </ThemedText>
+                      <ThemedText type="small">{label}</ThemedText>
                       {tappable && (
                         <ThemedText type="small" style={{ color: theme.tint }}>
-                          Ayrıntılar ›
+                          {c.details} ›
                         </ThemedText>
                       )}
                     </View>
@@ -242,7 +251,7 @@ export default function RouteScreen() {
 
         {!ROUTE_MAP_SUPPORTED && (
           <ThemedText type="small" themeColor="textSecondary" style={styles.centerText}>
-            Rota haritası yalnızca mobil uygulamada gösterilir.
+            {s.mapMobileOnly}
           </ThemedText>
         )}
 
@@ -255,7 +264,7 @@ export default function RouteScreen() {
             <ActivityIndicator color={theme.danger} />
           ) : (
             <ThemedText type="smallBold" style={{ color: theme.danger }}>
-              🗑️ Rotayı sil
+              🗑️ {s.deleteRoute}
             </ThemedText>
           )}
         </Pressable>

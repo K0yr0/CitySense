@@ -17,15 +17,18 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PointPicker } from '@/components/routes/point-picker';
-import { modeLabel } from '@/components/routes/route-geometry';
+import { lineLabel } from '@/components/routes/route-geometry';
 import { RoutesSignInGate } from '@/components/routes/sign-in-prompt';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useLocation } from '@/hooks/use-location';
 import { useTheme } from '@/hooks/use-theme';
+import { commonText } from '@/i18n/common';
+import { routesText } from '@/i18n/routes';
 import { ApiError, createRoute, getLines, type LonLat, type Mode, type NewRoute, type TransitLine } from '@/lib/api';
 import { distanceM, toLatLng } from '@/lib/geo';
+import { text, useText } from '@/lib/i18n';
 import { useSession } from '@/lib/session';
 
 type Kind = 'points' | 'line';
@@ -65,9 +68,10 @@ function Segmented<T extends string>({
 
 function saveErrorText(e: unknown): string {
   if (e instanceof ApiError) {
-    if (e.status === 401) return 'Oturumun sona ermiş. Lütfen yeniden giriş yap.';
-    if (e.status === 409) return 'Kaydedilebilecek en fazla rota sayısına ulaştın. Önce bir rotayı sil.';
-    if (e.status === 422) return 'Rota bilgileri geçersiz. Başlangıç ve bitiş farklı olmalı.';
+    const t = text(routesText);
+    if (e.status === 401) return t.sessionExpired;
+    if (e.status === 409) return t.tooManyRoutes;
+    if (e.status === 422) return t.invalidRoute;
   }
   return e instanceof Error ? e.message : String(e);
 }
@@ -76,6 +80,8 @@ export default function NewRouteScreen() {
   const { status } = useSession();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const s = useText(routesText);
+  const c = useText(commonText);
   const { refresh: locate } = useLocation({ requestOnMount: false });
 
   const [kind, setKind] = useState<Kind>('points');
@@ -107,7 +113,7 @@ export default function NewRouteScreen() {
   if (status !== 'signedIn') {
     return (
       <>
-        <Stack.Screen options={{ headerShown: true, title: 'Rota ekle' }} />
+        <Stack.Screen options={{ headerShown: true, title: c.titles.newRoute }} />
         <RoutesSignInGate status={status} />
       </>
     );
@@ -115,7 +121,7 @@ export default function NewRouteScreen() {
 
   const lines = linesState?.mode === mode ? linesState : null;
   const trimmedLine = line.trim();
-  const defaultName = kind === 'points' ? 'Ev → İş' : trimmedLine ? `${modeLabel(mode)} ${trimmedLine}` : `${modeLabel(mode)} hattı`;
+  const defaultName = kind === 'points' ? s.defaultPointsName : lineLabel(mode, trimmedLine);
   const tooClose = !!(start && end && distanceM(toLatLng(start), toLatLng(end)) < 20);
   const canSave = !saving && (kind === 'points' ? !!start && !!end && !tooClose : trimmedLine.length > 0);
 
@@ -144,7 +150,7 @@ export default function NewRouteScreen() {
 
   return (
     <ThemedView style={styles.flex}>
-      <Stack.Screen options={{ headerShown: true, title: 'Rota ekle' }} />
+      <Stack.Screen options={{ headerShown: true, title: c.titles.newRoute }} />
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
           keyboardShouldPersistTaps="handled"
@@ -156,13 +162,13 @@ export default function NewRouteScreen() {
               setError(null);
             }}
             options={[
-              { value: 'points', label: 'Başlangıç–bitiş' },
-              { value: 'line', label: 'Otobüs-tramvay hattı' },
+              { value: 'points', label: s.kindPoints },
+              { value: 'line', label: s.kindLine },
             ]}
           />
 
           <View style={styles.field}>
-            <ThemedText type="smallBold">Rota adı</ThemedText>
+            <ThemedText type="smallBold">{s.nameLabel}</ThemedText>
             <TextInput
               value={name}
               onChangeText={setName}
@@ -176,7 +182,7 @@ export default function NewRouteScreen() {
 
           {kind === 'points' ? (
             <View style={styles.field}>
-              <ThemedText type="smallBold">Başlangıç ve bitiş</ThemedText>
+              <ThemedText type="smallBold">{s.startAndEnd}</ThemedText>
               <PointPicker
                 start={start}
                 end={end}
@@ -188,13 +194,13 @@ export default function NewRouteScreen() {
               />
               {tooClose && (
                 <ThemedText type="small" style={{ color: theme.danger }}>
-                  Başlangıç ve bitiş birbirine çok yakın.
+                  {s.tooClose}
                 </ThemedText>
               )}
             </View>
           ) : (
             <View style={styles.field}>
-              <ThemedText type="smallBold">Araç</ThemedText>
+              <ThemedText type="smallBold">{s.vehicle}</ThemedText>
               <Segmented<Mode>
                 value={mode}
                 onChange={(m) => {
@@ -202,13 +208,13 @@ export default function NewRouteScreen() {
                   setLine('');
                 }}
                 options={[
-                  { value: 'tram', label: '🚋 Tramvay' },
-                  { value: 'road', label: '🚌 Otobüs' },
+                  { value: 'tram', label: s.modeTram },
+                  { value: 'road', label: s.modeBus },
                 ]}
               />
 
               <ThemedText type="smallBold" style={styles.subLabel}>
-                Hat
+                {s.line}
               </ThemedText>
               {!lines ? (
                 <ActivityIndicator color={theme.tint} style={styles.linesLoading} />
@@ -237,15 +243,17 @@ export default function NewRouteScreen() {
               ) : (
                 <ThemedText type="small" themeColor="textSecondary">
                   {lines.error
-                    ? 'Hat listesi alınamadı. Hat numarasını aşağıya yazabilirsin.'
-                    : `Henüz ölçüm yapılmış ${modeLabel(mode).toLowerCase()} hattı yok. Hat numarasını aşağıya yazabilirsin.`}
+                    ? s.linesFailed
+                    : mode === 'tram'
+                      ? s.noTramLines
+                      : s.noBusLines}
                 </ThemedText>
               )}
 
               <TextInput
                 value={line}
                 onChangeText={setLine}
-                placeholder={mode === 'tram' ? 'Hat numarası, ör. 17' : 'Hat numarası, ör. 175'}
+                placeholder={s.linePlaceholder(mode === 'tram' ? '17' : '175')}
                 placeholderTextColor={theme.textSecondary}
                 autoCapitalize="characters"
                 autoCorrect={false}
@@ -253,7 +261,7 @@ export default function NewRouteScreen() {
                 style={inputStyle}
               />
               <ThemedText type="small" themeColor="textSecondary">
-                Yol durumu, bu hattaki araçların geçtiği yollardan hesaplanır.
+                {s.lineHint}
               </ThemedText>
             </View>
           )}
@@ -279,13 +287,13 @@ export default function NewRouteScreen() {
               <ActivityIndicator color="#ffffff" />
             ) : (
               <ThemedText type="smallBold" style={styles.saveText}>
-                Kaydet
+                {c.save}
               </ThemedText>
             )}
           </Pressable>
           {kind === 'points' && (!start || !end) && (
             <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
-              Kaydetmek için başlangıç ve bitiş noktası seç.
+              {s.pickPointsHint}
             </ThemedText>
           )}
         </ScrollView>

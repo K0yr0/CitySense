@@ -5,7 +5,7 @@
  * - Asks the server (GET /mobile/question) only when GPS accuracy <= 25 m, and only when the phone
  *   moved >= 15 m since the last check or 60 s passed. Never more than one request in flight.
  * - "Once per incident": the server skips incidents the user already answered; on top of that the
- *   device remembers asked / answered / skipped ids (storage key below) so "Şimdi değil" sticks.
+ *   device remembers asked / answered / skipped ids (storage key below) so "Not now" sticks.
  * - Never asks when work_status = done (the server filters too) or when the incident is no longer
  *   candidate / likely.
  * - Answers go to POST /mobile/incidents/{id}/answer with a fresh position; the server weights them
@@ -18,8 +18,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
 import { useLocation } from '@/hooks/use-location';
+import { questionText } from '@/i18n/question';
 import { ApiError, answerIncident, getQuestion, type Answer, type PublicIncident } from '@/lib/api';
 import { distanceM, type LatLng } from '@/lib/geo';
+import { text } from '@/lib/i18n';
 import { getItem, setItem } from '@/lib/storage';
 
 /** The question is asked only when the phone's GPS accuracy is at most this (metres). */
@@ -46,12 +48,12 @@ export type NearbyQuestionState = {
   incident: PublicIncident | null;
   /** Server-side distance to the incident when it was offered. */
   distanceM: number | null;
-  /** Short Turkish message: thanks, why the question closed, or why sending failed. */
+  /** Short localized message: thanks, why the question closed, or why sending failed. */
   message: string | null;
   tone: NearbyTone | null;
   /** Send YES / NO with the current position. */
   answer: (answer: Answer) => Promise<void>;
-  /** "Şimdi değil": hide and never ask about this incident again on this device. */
+  /** "Not now": hide and never ask about this incident again on this device. */
   skip: () => void;
 };
 
@@ -67,20 +69,26 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
-/** Turkish message for an answer that the server refused; null = keep the question open. */
+/** Message (current language) for an answer that the server refused; null = keep the question open. */
 function refusalMessage(status: number | undefined): string | null {
+  const s = text(questionText);
   switch (status) {
     case 403:
-      return 'Artık 25 m içinde değilsin; soru kapatıldı.';
+      return s.tooFar;
     case 409:
-      return 'Bu soru artık geçerli değil (cevaplanmış ya da sorun giderilmiş).';
+      return s.noLongerValid;
     case 422:
-      return 'Konum isabeti yetersiz (25 m üstü); soru kapatıldı.';
+      return s.lowAccuracy;
     case 404:
-      return 'Bu bildirim artık yok.';
+      return s.gone;
     default:
       return null;
   }
+}
+
+/** Trust 0..1 as "80%". */
+function trustPct(trust: number): string {
+  return `${Math.round(Math.min(1, Math.max(0, trust)) * 100)}%`;
 }
 
 export function useNearbyQuestion({ enabled = true }: { enabled?: boolean } = {}): NearbyQuestionState {
@@ -165,10 +173,10 @@ export function useNearbyQuestion({ enabled = true }: { enabled?: boolean } = {}
     setTone(null);
   }, []);
 
-  const close = useCallback((text: string, kind: NearbyTone) => {
+  const close = useCallback((msg: string, kind: NearbyTone) => {
     phaseRef.current = 'closing';
     setPhase('closing');
-    setMessage(text);
+    setMessage(msg);
     setTone(kind);
   }, []);
 
@@ -273,7 +281,7 @@ export function useNearbyQuestion({ enabled = true }: { enabled?: boolean } = {}
       if (!fix) {
         phaseRef.current = 'asking';
         setPhase('asking');
-        setMessage('Konumun alınamadı. Lütfen tekrar dene.');
+        setMessage(text(questionText).noFix);
         setTone('error');
         return;
       }
@@ -282,12 +290,8 @@ export function useNearbyQuestion({ enabled = true }: { enabled?: boolean } = {}
         const result = await answerIncident(target.id, value, fix);
         remember(target.id);
         const trust = result.contributor_trust;
-        close(
-          trust != null
-            ? `Teşekkürler! Güven puanın: %${Math.round(Math.min(1, Math.max(0, trust)) * 100)}`
-            : 'Teşekkürler! Cevabın kaydedildi.',
-          'success',
-        );
+        const s = text(questionText);
+        close(trust != null ? s.thanksTrust(trustPct(trust)) : s.thanks, 'success');
       } catch (e) {
         const status = e instanceof ApiError ? e.status : undefined;
         const refusal = refusalMessage(status);
@@ -295,11 +299,11 @@ export function useNearbyQuestion({ enabled = true }: { enabled?: boolean } = {}
           remember(target.id);
           close(refusal, 'info');
         } else if (status === 401) {
-          close('Oturumun sona ermiş; cevap vermek için tekrar giriş yap.', 'info');
+          close(text(questionText).sessionExpired, 'info');
         } else {
           phaseRef.current = 'asking';
           setPhase('asking');
-          setMessage('Gönderilemedi. Bağlantını kontrol edip tekrar dene.');
+          setMessage(text(questionText).sendFailed);
           setTone('error');
         }
       }

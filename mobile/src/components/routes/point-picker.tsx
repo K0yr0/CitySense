@@ -9,8 +9,10 @@ import MapView, { Marker, Polyline, type MapPressEvent, type MarkerDragStartEndE
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { routesText } from '@/i18n/routes';
 import type { LonLat } from '@/lib/api';
 import { toLatLng, toLonLat, WARSAW_REGION, type LatLng } from '@/lib/geo';
+import { useText } from '@/lib/i18n';
 
 export type PointPickerProps = {
   start: LonLat | null;
@@ -24,6 +26,7 @@ type Which = 'start' | 'end';
 
 export function PointPicker({ start, end, onChange, locate }: PointPickerProps) {
   const theme = useTheme();
+  const s = useText(routesText);
   const ref = useRef<MapView>(null);
   const [which, setWhich] = useState<Which>(start ? 'end' : 'start');
   const [locating, setLocating] = useState(false);
@@ -49,7 +52,7 @@ export function PointPicker({ start, end, onChange, locate }: PointPickerProps) 
     try {
       const here = await locate();
       if (!here) {
-        setLocError('Konum alınamadı. Konum iznini kontrol et.');
+        setLocError(s.locationFailed);
         return;
       }
       place(toLonLat(here), 'start');
@@ -81,7 +84,7 @@ export function PointPicker({ start, end, onChange, locate }: PointPickerProps) 
                 active && { backgroundColor: theme.backgroundSelected },
               ]}>
               <ThemedText type="small" style={active ? { color: theme.tint } : undefined}>
-                {w === 'start' ? '🔵 Başlangıç' : '⚫ Bitiş'}
+                {w === 'start' ? `🔵 ${s.start}` : `⚫ ${s.end}`}
                 {set ? ' ✓' : ''}
               </ThemedText>
             </Pressable>
@@ -89,10 +92,7 @@ export function PointPicker({ start, end, onChange, locate }: PointPickerProps) 
         })}
       </View>
       <ThemedText type="small" themeColor="textSecondary">
-        {which === 'start'
-          ? 'Başlangıç noktası için haritaya dokun.'
-          : 'Bitiş noktası için haritaya dokun.'}{' '}
-        İğneleri sürükleyerek düzeltebilirsin.
+        {which === 'start' ? s.tapForStart : s.tapForEnd} {s.dragHint}
       </ThemedText>
 
       <MapView
@@ -115,14 +115,14 @@ export function PointPicker({ start, end, onChange, locate }: PointPickerProps) 
         {start && (
           <Marker
             coordinate={toLatLng(start)}
-            title="Başlangıç"
+            title={s.start}
             pinColor="#1A73E8"
             draggable
             onDragEnd={onDragEnd('start')}
           />
         )}
         {end && (
-          <Marker coordinate={toLatLng(end)} title="Bitiş" pinColor="#202124" draggable onDragEnd={onDragEnd('end')} />
+          <Marker coordinate={toLatLng(end)} title={s.end} pinColor="#202124" draggable onDragEnd={onDragEnd('end')} />
         )}
       </MapView>
 
@@ -136,7 +136,7 @@ export function PointPicker({ start, end, onChange, locate }: PointPickerProps) 
             <ActivityIndicator size="small" color={theme.tint} />
           ) : (
             <ThemedText type="smallBold" style={{ color: theme.tint }}>
-              📍 Konumumu başlangıç yap
+              {s.useMyLocation}
             </ThemedText>
           )}
         </Pressable>
@@ -149,7 +149,7 @@ export function PointPicker({ start, end, onChange, locate }: PointPickerProps) 
             }}
             style={({ pressed }) => [styles.outline, { borderColor: theme.backgroundSelected }, pressed && styles.pressed]}>
             <ThemedText type="small" themeColor="textSecondary">
-              Sıfırla
+              {s.reset}
             </ThemedText>
           </Pressable>
         )}

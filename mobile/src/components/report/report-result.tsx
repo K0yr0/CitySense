@@ -6,7 +6,10 @@ import { ActionButton } from '@/components/report/action-button';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { commonText } from '@/i18n/common';
+import { reportText } from '@/i18n/report';
 import { absoluteUrl, type MobileReport } from '@/lib/api';
+import { useText } from '@/lib/i18n';
 import {
   confidencePct,
   STATUS_COLORS,
@@ -29,6 +32,8 @@ type Props = {
  */
 export function ReportResult({ report, onNew }: Props) {
   const theme = useTheme();
+  const s = useText(reportText);
+  const c = useText(commonText);
   const { incident } = report;
   const photo = absoluteUrl(report.photo_url);
   const category = report.category ?? incident?.type ?? null;
@@ -37,9 +42,9 @@ export function ReportResult({ report, onNew }: Props) {
     <View style={styles.container}>
       <View style={[styles.banner, { backgroundColor: theme.backgroundElement }]}>
         <ThemedText type="subtitle" style={styles.bannerTitle}>
-          Teşekkürler!
+          {s.thanks}
         </ThemedText>
-        <ThemedText themeColor="textSecondary">Bildirimin alındı.</ThemedText>
+        <ThemedText themeColor="textSecondary">{s.received}</ThemedText>
       </View>
 
       <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
@@ -48,11 +53,11 @@ export function ReportResult({ report, onNew }: Props) {
           <View style={styles.flex}>
             <ThemedText type="smallBold">{typeLabel(category)}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              {report.department ? `Sorumlu: ${report.department}` : 'Sorumlu birim belirleniyor'}
+              {report.department ? c.responsible(report.department) : s.departmentPending}
             </ThemedText>
           </View>
           {photo ? (
-            <Image source={{ uri: photo }} style={styles.thumbnail} contentFit="cover" accessibilityLabel="Fotoğrafın" />
+            <Image source={{ uri: photo }} style={styles.thumbnail} contentFit="cover" accessibilityLabel={s.yourPhoto} />
           ) : null}
         </View>
 
@@ -61,36 +66,34 @@ export function ReportResult({ report, onNew }: Props) {
         {incident ? (
           <View style={styles.facts}>
             <Fact
-              label="Güven"
+              label={s.factConfidence}
               value={`${statusLabel(incident.status)} · ${confidencePct(incident.confidence)}`}
               color={STATUS_COLORS[incident.status]}
             />
             <Fact
-              label="Belediye"
+              label={s.factCity}
               value={workStatusLabel(incident.work_status)}
               color={WORK_STATUS_COLORS[incident.work_status]}
             />
             <Fact
-              label="Bildirenler"
+              label={s.factReporters}
               value={
-                report.others_count > 0
-                  ? `${report.others_count} kişi daha bildirdi`
-                  : 'Bu sorunu ilk bildiren sensin'
+                report.others_count > 0 ? s.othersReported(report.others_count) : s.firstReporter
               }
             />
-            {incident.address ? <Fact label="Adres" value={incident.address} /> : null}
+            {incident.address ? <Fact label={s.factAddress} value={incident.address} /> : null}
           </View>
         ) : (
           <ThemedText type="small" themeColor="textSecondary">
-            Henüz bir sorunla eşleşmedi. Başkaları da bildirdikçe ya da sensörler doğruladıkça haritada belirecek.
+            {s.notMatched}
           </ThemedText>
         )}
       </View>
 
       {incident ? (
-        <ActionButton label="Sorunu gör" onPress={() => router.push(`/incident/${incident.id}`)} />
+        <ActionButton label={s.viewProblem} onPress={() => router.push(`/incident/${incident.id}`)} />
       ) : null}
-      <ActionButton label="Yeni bildirim" variant="secondary" onPress={onNew} />
+      <ActionButton label={s.newReport} variant="secondary" onPress={onNew} />
     </View>
   );
 }

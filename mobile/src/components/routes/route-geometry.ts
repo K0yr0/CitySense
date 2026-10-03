@@ -4,13 +4,15 @@
  * Only colour classes are used; no raw health numbers ever reach the UI.
  */
 import type { FavoriteRoute, HealthClass, LonLat, Mode, RouteQuality, RouteWarning } from '@/lib/api';
+import { routesText } from '@/i18n/routes';
 import type { LatLng } from '@/lib/geo';
+import { text } from '@/lib/i18n';
 import { HEALTH_CLASSES } from '@/lib/labels';
 
 /** The user counts as "on the route" within this distance of the path. */
 export const ON_ROUTE_M = 50;
 
-/** "İleride kötü yol" banner for the nearest warning ahead within this distance. */
+/** "Bad road ahead" banner for the nearest warning ahead within this distance. */
 export const AHEAD_ALERT_M = 500;
 
 const M_PER_DEG_LAT = 110_574;
@@ -117,15 +119,18 @@ export function healthShares(summary: RouteQuality['summary']): { total: number;
   };
 }
 
-/** "Tramvay" / "Otobüs" */
-export function modeLabel(mode: Mode | null | undefined): string {
-  return mode === 'tram' ? 'Tramvay' : 'Otobüs';
+/** "Tram 17" / "Bus 175" for a line number, or "Tram line" / "Bus line" without one. */
+export function lineLabel(mode: Mode | null | undefined, line?: string | null): string {
+  const t = text(routesText);
+  if (line) return mode === 'tram' ? t.tramLine(line) : t.busLine(line);
+  return mode === 'tram' ? t.tramLineGeneric : t.busLineGeneric;
 }
 
-/** Short description of a route: "Tramvay 17", "Otobüs 175", "Başlangıç → bitiş". */
+/** Short description of a route: "Tram 17", "Bus 175", "Start → end". */
 export function describeRoute(route: FavoriteRoute): string {
-  if (route.kind === 'line') return `${route.line ? modeLabel(route.mode) : 'Hat'} ${route.line ?? ''}`.trim();
-  return 'Başlangıç → bitiş';
+  const t = text(routesText);
+  if (route.kind === 'line') return route.line ? lineLabel(route.mode, route.line) : t.lineGeneric;
+  return t.startToEnd;
 }
 
 /** Region (react-native-maps) that contains every point, with a margin. */

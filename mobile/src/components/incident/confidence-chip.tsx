@@ -1,26 +1,15 @@
 /**
- * "Güven": the confidence engine's status (candidate → likely → verified). Never mixed with the
+ * "Confidence": the confidence engine's status (candidate → likely → verified). Never mixed with the
  * city's work status (see work-status-steps.tsx).
  */
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
+import { incidentText } from '@/i18n/incident';
 import type { IncidentStatus } from '@/lib/api';
-import { STATUS_COLORS, confidencePct, statusLabel } from '@/lib/labels';
-
-/** One-line plain-language explanation of each confidence status. */
-export const STATUS_EXPLANATIONS: Record<IncidentStatus, string> = {
-  candidate: 'Henüz doğrulanmadı',
-  likely: 'Büyük ihtimalle gerçek',
-  verified: 'Doğrulandı',
-  dismissed: 'Kontrollerde sorun bulunamadı',
-  closed: 'Kapatıldı',
-};
-
-export function statusExplanation(status: IncidentStatus): string {
-  return STATUS_EXPLANATIONS[status] ?? '';
-}
+import { useText } from '@/lib/i18n';
+import { STATUS_COLORS, confidencePct, statusHint, statusLabel } from '@/lib/labels';
 
 type Props = {
   status: IncidentStatus;
@@ -29,13 +18,14 @@ type Props = {
   compact?: boolean;
 };
 
-/** Coloured pill "Muhtemel · %72", optionally with the one-line explanation under it. */
+/** Coloured pill "Likely · 72%", optionally with the one-line explanation under it. */
 export function ConfidenceChip({ status, confidence, compact = false }: Props) {
+  const s = useText(incidentText);
   const color = STATUS_COLORS[status] ?? STATUS_COLORS.candidate;
   const pill = (
     <View
       style={[styles.pill, { backgroundColor: `${color}22`, borderColor: color }]}
-      accessibilityLabel={`Güven: ${statusLabel(status)}, ${confidencePct(confidence)}`}>
+      accessibilityLabel={s.confidenceA11y(statusLabel(status), confidencePct(confidence))}>
       <View style={[styles.dot, { backgroundColor: color }]} />
       <ThemedText type="smallBold" style={{ color }}>
         {statusLabel(status)} · {confidencePct(confidence)}
@@ -47,7 +37,7 @@ export function ConfidenceChip({ status, confidence, compact = false }: Props) {
     <View style={styles.block}>
       {pill}
       <ThemedText type="small" themeColor="textSecondary">
-        {statusExplanation(status)}
+        {statusHint(status)}
       </ThemedText>
     </View>
   );

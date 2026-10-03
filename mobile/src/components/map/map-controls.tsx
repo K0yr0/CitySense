@@ -6,7 +6,9 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { HEALTH_CLASSES, HEALTH_COLORS, HEALTH_LABELS } from '@/lib/labels';
+import { useText } from '@/lib/i18n';
+import { mapText } from '@/i18n/map';
+import { HEALTH_CLASSES, HEALTH_COLORS, healthLabel } from '@/lib/labels';
 
 /** Road health legend: only colour classes, never numbers. */
 export function HealthLegend() {
@@ -16,7 +18,7 @@ export function HealthLegend() {
       {HEALTH_CLASSES.map((h) => (
         <View key={h} style={styles.legendItem}>
           <View style={[styles.swatch, { backgroundColor: HEALTH_COLORS[h] }]} />
-          <ThemedText type="small">{HEALTH_LABELS[h]}</ThemedText>
+          <ThemedText type="small">{healthLabel(h)}</ThemedText>
         </View>
       ))}
     </View>
@@ -46,12 +48,13 @@ export function Chip({ children, onPress, active = true }: { children: ReactNode
 
 export function LocateButton({ onPress, busy, active }: { onPress: () => void; busy: boolean; active: boolean }) {
   const theme = useTheme();
+  const s = useText(mapText);
   return (
     <Pressable
       onPress={onPress}
       disabled={busy}
       accessibilityRole="button"
-      accessibilityLabel="Anlık konum"
+      accessibilityLabel={s.locateLabel}
       style={({ pressed }) => [styles.locate, { backgroundColor: theme.background }, pressed && styles.pressed]}>
       {busy ? (
         <ActivityIndicator color={theme.tint} />

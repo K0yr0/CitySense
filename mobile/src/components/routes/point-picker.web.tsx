@@ -1,6 +1,6 @@
 /**
  * Web start/end picker: react-native-maps has no web support, so points are typed as
- * "enlem, boylam" (the format Google Maps copies) or taken from the browser's location.
+ * "latitude, longitude" (the format Google Maps copies) or taken from the browser's location.
  */
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
@@ -8,8 +8,10 @@ import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { routesText } from '@/i18n/routes';
 import type { LonLat } from '@/lib/api';
 import { toLonLat, type LatLng } from '@/lib/geo';
+import { useText } from '@/lib/i18n';
 
 export type PointPickerProps = {
   start: LonLat | null;
@@ -34,6 +36,7 @@ function format(p: LonLat | null): string {
 
 export function PointPicker({ start, end, onChange, locate }: PointPickerProps) {
   const theme = useTheme();
+  const s = useText(routesText);
   const [startText, setStartText] = useState(format(start));
   const [endText, setEndText] = useState(format(end));
   const [locating, setLocating] = useState(false);
@@ -47,7 +50,7 @@ export function PointPicker({ start, end, onChange, locate }: PointPickerProps) 
     try {
       const here = await locate();
       if (!here) {
-        setLocError('Konum alınamadı. Tarayıcının konum iznini kontrol et.');
+        setLocError(s.locationFailedWeb);
         return;
       }
       const p = toLonLat(here);
@@ -61,9 +64,9 @@ export function PointPicker({ start, end, onChange, locate }: PointPickerProps) 
   return (
     <View style={styles.wrap}>
       <ThemedText type="small" themeColor="textSecondary">
-        Harita web&apos;de kullanılamıyor. Noktaları &quot;enlem, boylam&quot; olarak yaz (ör. 52.22970, 21.01220).
+        {s.webMapNote}
       </ThemedText>
-      <ThemedText type="smallBold">Başlangıç</ThemedText>
+      <ThemedText type="smallBold">{s.start}</ThemedText>
       <TextInput
         value={startText}
         onChangeText={(t) => {
@@ -74,7 +77,7 @@ export function PointPicker({ start, end, onChange, locate }: PointPickerProps) 
         placeholderTextColor={theme.textSecondary}
         style={inputStyle}
       />
-      <ThemedText type="smallBold">Bitiş</ThemedText>
+      <ThemedText type="smallBold">{s.end}</ThemedText>
       <TextInput
         value={endText}
         onChangeText={(t) => {
@@ -94,7 +97,7 @@ export function PointPicker({ start, end, onChange, locate }: PointPickerProps) 
           <ActivityIndicator size="small" color={theme.tint} />
         ) : (
           <ThemedText type="smallBold" style={{ color: theme.tint }}>
-            📍 Konumumu başlangıç yap
+            {s.useMyLocation}
           </ThemedText>
         )}
       </Pressable>

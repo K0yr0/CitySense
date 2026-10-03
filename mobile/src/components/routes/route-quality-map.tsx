@@ -6,8 +6,10 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { StyleSheet } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 
+import { routesText } from '@/i18n/routes';
 import type { RouteQuality, RouteWarning } from '@/lib/api';
 import { toLatLng, WARSAW_REGION } from '@/lib/geo';
+import { useText } from '@/lib/i18n';
 import { healthColor } from '@/lib/labels';
 
 import { regionFor } from './route-geometry';
@@ -16,7 +18,7 @@ export const ROUTE_MAP_SUPPORTED = true;
 
 type Props = {
   quality: RouteQuality;
-  /** The warning the "İleride kötü yol" banner points at (drawn larger). */
+  /** The warning the "Bad road ahead" banner points at (drawn larger). */
   highlighted?: RouteWarning | null;
   onWarningPress?: (warning: RouteWarning) => void;
   height?: number;
@@ -25,6 +27,7 @@ type Props = {
 const EDGE = { top: 48, right: 48, bottom: 48, left: 48 };
 
 export function RouteQualityMap({ quality, highlighted, onWarningPress, height = 320 }: Props) {
+  const s = useText(routesText);
   const ref = useRef<MapView>(null);
   const coords = useMemo(() => quality.path.map(toLatLng), [quality.path]);
   const initialRegion = useMemo(() => regionFor(quality.path) ?? WARSAW_REGION, [quality.path]);
@@ -63,10 +66,10 @@ export function RouteQualityMap({ quality, highlighted, onWarningPress, height =
         />
       ))}
       {route.kind === 'points' && route.start && (
-        <Marker coordinate={toLatLng(route.start)} title="Başlangıç" pinColor="#1A73E8" />
+        <Marker coordinate={toLatLng(route.start)} title={s.start} pinColor="#1A73E8" />
       )}
       {route.kind === 'points' && route.end && (
-        <Marker coordinate={toLatLng(route.end)} title="Bitiş" pinColor="#202124" />
+        <Marker coordinate={toLatLng(route.end)} title={s.end} pinColor="#202124" />
       )}
       {quality.warnings.map((w, i) => {
         const isHighlighted = highlighted === w;
@@ -74,8 +77,8 @@ export function RouteQualityMap({ quality, highlighted, onWarningPress, height =
           <Marker
             key={`warn-${w.kind}-${w.incident_id ?? 'p'}-${i}`}
             coordinate={{ latitude: w.lat, longitude: w.lon }}
-            title={w.kind === 'incident' ? '⚠️ Bildirilmiş sorun' : '⚠️ Kötü yol'}
-            description={w.kind === 'incident' ? `${w.message} · Ayrıntı için dokun` : w.message}
+            title={w.kind === 'incident' ? s.reportedProblem : s.badRoad}
+            description={w.kind === 'incident' ? s.tapForDetails(w.message) : w.message}
             pinColor={w.kind === 'incident' ? '#D93025' : '#F29900'}
             zIndex={isHighlighted ? 10 : 5}
             onCalloutPress={() => onWarningPress?.(w)}

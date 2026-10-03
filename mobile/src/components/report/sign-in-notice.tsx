@@ -5,18 +5,22 @@ import { ActionButton } from '@/components/report/action-button';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { commonText } from '@/i18n/common';
+import { reportText } from '@/i18n/report';
+import { useText } from '@/lib/i18n';
 
 /** Shown above the form when the user is signed out: reading is free, sending needs an account. */
 export function SignInNotice({ message }: { message?: string }) {
   const theme = useTheme();
+  const s = useText(reportText);
+  const c = useText(commonText);
   return (
     <View style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.tint }]}>
-      <ThemedText type="smallBold">Bildirim göndermek için giriş yapmalısın</ThemedText>
+      <ThemedText type="smallBold">{s.signInTitle}</ThemedText>
       <ThemedText type="small" themeColor="textSecondary">
-        {message ??
-          'Haritaya bakmak serbest. Bildirimlerin hesabına bağlanır; böylece güven puanın birikir ve sahte bildirimler ayıklanır.'}
+        {message ?? s.signInBody}
       </ThemedText>
-      <ActionButton label="Giriş yap" compact onPress={() => router.push('/sign-in')} style={styles.button} />
+      <ActionButton label={c.signIn} compact onPress={() => router.push('/sign-in')} style={styles.button} />
     </View>
   );
 }

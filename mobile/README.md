@@ -32,7 +32,7 @@ Node 22 LTS ya da 24 önerilir.
    npx expo start
    ```
 4. **Telefonda aç:** Expo Go uygulamasını kur, telefon ve bilgisayar **aynı Wi-Fi**'da olsun, terminaldeki
-   QR kodunu okut. Harita sekmesi "● Bağlı" ve canlı tramvay sayısını göstermeli.
+   QR kodunu okut. Harita (Map) sekmesinde olay pinleri görünmeli.
 
 `.env` değiştikten sonra önbelleği temizleyerek yeniden başlat: `npx expo start --clear`.
 
@@ -51,9 +51,21 @@ Yeni paket eklerken `npm install` değil `npx expo install <paket>` kullan (SDK'
 Expo Go yalnızca kendi içindeki native modülleri çalıştırır; başka native kod içeren bir kütüphane
 eklenirse development build gerekir (`AGENTS.md`).
 
+## Diller
+
+Uygulama **İngilizce, Lehçe ve Ukraynaca** (Türkçe yok). İlk açılışta telefonun dili Lehçe ya da Ukraynaca ise o,
+değilse İngilizce seçilir; Profile sekmesinin en üstündeki seçiciden değiştirilir ve cihazda saklanır.
+
+- Metinler `src/i18n/<alan>.ts` dosyalarında: `{ en, pl, uk }`; `pl` ve `uk` `typeof en` tipinde, eksik anahtar derleme hatası verir.
+- Bileşende `const s = useText(reportText)`, bileşen dışında `text(reportText)`. Sayılı ifadeler için `plural(n, {one, few, many, other})`
+  (Lehçe/Ukraynaca: 1 / 2–4 / 5+).
+- Ortak kelimeler `src/i18n/common.ts`, olay türü/durum/yol sağlığı sözlüğü `src/i18n/labels.ts`.
+- Backend'in kısa durum mesajları (`message`) `Accept-Language` başlığına göre en/pl/uk gelir (`backend/api/mobile.py` → `TEXTS`).
+- iOS izin metinleri: `app.json` (İngilizce) + `locales/pl.json`, `locales/uk.json`.
+
 ## Giriş (M2)
 
-- **Demo girişi** (Expo Go dahil her yerde): backend `.env` içinde `AUTH_DEV_LOGIN=1` olmalı. Profil → Giriş yap →
+- **Demo girişi** (Expo Go dahil her yerde): backend `.env` içinde `AUTH_DEV_LOGIN=1` olmalı. Profile → Sign in →
   bir e-posta yaz. Yalnızca yerel test ve demo için; canlıda kapalı tutulur.
 - **Google ile giriş** Expo Go'da çalışmaz (native kod gerekir). Development build ister
   (`npx expo run:ios` / `npx expo run:android` ya da `eas build --profile development`) ve:
@@ -81,7 +93,9 @@ src/hooks/use-location.ts         konum (expo-location); konum geçmişi tutulma
 src/hooks/use-nearby-question.ts  25 m sorusu mantığı (isabet ≤ 25 m, olay başına bir kez, yapıldıysa sorma)
 src/lib/api.ts                    backend istemcisi (tüm /mobile uç noktaları); yeni endpoint'ler buraya
 src/lib/session.tsx               oturum, token, cihaz katkıcı anahtarı
-src/lib/labels.ts                 Türkçe etiketler ve renkler (güven durumu ≠ iş durumu)
+src/lib/labels.ts                 etiketler (geçerli dilde) ve renkler (güven durumu ≠ iş durumu)
+src/lib/i18n.tsx                  dil seçimi, useText/text, plural
+src/i18n/                         en/pl/uk metinleri (alan başına bir dosya)
 src/lib/geo.ts, storage.ts        geometri yardımcıları, cihazda güvenli saklama
 ```
 

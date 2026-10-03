@@ -2,8 +2,10 @@ import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
+import { routesText } from '@/i18n/routes';
 import type { HealthClass, RouteQuality } from '@/lib/api';
-import { HEALTH_LABELS, healthColor } from '@/lib/labels';
+import { useText } from '@/lib/i18n';
+import { healthLabel, healthColor } from '@/lib/labels';
 
 import { healthShares } from './route-geometry';
 
@@ -14,15 +16,16 @@ export function HealthDot({ cls, size = 12 }: { cls: HealthClass; size?: number 
 
 /** Proportions of good / fair / poor / unknown road along the route (by metres), plus a legend. */
 export function QualityBar({ summary }: { summary: RouteQuality['summary'] }) {
+  const s = useText(routesText);
   const { total, shares } = healthShares(summary);
   const visible = shares.filter((s) => s.fraction > 0);
 
   return (
     <View style={styles.wrap}>
-      <View style={styles.bar} accessibilityLabel="Rota boyunca yol durumu">
+      <View style={styles.bar} accessibilityLabel={s.qualityBarA11y}>
         {total > 0 ? (
-          visible.map((s) => (
-            <View key={s.cls} style={{ flex: s.fraction, backgroundColor: healthColor(s.cls) }} />
+          visible.map((share) => (
+            <View key={share.cls} style={{ flex: share.fraction, backgroundColor: healthColor(share.cls) }} />
           ))
         ) : (
           <View style={{ flex: 1, backgroundColor: healthColor('unknown') }} />
@@ -30,17 +33,17 @@ export function QualityBar({ summary }: { summary: RouteQuality['summary'] }) {
       </View>
       <View style={styles.legend}>
         {total > 0 ? (
-          visible.map((s) => (
-            <View key={s.cls} style={styles.legendItem}>
-              <HealthDot cls={s.cls} size={10} />
+          visible.map((share) => (
+            <View key={share.cls} style={styles.legendItem}>
+              <HealthDot cls={share.cls} size={10} />
               <ThemedText type="small" themeColor="textSecondary">
-                {HEALTH_LABELS[s.cls]} %{Math.round(100 * s.fraction)}
+                {healthLabel(share.cls)} {Math.round(100 * share.fraction)}%
               </ThemedText>
             </View>
           ))
         ) : (
           <ThemedText type="small" themeColor="textSecondary">
-            Bu rota boyunca henüz ölçüm yok.
+            {s.noMeasurements}
           </ThemedText>
         )}
       </View>

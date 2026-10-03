@@ -12,7 +12,10 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.cityecho.app"
+      "bundleIdentifier": "com.cityecho.app",
+      "infoPlist": {
+        "CFBundleAllowMixedLocalizations": true
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -42,20 +45,25 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "CityEcho konumunu haritada göstermek, bildirimine konum eklemek ve 25 m çevrendeki sorunları sormak için kullanır. Konum geçmişi saklanmaz."
+          "locationWhenInUsePermission": "CityEcho uses your location to show you on the map, attach it to your reports and ask about problems within 25 m of you. No location history is stored."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Bildirimine fotoğraf eklemek için galerine erişir.",
-          "cameraPermission": "Sorunun fotoğrafını çekmek için kameraya erişir."
+          "photosPermission": "Lets you attach a photo from your library to a report.",
+          "cameraPermission": "Lets you take a photo of the problem for your report."
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "locales": {
+      "pl": "./locales/pl.json",
+      "uk": "./locales/uk.json"
     }
   }
 }

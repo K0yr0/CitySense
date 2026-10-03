@@ -1,5 +1,5 @@
 /**
- * M1 · Harita: full-screen map with road health as colour only, open incidents as pins,
+ * M1 · Map: full-screen map with road health as colour only, open incidents as pins,
  * and the user's current position with its GPS accuracy ring. Looking at the map is free
  * (no sign-in). No sensor data, evidence or timelines are shown to the citizen.
  */
@@ -18,6 +18,9 @@ import { Spacing } from '@/constants/theme';
 import { useLocation } from '@/hooks/use-location';
 import type { PublicIncident } from '@/lib/api';
 import { WARSAW_REGION } from '@/lib/geo';
+import { useText } from '@/lib/i18n';
+import { commonText } from '@/i18n/common';
+import { mapText } from '@/i18n/map';
 
 /** Constant object: <Tabs.Screen> re-applies options whenever their identity changes. */
 const SCREEN_OPTIONS = { headerShown: false } as const;
@@ -35,6 +38,8 @@ export default function MapScreen() {
   const dark = useColorScheme() === 'dark';
   const focused = useIsFocused();
   const mapRef = useRef<IncidentMapHandle>(null);
+  const s = useText(mapText);
+  const c = useText(commonText);
 
   const data = useMapData(WARSAW_REGION);
   const [selected, setSelected] = useState<PublicIncident | null>(null);
@@ -90,13 +95,13 @@ export default function MapScreen() {
       <View pointerEvents="box-none" style={[styles.top, sideInsets, { top: insets.top + Spacing.two }]}>
         {!IS_WEB && showSegments && <HealthLegend />}
         {data.error ? (
-          <Banner tone="error" actionLabel="Yeniden dene" onAction={data.reload}>
-            Veriler yüklenemedi. {data.error}
+          <Banner tone="error" actionLabel={c.retry} onAction={data.reload}>
+            {s.loadFailed(data.error)}
           </Banner>
         ) : firstLoad ? (
-          <Banner>Yükleniyor…</Banner>
+          <Banner>{c.loading}</Banner>
         ) : (
-          !IS_WEB && showSegments && data.zoomedOut && <Banner>Yol renkleri için yakınlaştır</Banner>
+          !IS_WEB && showSegments && data.zoomedOut && <Banner>{s.zoomInForColors}</Banner>
         )}
       </View>
 
@@ -107,8 +112,9 @@ export default function MapScreen() {
           user &&
           accuracy != null && (
             <Banner>
-              {`Konum ±${Math.round(accuracy)} m`}
-              {accuracy > QUESTION_ACCURACY_M ? ' · 25 m sorusu için daha iyi GPS gerekli' : ''}
+              {accuracy > QUESTION_ACCURACY_M
+                ? s.accuracyTooLow(Math.round(accuracy), QUESTION_ACCURACY_M)
+                : s.accuracy(Math.round(accuracy))}
             </Banner>
           )
         )}
@@ -116,11 +122,13 @@ export default function MapScreen() {
         <View pointerEvents="box-none" style={styles.controls}>
           <View pointerEvents="box-none" style={styles.chips}>
             <Chip active={showIncidents} onPress={() => setShowIncidents((v) => !v)}>
-              {showIncidents ? '● ' : '○ '}Sorunlar
+              {showIncidents ? '● ' : '○ '}
+              {s.layers.incidents}
             </Chip>
             {!IS_WEB && (
               <Chip active={showSegments} onPress={() => setShowSegments((v) => !v)}>
-                {showSegments ? '● ' : '○ '}Yol renkleri
+                {showSegments ? '● ' : '○ '}
+                {s.layers.roadColors}
               </Chip>
             )}
           </View>

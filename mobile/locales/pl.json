@@ -1,0 +1,8 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "CityEcho",
+    "NSLocationWhenInUseUsageDescription": "CityEcho używa Twojej lokalizacji, aby pokazać Cię na mapie, dołączyć ją do zgłoszeń i zapytać o problemy w promieniu 25 m. Historia lokalizacji nie jest zapisywana.",
+    "NSPhotoLibraryUsageDescription": "Pozwala dołączyć do zgłoszenia zdjęcie z galerii.",
+    "NSCameraUsageDescription": "Pozwala zrobić zdjęcie problemu do zgłoszenia."
+  }
+}

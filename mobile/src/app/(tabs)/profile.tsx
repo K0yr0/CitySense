@@ -1,43 +1,51 @@
 /**
  * M2 profile tab. Signed out: why to sign in + button. Signed in: trust score, counts
- * (GET /mobile/me) and "Bildirimlerim" (GET /mobile/reports), pull-to-refresh, sign out.
+ * (GET /mobile/me) and "My reports" (GET /mobile/reports), pull-to-refresh, sign out.
+ * The language picker sits at the top in both states.
  */
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ActionButton } from '@/components/profile/action-button';
+import { LanguagePicker } from '@/components/profile/language-picker';
 import { ReportRow } from '@/components/profile/report-row';
 import { TrustCard } from '@/components/profile/trust-card';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { commonText } from '@/i18n/common';
+import { profileText } from '@/i18n/profile';
 import { API_URL, ApiError, getMe, getMyReports, type Me, type MobileReport } from '@/lib/api';
+import { useText } from '@/lib/i18n';
 import { useSession } from '@/lib/session';
 
 function ApiFooter() {
+  const s = useText(profileText);
   return (
     <ThemedText type="code" themeColor="textSecondary" style={styles.footer}>
-      Sunucu: {API_URL}
+      {s.server(API_URL)}
     </ThemedText>
   );
 }
 
 function SignedOut() {
   const router = useRouter();
+  const s = useText(profileText);
+  const c = useText(commonText);
   return (
     <ScrollView contentContainerStyle={styles.content}>
+      <LanguagePicker />
       <ThemedView type="backgroundElement" style={styles.card}>
-        <ThemedText type="smallBold">Giriş yapmadın</ThemedText>
+        <ThemedText type="smallBold">{s.signedOutTitle}</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          Haritaya bakmak için giriş gerekmez. Sorun bildirmek, çevrendeki sorulara cevap vermek ve
-          bildirimlerini takip etmek için giriş yap.
+          {s.signedOutBody}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          Giriş yapmadan kazandığın güven puanı hesabına taşınır.
+          {s.trustCarryOver}
         </ThemedText>
-        <ActionButton label="Giriş yap" onPress={() => router.push('/sign-in')} />
+        <ActionButton label={c.signIn} onPress={() => router.push('/sign-in')} />
       </ThemedView>
       <ApiFooter />
     </ScrollView>
@@ -47,6 +55,8 @@ function SignedOut() {
 function SignedIn() {
   const router = useRouter();
   const theme = useTheme();
+  const s = useText(profileText);
+  const c = useText(commonText);
   const { user, signOut } = useSession();
   const [me, setMe] = useState<Me | null>(null);
   const [reports, setReports] = useState<MobileReport[] | null>(null);
@@ -82,8 +92,9 @@ function SignedIn() {
 
   const header = (
     <View style={styles.headerBlock}>
+      <LanguagePicker />
       <ThemedView type="backgroundElement" style={styles.card}>
-        <ThemedText type="smallBold">{user?.name || 'CityEcho kullanıcısı'}</ThemedText>
+        <ThemedText type="smallBold">{user?.name || s.defaultName}</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
           {user?.email}
         </ThemedText>
@@ -98,7 +109,7 @@ function SignedIn() {
       {error && (
         <ThemedView type="backgroundElement" style={styles.card}>
           <ThemedText type="small" style={{ color: theme.danger }}>
-            Bilgiler alınamadı.
+            {s.loadFailed}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
             {error}
@@ -107,7 +118,7 @@ function SignedIn() {
       )}
 
       <ThemedText type="smallBold" style={styles.sectionTitle}>
-        Bildirimlerim
+        {s.myReports}
       </ThemedText>
     </View>
   );
@@ -115,13 +126,13 @@ function SignedIn() {
   const empty =
     reports === null ? null : (
       <ThemedText type="small" themeColor="textSecondary" style={styles.empty}>
-        Henüz bildirimin yok. Bir sorun gördüğünde &quot;Bildir&quot; sekmesinden gönderebilirsin.
+        {s.noReports(c.tabs.report)}
       </ThemedText>
     );
 
   const footer = (
     <View style={styles.footerBlock}>
-      <ActionButton label="Çıkış yap" variant="danger" onPress={() => signOut()} />
+      <ActionButton label={c.signOut} variant="danger" onPress={() => signOut()} />
       <ApiFooter />
     </View>
   );

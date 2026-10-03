@@ -11,11 +11,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ActionButton } from '@/components/profile/action-button';
 import { GoogleSignInButton, googleUnavailableReason } from '@/components/profile/google-sign-in';
+import { LanguagePicker } from '@/components/profile/language-picker';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { commonText } from '@/i18n/common';
+import { profileText } from '@/i18n/profile';
 import { ApiError } from '@/lib/api';
+import { text, useText } from '@/lib/i18n';
 import { useSession } from '@/lib/session';
 
 // Web: Google redirects its popup back to this route; this closes the popup and hands over the result.
@@ -26,16 +30,16 @@ const GOOGLE_TIMEOUT_MS = 60000;
 
 function googleErrorMessage(e: unknown): string {
   if (e instanceof ApiError) {
-    if (e.status === 503) return 'Google girişi sunucuda ayarlı değil (GOOGLE_CLIENT_IDS).';
-    if (e.status === 401) return 'Google hesabı doğrulanamadı. Tekrar dene.';
+    if (e.status === 503) return text(profileText).googleNotOnServer;
+    if (e.status === 401) return text(profileText).googleNotVerified;
   }
   return e instanceof Error ? e.message : String(e);
 }
 
 function devErrorMessage(e: unknown): string {
   if (e instanceof ApiError) {
-    if (e.status === 404) return 'Demo girişi bu sunucuda kapalı (AUTH_DEV_LOGIN=1 gerekli).';
-    if (e.status === 422) return 'Geçerli bir e-posta adresi yaz.';
+    if (e.status === 404) return text(profileText).demoDisabled;
+    if (e.status === 422) return text(profileText).invalidEmail;
   }
   return e instanceof Error ? e.message : String(e);
 }
@@ -44,6 +48,8 @@ export default function SignInScreen() {
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const s = useText(profileText);
+  const c = useText(commonText);
   const { status, user, signInDev, signInWithGoogleIdToken } = useSession();
 
   const [email, setEmail] = useState('');
@@ -76,7 +82,7 @@ export default function SignInScreen() {
     googleTimer.current = setTimeout(() => {
       googleTimer.current = null;
       setGoogleBusy(false);
-      setError('Google yanıt vermedi. Tekrar dene.');
+      setError(text(profileText).googleNoResponse);
     }, GOOGLE_TIMEOUT_MS);
   }, []);
 
@@ -104,7 +110,7 @@ export default function SignInScreen() {
   const onDevSignIn = async () => {
     const value = email.trim();
     if (!EMAIL_RE.test(value)) {
-      setError('Geçerli bir e-posta adresi yaz.');
+      setError(s.invalidEmail);
       return;
     }
     setError(null);
@@ -125,25 +131,25 @@ export default function SignInScreen() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + Spacing.four }]}>
           <View style={styles.intro}>
-            <ThemedText type="subtitle">CityEcho&apos;ya giriş</ThemedText>
+            <ThemedText type="subtitle">{s.signInTitle}</ThemedText>
             <ThemedText themeColor="textSecondary">
-              Haritaya bakmak serbest. Sorun bildirmek ve çevrendeki sorulara cevap vermek için giriş yap.
+              {s.signInIntro}
             </ThemedText>
-            <ThemedText type="small">Giriş yapmadan kazandığın güven puanı hesabına taşınır.</ThemedText>
+            <ThemedText type="small">{s.trustCarryOver}</ThemedText>
           </View>
 
           {status === 'signedIn' && user && !busy && (
             <ThemedView type="backgroundElement" style={styles.card}>
-              <ThemedText type="small">Zaten giriş yaptın: {user.email}</ThemedText>
-              <ActionButton label="Kapat" variant="secondary" onPress={finish} />
+              <ThemedText type="small">{s.alreadySignedIn(user.email)}</ThemedText>
+              <ActionButton label={c.close} variant="secondary" onPress={finish} />
             </ThemedView>
           )}
 
           <ThemedView type="backgroundElement" style={styles.card}>
-            <ThemedText type="smallBold">Google</ThemedText>
+            <ThemedText type="smallBold">{s.google}</ThemedText>
             {googleReason ? (
               <>
-                <ActionButton label="Google ile giriş yap" onPress={() => {}} disabled />
+                <ActionButton label={s.googleButton} onPress={() => {}} disabled />
                 <ThemedText type="small" themeColor="textSecondary">
                   {googleReason}
                 </ThemedText>
@@ -161,14 +167,14 @@ export default function SignInScreen() {
           </ThemedView>
 
           <ThemedView type="backgroundElement" style={styles.card}>
-            <ThemedText type="smallBold">Demo girişi</ThemedText>
+            <ThemedText type="smallBold">{s.demoTitle}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              Yalnızca test ve sunum için: Google olmadan bir e-posta ile giriş.
+              {s.demoBody}
             </ThemedText>
             <TextInput
               value={email}
               onChangeText={setEmail}
-              placeholder="ornek@eposta.pl"
+              placeholder={s.emailPlaceholder}
               placeholderTextColor={theme.textSecondary}
               autoCapitalize="none"
               autoCorrect={false}
@@ -178,14 +184,14 @@ export default function SignInScreen() {
               returnKeyType="go"
               onSubmitEditing={onDevSignIn}
               editable={!busy}
-              accessibilityLabel="E-posta"
+              accessibilityLabel={s.emailLabel}
               style={[
                 styles.input,
                 { color: theme.text, backgroundColor: theme.background, borderColor: theme.backgroundSelected },
               ]}
             />
             <ActionButton
-              label="Demo girişi"
+              label={s.demoButton}
               variant="secondary"
               onPress={onDevSignIn}
               disabled={busy || !email.trim()}
@@ -200,8 +206,10 @@ export default function SignInScreen() {
           )}
 
           <ThemedText type="small" themeColor="textSecondary" style={styles.privacy}>
-            Yalnızca e-posta ve adın saklanır; konum geçmişi tutulmaz.
+            {s.privacy}
           </ThemedText>
+
+          <LanguagePicker />
         </ScrollView>
       </KeyboardAvoidingView>
     </ThemedView>

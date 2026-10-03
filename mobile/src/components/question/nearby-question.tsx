@@ -1,5 +1,5 @@
 /**
- * M4: "25 m çevrende çukur görüyor musun? Evet / Hayır" — a card floating above the tab bar.
+ * M4: "Do you see a pothole within 25 m of you? Yes / No" — a card floating above the tab bar.
  *
  * Mounted once in app/_layout.tsx above every screen. Renders nothing when signed out, when
  * location permission is denied, or when there is nothing to ask. Logic: hooks/use-nearby-question.
@@ -9,9 +9,12 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { questionText } from '@/components/question/question-text';
+import { questionFor } from '@/components/question/question-text';
 import { useNearbyQuestion, type NearbyQuestionState } from '@/hooks/use-nearby-question';
 import { useTheme } from '@/hooks/use-theme';
+import { commonText } from '@/i18n/common';
+import { questionText } from '@/i18n/question';
+import { useText } from '@/lib/i18n';
 import { TYPE_ICONS } from '@/lib/labels';
 import { useSession } from '@/lib/session';
 
@@ -33,6 +36,8 @@ function NearbyQuestionOverlay() {
 
 function QuestionCard({ question }: { question: NearbyQuestionState }) {
   const theme = useTheme();
+  const s = useText(questionText);
+  const c = useText(commonText);
   const insets = useSafeAreaInsets();
   const [appear] = useState(() => new Animated.Value(0));
   const { incident, phase, message, tone, answer, skip } = question;
@@ -72,7 +77,7 @@ function QuestionCard({ question }: { question: NearbyQuestionState }) {
             <View style={styles.header}>
               <Text style={styles.icon}>{TYPE_ICONS[incident.type] ?? TYPE_ICONS.other}</Text>
               <View style={styles.headerText}>
-                <Text style={[styles.question, { color: theme.text }]}>{questionText(incident.type)}</Text>
+                <Text style={[styles.question, { color: theme.text }]}>{questionFor(incident.type, s)}</Text>
                 {incident.address ? (
                   <Text numberOfLines={1} style={[styles.address, { color: theme.textSecondary }]}>
                     {incident.address}
@@ -86,25 +91,25 @@ function QuestionCard({ question }: { question: NearbyQuestionState }) {
             <View style={styles.buttons}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Evet, görüyorum"
+                accessibilityLabel={s.yesA11y}
                 disabled={sending}
                 onPress={() => void answer('yes')}
                 style={({ pressed }) => [
                   styles.button,
                   { backgroundColor: theme.tint, opacity: pressed || sending ? 0.6 : 1 },
                 ]}>
-                <Text style={[styles.buttonText, { color: '#ffffff' }]}>Evet</Text>
+                <Text style={[styles.buttonText, { color: '#ffffff' }]}>{c.yes}</Text>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Hayır, görmüyorum"
+                accessibilityLabel={s.noA11y}
                 disabled={sending}
                 onPress={() => void answer('no')}
                 style={({ pressed }) => [
                   styles.button,
                   { backgroundColor: theme.backgroundSelected, opacity: pressed || sending ? 0.6 : 1 },
                 ]}>
-                <Text style={[styles.buttonText, { color: theme.text }]}>Hayır</Text>
+                <Text style={[styles.buttonText, { color: theme.text }]}>{c.no}</Text>
               </Pressable>
             </View>
 
@@ -113,7 +118,7 @@ function QuestionCard({ question }: { question: NearbyQuestionState }) {
                 <ActivityIndicator size="small" color={theme.textSecondary} />
               ) : (
                 <Pressable accessibilityRole="button" onPress={skip} hitSlop={8}>
-                  <Text style={[styles.skip, { color: theme.textSecondary }]}>Şimdi değil</Text>
+                  <Text style={[styles.skip, { color: theme.textSecondary }]}>{s.notNow}</Text>
                 </Pressable>
               )}
             </View>

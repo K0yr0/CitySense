@@ -3,7 +3,9 @@ import { StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { commonText } from '@/i18n/common';
 import type { IssueType } from '@/lib/api';
+import { useText } from '@/lib/i18n';
 import { TYPE_ICONS, typeLabel } from '@/lib/labels';
 
 type Props = {
@@ -15,6 +17,7 @@ type Props = {
 /** Big type icon + label, address and the responsible department. */
 export function IncidentHeader({ type, address, department }: Props) {
   const theme = useTheme();
+  const c = useText(commonText);
   return (
     <View style={styles.row}>
       <View style={[styles.icon, { backgroundColor: theme.backgroundElement }]}>
@@ -25,11 +28,11 @@ export function IncidentHeader({ type, address, department }: Props) {
           {typeLabel(type)}
         </ThemedText>
         <ThemedText themeColor={address ? 'text' : 'textSecondary'}>
-          {address || 'Adres bilinmiyor'}
+          {address || c.unknownAddress}
         </ThemedText>
         {department ? (
           <ThemedText type="small" themeColor="textSecondary">
-            Sorumlu: {department}
+            {c.responsible(department)}
           </ThemedText>
         ) : null}
       </View>

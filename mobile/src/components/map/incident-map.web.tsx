@@ -9,12 +9,17 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useText } from '@/lib/i18n';
+import { commonText } from '@/i18n/common';
+import { mapText } from '@/i18n/map';
 import { confidencePct, incidentColor, statusLabel, TYPE_ICONS, typeLabel } from '@/lib/labels';
 
 import type { IncidentMapProps } from './types';
 
 export function IncidentMap({ ref, incidents, selectedId, topInset, bottomInset, onSelectIncident }: IncidentMapProps) {
   const theme = useTheme();
+  const s = useText(mapText);
+  const c = useText(commonText);
 
   useImperativeHandle(ref, () => ({ animateTo: () => {} }));
 
@@ -23,12 +28,11 @@ export function IncidentMap({ ref, incidents, selectedId, topInset, bottomInset,
       <ScrollView
         contentContainerStyle={[styles.content, { paddingTop: topInset, paddingBottom: bottomInset }]}>
         <ThemedText type="small" themeColor="textSecondary" style={styles.note}>
-          Harita yalnızca mobil uygulamada (Expo Go) görünür. Web&apos;de yakındaki sorunlar liste olarak
-          gösteriliyor.
+          {s.web.note}
         </ThemedText>
         {incidents.length === 0 && (
           <ThemedText type="small" themeColor="textSecondary" style={styles.note}>
-            Bu bölgede açık sorun yok.
+            {s.web.empty}
           </ThemedText>
         )}
         {incidents.map((i) => (
@@ -46,7 +50,7 @@ export function IncidentMap({ ref, incidents, selectedId, topInset, bottomInset,
                 {TYPE_ICONS[i.type] ?? TYPE_ICONS.other} {typeLabel(i.type)}
               </ThemedText>
               <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-                {i.address ?? 'Adres bilinmiyor'} · {statusLabel(i.status)} {confidencePct(i.confidence)}
+                {i.address ?? c.unknownAddress} · {statusLabel(i.status)} {confidencePct(i.confidence)}
               </ThemedText>
             </View>
           </Pressable>

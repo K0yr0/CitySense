@@ -1,5 +1,8 @@
 import { Alert, Platform } from 'react-native';
 
+import { commonText } from '@/i18n/common';
+import { text } from '@/lib/i18n';
+
 /** Yes/no confirmation. React Native Web's Alert has no buttons, so the browser's confirm() is used there. */
 export function confirmAction(title: string, message: string, confirmLabel: string): Promise<boolean> {
   if (Platform.OS === 'web') {
@@ -11,7 +14,7 @@ export function confirmAction(title: string, message: string, confirmLabel: stri
       title,
       message,
       [
-        { text: 'Vazgeç', style: 'cancel', onPress: () => resolve(false) },
+        { text: text(commonText).cancel, style: 'cancel', onPress: () => resolve(false) },
         { text: confirmLabel, style: 'destructive', onPress: () => resolve(true) },
       ],
       { cancelable: true, onDismiss: () => resolve(false) },

@@ -4,7 +4,9 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { profileText } from '@/i18n/profile';
 import type { Me } from '@/lib/api';
+import { useText } from '@/lib/i18n';
 
 function Stat({ value, label }: { value: number; label: string }) {
   return (
@@ -22,32 +24,34 @@ function Stat({ value, label }: { value: number; label: string }) {
 /** Trust score (0–1 from the engine) as a percentage + bar, and activity counts. */
 export function TrustCard({ me }: { me: Me }) {
   const theme = useTheme();
+  const s = useText(profileText);
   const pct = Math.round(100 * Math.min(1, Math.max(0, me.trust || 0)));
   const barColor = pct >= 70 ? theme.success : pct >= 40 ? '#F2B300' : theme.danger;
+  const pctText = `${pct}%`;
 
   return (
     <ThemedView type="backgroundElement" style={styles.card}>
       <View style={styles.header}>
-        <ThemedText type="smallBold">Güven puanın</ThemedText>
+        <ThemedText type="smallBold">{s.trustTitle}</ThemedText>
         <ThemedText type="smallBold" style={{ color: barColor }}>
-          %{pct}
+          {pctText}
         </ThemedText>
       </View>
       <View
         style={[styles.track, { backgroundColor: theme.backgroundSelected }]}
         accessibilityRole="progressbar"
-        accessibilityLabel={`Güven puanı yüzde ${pct}`}
+        accessibilityLabel={s.trustA11y(pctText)}
         accessibilityValue={{ min: 0, max: 100, now: pct }}>
         <View style={[styles.fill, { width: `${pct}%`, backgroundColor: barColor }]} />
       </View>
       <ThemedText type="small" themeColor="textSecondary">
-        Cevapların doğru çıktıkça puanın artar; puanın yükseldikçe cevapların daha çok sayılır.
+        {s.trustHint}
       </ThemedText>
       <View style={styles.stats}>
-        <Stat value={me.correct} label="Doğru cevap" />
-        <Stat value={me.incorrect} label="Yanlış cevap" />
-        <Stat value={me.reports_count} label="Bildirim" />
-        <Stat value={me.answers_count} label="Cevap" />
+        <Stat value={me.correct} label={s.stats.correct(me.correct)} />
+        <Stat value={me.incorrect} label={s.stats.incorrect(me.incorrect)} />
+        <Stat value={me.reports_count} label={s.stats.reports(me.reports_count)} />
+        <Stat value={me.answers_count} label={s.stats.answers(me.answers_count)} />
       </View>
     </ThemedView>
   );

@@ -7,6 +7,9 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import type { LocationState } from '@/hooks/use-location';
 import { useTheme } from '@/hooks/use-theme';
+import { commonText } from '@/i18n/common';
+import { reportText } from '@/i18n/report';
+import { useText } from '@/lib/i18n';
 
 /** Above this the pin may land on the wrong street; we still allow it but say so. */
 const LOW_ACCURACY_M = 50;
@@ -18,9 +21,11 @@ type Props = {
   disabled?: boolean;
 };
 
-/** "Konumun eklendi (±N m)" with refresh, a toggle to leave the location out, and a small map. */
+/** "Your location is added (±N m)" with refresh, a toggle to leave the location out, and a small map. */
 export function LocationField({ location, attach, onAttachChange, disabled = false }: Props) {
   const theme = useTheme();
+  const s = useText(reportText);
+  const c = useText(commonText);
   const [refreshing, setRefreshing] = useState(false);
   const { coords, accuracy, permission, error } = location;
 
@@ -36,19 +41,19 @@ export function LocationField({ location, attach, onAttachChange, disabled = fal
   let status: string;
   let tone: 'ok' | 'muted' | 'warn' = 'muted';
   if (!attach) {
-    status = 'Konum eklenmeyecek. Adresi metinde yazarsan belediye yine bulabilir.';
+    status = s.locationOff;
   } else if (coords) {
     status =
-      accuracy != null ? `Konumun eklendi (±${Math.max(1, Math.round(accuracy))} m)` : 'Konumun eklendi';
+      accuracy != null ? s.locationAddedAccuracy(Math.max(1, Math.round(accuracy))) : s.locationAdded;
     tone = accuracy != null && accuracy > LOW_ACCURACY_M ? 'warn' : 'ok';
   } else if (permission === 'denied') {
-    status = 'Konum izni yok. İzin verirsen bildirime eklenir; vermezsen adresi metinde yaz.';
+    status = s.locationDenied;
     tone = 'warn';
   } else if (error) {
-    status = `Konum alınamadı: ${error}`;
+    status = s.locationFailed(error);
     tone = 'warn';
   } else {
-    status = 'Konum alınıyor…';
+    status = s.locating;
   }
 
   const color = tone === 'ok' ? theme.success : tone === 'warn' ? theme.danger : theme.textSecondary;
@@ -57,10 +62,10 @@ export function LocationField({ location, attach, onAttachChange, disabled = fal
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <ThemedText type="smallBold" style={styles.flex}>
-          Konumu ekle
+          {s.locationLabel}
         </ThemedText>
         <Switch
-          accessibilityLabel="Konumu bildirime ekle"
+          accessibilityLabel={s.locationA11y}
           value={attach}
           onValueChange={onAttachChange}
           disabled={disabled}
@@ -74,7 +79,7 @@ export function LocationField({ location, attach, onAttachChange, disabled = fal
         </ThemedText>
         {attach ? (
           <ActionButton
-            label={coords ? 'Yenile' : permission === 'denied' ? 'İzin ver' : 'Tekrar dene'}
+            label={coords ? s.refresh : permission === 'denied' ? s.allow : c.retry}
             variant="secondary"
             compact
             loading={refreshing}
@@ -86,7 +91,7 @@ export function LocationField({ location, attach, onAttachChange, disabled = fal
 
       {attach && coords && accuracy != null && accuracy > LOW_ACCURACY_M ? (
         <ThemedText type="small" themeColor="textSecondary">
-          İsabet düşük. Açık alanda &quot;Yenile&quot;ye basmak konumu iyileştirebilir.
+          {s.lowAccuracy}
         </ThemedText>
       ) : null}
 

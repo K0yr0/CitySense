@@ -1,14 +1,17 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
+import { incidentText } from '@/i18n/incident';
+import { useText } from '@/lib/i18n';
 import { WORK_STATUS_COLORS } from '@/lib/labels';
 
 /** Shown when the city marked the incident done (work_status = done). Asks nothing. */
 export function DoneBanner() {
+  const s = useText(incidentText);
   return (
     <View style={[styles.banner, { backgroundColor: WORK_STATUS_COLORS.done }]} accessibilityRole="summary">
-      <Text style={styles.title}>✓ Yapıldı — teşekkürler!</Text>
-      <Text style={styles.body}>Belediye bu sorunu giderdi. Bildirimlerin için teşekkür ederiz.</Text>
+      <Text style={styles.title}>{s.doneTitle}</Text>
+      <Text style={styles.body}>{s.doneBody}</Text>
     </View>
   );
 }

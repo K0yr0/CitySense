@@ -3,7 +3,10 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { commonText } from '@/i18n/common';
+import { profileText } from '@/i18n/profile';
 import type { MobileReport } from '@/lib/api';
+import { useText } from '@/lib/i18n';
 import { TYPE_ICONS, timeAgo, typeLabel, WORK_STATUS_COLORS, workStatusLabel } from '@/lib/labels';
 
 function Chip({ label, color }: { label: string; color: string }) {
@@ -16,9 +19,11 @@ function Chip({ label, color }: { label: string; color: string }) {
   );
 }
 
-/** One of "Bildirimlerim": category, own text, backend message, time and the city's work status. */
+/** One row of "My reports": category, own text, backend message, time and the city's work status. */
 export function ReportRow({ report, onPress }: { report: MobileReport; onPress?: () => void }) {
   const theme = useTheme();
+  const s = useText(profileText);
+  const c = useText(commonText);
   const category = report.category ?? 'other';
   const incident = report.incident;
 
@@ -54,11 +59,11 @@ export function ReportRow({ report, onPress }: { report: MobileReport; onPress?:
         {incident ? (
           <Chip label={workStatusLabel(incident.work_status)} color={WORK_STATUS_COLORS[incident.work_status]} />
         ) : (
-          <Chip label="Değerlendiriliyor" color={theme.textSecondary} />
+          <Chip label={s.underReview} color={theme.textSecondary} />
         )}
         {onPress && (
           <ThemedText type="small" style={{ color: theme.tint }}>
-            Ayrıntı ›
+            {c.details} ›
           </ThemedText>
         )}
       </View>

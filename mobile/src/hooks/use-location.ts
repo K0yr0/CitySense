@@ -6,7 +6,9 @@
 import * as Location from 'expo-location';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { commonText } from '@/i18n/common';
 import type { LatLng } from '@/lib/geo';
+import { text } from '@/lib/i18n';
 
 export type Permission = 'unknown' | 'granted' | 'denied';
 
@@ -51,7 +53,7 @@ export function useLocation({ watch = false, requestOnMount = true, distanceInte
       const current = await Location.getForegroundPermissionsAsync();
       const result = current.granted ? current : await Location.requestForegroundPermissionsAsync();
       if (mounted.current) setPermission(result.granted ? 'granted' : 'denied');
-      if (!result.granted && mounted.current) setError('Konum izni verilmedi.');
+      if (!result.granted && mounted.current) setError(text(commonText).locationDenied);
       return result.granted;
     } catch (e) {
       if (mounted.current) setError(e instanceof Error ? e.message : String(e));

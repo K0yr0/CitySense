@@ -5,11 +5,16 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { commonText } from '@/i18n/common';
+import { routesText } from '@/i18n/routes';
+import { useText } from '@/lib/i18n';
 import type { SessionStatus } from '@/lib/session';
 
 /** Shown instead of a routes screen while the session loads or when the user is signed out. */
 export function RoutesSignInGate({ status }: { status: SessionStatus }) {
   const theme = useTheme();
+  const s = useText(routesText);
+  const c = useText(commonText);
   if (status === 'loading') {
     return (
       <ThemedView style={styles.center}>
@@ -22,21 +27,20 @@ export function RoutesSignInGate({ status }: { status: SessionStatus }) {
       <View style={styles.box}>
         <ThemedText style={styles.icon}>🛣️</ThemedText>
         <ThemedText type="smallBold" style={styles.title}>
-          Favori rotaların
+          {s.gateTitle}
         </ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.text}>
-          Evden işe giden yolunu ya da bindiğin otobüs/tramvay hattını kaydet. Rota boyunca yolun
-          durumunu renklerle gösterir, ileride kötü yol ya da bildirilmiş bir sorun varsa seni uyarırız.
+          {s.gateText}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary" style={styles.text}>
-          Rotalar hesabına kaydedildiği için giriş yapman gerekiyor.
+          {s.gateNeedSignIn}
         </ThemedText>
         <Pressable
           accessibilityRole="button"
           onPress={() => router.push('/sign-in')}
           style={({ pressed }) => [styles.button, { backgroundColor: theme.tint }, pressed && styles.pressed]}>
           <ThemedText type="smallBold" style={styles.buttonText}>
-            Giriş yap
+            {c.signIn}
           </ThemedText>
         </Pressable>
       </View>

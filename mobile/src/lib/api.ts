@@ -11,6 +11,9 @@
 
 import { Platform } from 'react-native';
 
+import { commonText } from '@/i18n/common';
+import { getLocale, text } from '@/lib/i18n';
+
 export const API_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000').replace(
   /\/+$/,
   '',
@@ -49,13 +52,15 @@ async function request<T>(path: string, { timeoutMs = TIMEOUT_MS, ...init }: Req
       ...init,
       headers: {
         Accept: 'application/json',
+        // The backend writes its short status messages in this language (en / pl / uk).
+        'Accept-Language': getLocale(),
         ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
         ...init.headers,
       },
       signal: controller.signal,
     });
   } catch {
-    throw new ApiError(`Sunucuya ulaşılamadı: ${API_URL}`);
+    throw new ApiError(text(commonText).backend.serverUnreachable(API_URL));
   } finally {
     clearTimeout(timer);
   }

@@ -5,6 +5,8 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { commonText } from '@/i18n/common';
+import { useText } from '@/lib/i18n';
 import { API_URL, getHealth, getLiveVehicles } from '@/lib/api';
 
 type Status =
@@ -15,7 +17,7 @@ type Status =
 async function checkBackend(): Promise<Status> {
   try {
     const health = await getHealth();
-    if (!health.ok) throw new Error('/health ok=false döndü');
+    if (!health.ok) throw new Error('/health returned ok=false');
   } catch (e) {
     return { state: 'error', message: e instanceof Error ? e.message : String(e) };
   }
@@ -27,9 +29,11 @@ async function checkBackend(): Promise<Status> {
   }
 }
 
-/** Day-0 connection check: GET /health + live tram count from GET /vehicles/live?kind=tram. */
+/** Connection check: GET /health + live tram count from GET /vehicles/live?kind=tram. */
 export function BackendStatus() {
   const theme = useTheme();
+  const s = useText(commonText).backend;
+  const c = useText(commonText);
   const [status, setStatus] = useState<Status>({ state: 'loading' });
 
   useEffect(() => {
@@ -49,7 +53,7 @@ export function BackendStatus() {
 
   return (
     <ThemedView type="backgroundElement" style={styles.card}>
-      <ThemedText type="smallBold">Backend bağlantısı</ThemedText>
+      <ThemedText type="smallBold">{s.title}</ThemedText>
       <ThemedText type="code" themeColor="textSecondary">
         {API_URL}
       </ThemedText>
@@ -58,21 +62,18 @@ export function BackendStatus() {
 
       {status.state === 'ok' && (
         <>
-          <ThemedText style={{ color: theme.success }}>● Bağlı</ThemedText>
+          <ThemedText style={{ color: theme.success }}>{s.connected}</ThemedText>
           <ThemedText>
-            {status.trams === null
-              ? 'Canlı tramvay verisi şu an alınamıyor.'
-              : `Şu an ${status.trams} tramvay canlı.`}
+            {status.trams === null ? s.noLiveData : s.liveTrams(status.trams)}
           </ThemedText>
         </>
       )}
 
       {status.state === 'error' && (
         <>
-          <ThemedText style={{ color: theme.danger }}>● Backend&apos;e ulaşılamadı</ThemedText>
+          <ThemedText style={{ color: theme.danger }}>{s.unreachable}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            Backend çalışıyor mu? Telefondaysan EXPO_PUBLIC_API_URL bilgisayarının LAN IP&apos;si
-            olmalı (ör. http://192.168.1.20:8000) ve aynı Wi-Fi&apos;da olmalısın.
+            {s.help}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
             ({status.message})
@@ -85,7 +86,7 @@ export function BackendStatus() {
         disabled={status.state === 'loading'}
         style={({ pressed }) => [styles.button, { borderColor: theme.tint }, pressed && styles.pressed]}>
         <ThemedText type="smallBold" style={{ color: theme.tint }}>
-          Yeniden dene
+          {c.retry}
         </ThemedText>
       </Pressable>
     </ThemedView>

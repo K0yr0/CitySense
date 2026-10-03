@@ -21,8 +21,11 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { commonText } from '@/i18n/common';
+import { incidentText } from '@/i18n/incident';
 import { ApiError, getIncident, type IncidentDetail } from '@/lib/api';
 import { incidentColor, timeAgo, typeLabel } from '@/lib/labels';
+import { useText } from '@/lib/i18n';
 import { useSession } from '@/lib/session';
 
 function parseId(raw: string | string[] | undefined): number | null {
@@ -50,6 +53,8 @@ export default function IncidentScreen() {
   const id = parseId(params.id);
   const { user } = useSession();
   const userId = user?.id ?? null;
+  const s = useText(incidentText);
+  const c = useText(commonText);
 
   const [incident, setIncident] = useState<IncidentDetail | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -103,9 +108,9 @@ export default function IncidentScreen() {
     return (
       <CenteredMessage
         icon="🔍"
-        title="Bu sorun bulunamadı"
-        body="Sorun kaldırılmış ya da bağlantı hatalı olabilir."
-        action={{ label: 'Geri dön', onPress: goBack }}
+        title={s.notFoundTitle}
+        body={s.notFoundBody}
+        action={{ label: c.back, onPress: goBack }}
       />
     );
   }
@@ -117,9 +122,9 @@ export default function IncidentScreen() {
     return (
       <CenteredMessage
         icon="📡"
-        title="Sorun yüklenemedi"
-        body={error ?? 'Bilinmeyen bir hata oluştu.'}
-        action={{ label: 'Tekrar dene', onPress: retry }}
+        title={s.loadFailedTitle}
+        body={error ?? s.unknownError}
+        action={{ label: c.retry, onPress: retry }}
       />
     );
   }
@@ -145,6 +150,8 @@ function IncidentBody({
 }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const s = useText(incidentText);
+  const c = useText(commonText);
   const done = incident.work_status === 'done';
   const title = typeLabel(incident.type);
   const firstSeen = timeAgo(incident.first_seen);
@@ -159,7 +166,7 @@ function IncidentBody({
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.tint} />}>
         {error ? (
           <ThemedText type="small" style={{ color: theme.danger }}>
-            Güncellenemedi: {error}
+            {s.refreshFailed(error)}
           </ThemedText>
         ) : null}
 
@@ -169,13 +176,11 @@ function IncidentBody({
 
         <View style={styles.facts}>
           {incident.report_count > 0 ? (
-            <Fact icon="👥">
-              {incident.report_count} kişi bildirdi
-            </Fact>
+            <Fact icon="👥">{s.reportedBy(incident.report_count)}</Fact>
           ) : null}
           {firstSeen || lastSeen ? (
             <Fact icon="🕒">
-              {[firstSeen && `İlk görülme: ${firstSeen}`, lastSeen && `Son: ${lastSeen}`]
+              {[firstSeen && s.firstSeen(firstSeen), lastSeen && s.lastSeen(lastSeen)]
                 .filter(Boolean)
                 .join(' · ')}
             </Fact>
@@ -185,18 +190,18 @@ function IncidentBody({
 
         {incident.i_reported || incident.my_answer ? (
           <View style={styles.badges}>
-            {incident.i_reported ? <Badge>Bunu sen bildirdin</Badge> : null}
+            {incident.i_reported ? <Badge>{s.youReported}</Badge> : null}
             {incident.my_answer ? (
-              <Badge>Cevabın: {incident.my_answer === 'yes' ? 'Evet' : 'Hayır'}</Badge>
+              <Badge>{s.yourAnswer(incident.my_answer === 'yes' ? c.yes : c.no)}</Badge>
             ) : null}
           </View>
         ) : null}
 
-        <SectionCard title="Güven">
+        <SectionCard title={s.sectionConfidence}>
           <ConfidenceChip status={incident.status} confidence={incident.confidence} />
         </SectionCard>
 
-        <SectionCard title="Belediye">
+        <SectionCard title={s.sectionCity}>
           <WorkStatusSteps workStatus={incident.work_status} />
         </SectionCard>
 
@@ -206,7 +211,7 @@ function IncidentBody({
           accessibilityRole="button"
           style={({ pressed }) => [styles.mapButton, { borderColor: theme.tint }, pressed && styles.pressed]}>
           <ThemedText type="smallBold" style={{ color: theme.tint }}>
-            Haritada aç
+            {s.openInMaps}
           </ThemedText>
         </Pressable>
       </ScrollView>

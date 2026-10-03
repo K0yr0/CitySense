@@ -3,6 +3,8 @@ import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import type { ColorValue } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { commonText } from '@/i18n/common';
+import { useText } from '@/lib/i18n';
 
 function TabIcon({ name, color }: { name: SymbolViewProps['name']; color: ColorValue }) {
   return <SymbolView name={name} tintColor={color} size={24} />;
@@ -10,6 +12,7 @@ function TabIcon({ name, color }: { name: SymbolViewProps['name']; color: ColorV
 
 export default function TabLayout() {
   const theme = useTheme();
+  const { tabs } = useText(commonText);
   return (
     <Tabs
       screenOptions={{
@@ -19,7 +22,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Harita',
+          title: tabs.map,
           tabBarIcon: ({ color }) => (
             <TabIcon name={{ ios: 'map', android: 'map', web: 'map' }} color={color} />
           ),
@@ -28,7 +31,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="report"
         options={{
-          title: 'Bildir',
+          title: tabs.report,
           tabBarIcon: ({ color }) => (
             <TabIcon
               name={{ ios: 'exclamationmark.bubble', android: 'campaign', web: 'campaign' }}
@@ -40,7 +43,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="routes"
         options={{
-          title: 'Rotalarım',
+          title: tabs.routes,
           tabBarIcon: ({ color }) => (
             <TabIcon
               name={{ ios: 'point.topleft.down.to.point.bottomright.curvepath', android: 'route', web: 'route' }}
@@ -52,7 +55,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profil',
+          title: tabs.profile,
           tabBarIcon: ({ color }) => (
             <TabIcon
               name={{ ios: 'person.crop.circle', android: 'person', web: 'person' }}

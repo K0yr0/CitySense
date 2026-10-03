@@ -1,6 +1,6 @@
 /**
  * M3 · Report a problem: text (required), optional photo, optional location.
- * After sending, a short status card (category, department, "N kişi daha bildirdi", work state).
+ * After sending, a short status card (category, department, "N other people reported this", work state).
  * Reading the form is free; sending requires sign-in.
  */
 import { router } from 'expo-router';
@@ -18,7 +18,9 @@ import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useLocation } from '@/hooks/use-location';
 import { useTheme } from '@/hooks/use-theme';
+import { reportText } from '@/i18n/report';
 import { ApiError, submitReport, type MobileReport, type NewReport } from '@/lib/api';
+import { useText } from '@/lib/i18n';
 import { useSession } from '@/lib/session';
 
 const MIN_TEXT = 5;
@@ -26,6 +28,7 @@ const MAX_TEXT = 2000;
 
 export default function ReportScreen() {
   const theme = useTheme();
+  const s = useText(reportText);
   const headerHeight = useContext(HeaderHeightContext) ?? 0;
   const { status, signOut } = useSession();
   const location = useLocation({ requestOnMount: true });
@@ -50,7 +53,7 @@ export default function ReportScreen() {
       return;
     }
     if (!textOk) {
-      setError(`Lütfen sorunu en az ${MIN_TEXT} karakterle anlat.`);
+      setError(s.tooShort(MIN_TEXT));
       return;
     }
     setError(null);
@@ -72,9 +75,9 @@ export default function ReportScreen() {
         setSessionExpired(true);
         await signOut();
       } else if (e instanceof ApiError) {
-        setError(`Gönderilemedi. ${e.detail ?? e.message}`);
+        setError(s.sendFailed(e.detail ?? e.message));
       } else {
-        setError(`Gönderilemedi. ${e instanceof Error ? e.message : String(e)}`);
+        setError(s.sendFailed(e instanceof Error ? e.message : String(e)));
       }
     } finally {
       setSubmitting(false);
@@ -91,7 +94,7 @@ export default function ReportScreen() {
   };
 
   const submitLabel =
-    status === 'loading' ? 'Oturum yükleniyor…' : signedIn ? 'Gönder' : 'Göndermek için giriş yap';
+    status === 'loading' ? s.sessionLoading : signedIn ? s.send : s.signInToSend;
 
   return (
     <ThemedView style={styles.screen}>
@@ -111,39 +114,34 @@ export default function ReportScreen() {
               <>
                 <View style={styles.intro}>
                   <ThemedText type="smallBold" style={styles.heading}>
-                    Bir sorun mu gördün?
+                    {s.heading}
                   </ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
-                    Kısaca anlat; konu ve sorumlu birimi biz belirleriz. Fotoğraf ve konum, sorunun daha hızlı
-                    doğrulanmasını sağlar.
+                    {s.intro}
                   </ThemedText>
                 </View>
 
                 {status === 'signedOut' ? (
                   <SignInNotice
-                    message={
-                      sessionExpired
-                        ? 'Oturumun sona ermiş. Yeniden giriş yap; yazdıkların burada kalacak.'
-                        : undefined
-                    }
+                    message={sessionExpired ? s.sessionExpired : undefined}
                   />
                 ) : null}
 
                 <View style={styles.field}>
-                  <ThemedText type="smallBold">Ne gördün?</ThemedText>
+                  <ThemedText type="smallBold">{s.textLabel}</ThemedText>
                   <TextInput
                     value={text}
                     onChangeText={(value) => {
                       setText(value);
                       if (error) setError(null);
                     }}
-                    placeholder="Ne gördün? Örn. Marszałkowska 10 önünde derin çukur"
+                    placeholder={s.placeholder}
                     placeholderTextColor={theme.textSecondary}
                     multiline
                     maxLength={MAX_TEXT}
                     editable={!submitting}
                     textAlignVertical="top"
-                    accessibilityLabel="Sorunun açıklaması"
+                    accessibilityLabel={s.textA11y}
                     style={[
                       styles.input,
                       { color: theme.text, backgroundColor: theme.backgroundElement, borderColor: theme.backgroundSelected },
@@ -151,7 +149,7 @@ export default function ReportScreen() {
                   />
                   {trimmed.length > 0 && !textOk ? (
                     <ThemedText type="small" themeColor="textSecondary">
-                      En az {MIN_TEXT} karakter yaz.
+                      {s.minChars(MIN_TEXT)}
                     </ThemedText>
                   ) : null}
                 </View>
@@ -178,7 +176,7 @@ export default function ReportScreen() {
                   onPress={submit}
                   loading={submitting}
                   disabled={status === 'loading' || (signedIn && !textOk)}
-                  accessibilityHint={signedIn ? 'Bildirimi belediyeye gönderir' : 'Giriş ekranını açar'}
+                  accessibilityHint={signedIn ? s.sendHint : s.signInHint}
                 />
               </>
             )}

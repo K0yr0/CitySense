@@ -4,8 +4,10 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { routesText } from '@/i18n/routes';
 import type { FavoriteRoute, RouteQuality } from '@/lib/api';
-import { HEALTH_LABELS } from '@/lib/labels';
+import { useText } from '@/lib/i18n';
+import { healthLabel } from '@/lib/labels';
 
 import { HealthDot } from './quality-bar';
 import { loadRouteQuality } from './quality-cache';
@@ -24,6 +26,7 @@ type Props = {
 /** One saved route: name, kind, and (loaded lazily) the overall colour and number of warnings. */
 export function RouteCard({ route, refreshToken, onPress, onDelete }: Props) {
   const theme = useTheme();
+  const s = useText(routesText);
   const key = `${route.id}:${refreshToken}`;
   const [loaded, setLoaded] = useState<Loaded | null>(null);
 
@@ -49,7 +52,7 @@ export function RouteCard({ route, refreshToken, onPress, onDelete }: Props) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityHint="Rotayı açar. Silmek için basılı tut."
+      accessibilityHint={s.cardHint}
       onPress={onPress}
       onLongPress={onDelete}
       style={({ pressed }) => [styles.card, { backgroundColor: theme.backgroundElement }, pressed && styles.pressed]}>
@@ -66,22 +69,22 @@ export function RouteCard({ route, refreshToken, onPress, onDelete }: Props) {
             <>
               <ActivityIndicator size="small" color={theme.textSecondary} />
               <ThemedText type="small" themeColor="textSecondary">
-                Yol durumu hesaplanıyor…
+                {s.computingShort}
               </ThemedText>
             </>
           ) : current.failed || !quality ? (
             <ThemedText type="small" themeColor="textSecondary">
-              Yol durumu alınamadı
+              {s.qualityFailed}
             </ThemedText>
           ) : (
             <>
               <HealthDot cls={quality.summary.overall} />
-              <ThemedText type="small">{HEALTH_LABELS[quality.summary.overall]}</ThemedText>
+              <ThemedText type="small">{healthLabel(quality.summary.overall)}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
                 ·
               </ThemedText>
               <ThemedText type="small" style={warnings > 0 ? { color: theme.danger } : undefined} themeColor="textSecondary">
-                {warnings > 0 ? `⚠️ ${warnings} uyarı` : 'Uyarı yok'}
+                {warnings > 0 ? s.warningCount(warnings) : s.noWarningsShort}
               </ThemedText>
             </>
           )}
@@ -89,7 +92,7 @@ export function RouteCard({ route, refreshToken, onPress, onDelete }: Props) {
       </View>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`${route.name} rotasını sil`}
+        accessibilityLabel={s.deleteA11y(route.name)}
         hitSlop={10}
         onPress={onDelete}
         style={({ pressed }) => [styles.trash, pressed && styles.pressed]}>

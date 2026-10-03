@@ -1,16 +1,19 @@
-/** Turkish wording of the 25 m question, adapted to the incident type (ROADMAP M4). */
+/** Wording of the 25 m question, adapted to the incident type (ROADMAP M4). Texts: i18n/question.ts. */
+import { questionText } from '@/i18n/question';
 import type { IssueType } from '@/lib/api';
+import { text } from '@/lib/i18n';
 import { typeLabel } from '@/lib/labels';
 
-export function questionText(type: IssueType): string {
+type QuestionTexts = (typeof questionText)['en'];
+
+/** The question for an incident type; pass `s` from useText(questionText) inside components. */
+export function questionFor(type: IssueType, s: QuestionTexts = text(questionText)): string {
   switch (type) {
     case 'road_damage':
-      return '25 m çevrende çukur görüyor musun?';
     case 'tram_track':
-      return '25 m çevrende rayda bir kusur görüyor musun?';
     case 'streetlight':
-      return '25 m çevrende yanmayan bir lamba görüyor musun?';
+      return s.ask[type];
     default:
-      return `25 m çevrende bu sorunu görüyor musun? (${typeLabel(type)})`;
+      return s.ask.other(typeLabel(type));
   }
 }
