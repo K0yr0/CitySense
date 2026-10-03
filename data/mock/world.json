@@ -24,16 +24,6 @@
       "why": "reported subsidence that does not exist -> dismissed"
     }
   ],
-  "false_alarm_anonymous_reports": [
-    {
-      "false_alarm": "F1",
-      "text": "Dziura w jezdni, samochody hamują."
-    },
-    {
-      "false_alarm": "F2",
-      "text": "Zapadnięta nawierzchnia na jezdni."
-    }
-  ],
   "rides": {
     "full": {
       "day": {
@@ -211,9 +201,7 @@
         10,
         23
       ],
-      "false_alarms": [
-        "F2"
-      ]
+      "false_alarms": []
     }
   },
   "work": {

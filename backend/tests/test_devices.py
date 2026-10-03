@@ -154,7 +154,8 @@ def test_final_processes_whole_ride(env):
     meta = env.calls[1][1]
     assert meta["n"] == 5 and meta["vehicle_line"] == "175" and meta["mode"] == "road"
     assert meta["device_hash"] == devices_api.device_hash("bus-175-01") and len(meta["device_hash"]) == 16
-    assert meta["source_file"].endswith(".csv") and "bus-175-01" in meta["source_file"]
+    assert meta["source_file"] == "device:bus-175-01"
+    assert not (env.tmp / "rides").exists()  # no CSV copy of device rides (they fill the disk)
     assert env.calls[2:] == [("ingest_evidence", [21]), ("check_ride_verifications", 5)]
     assert len(_upserts(env)) == 2  # first chunk + final
     assert "bus-175-01" not in devices_api._buffers

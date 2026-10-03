@@ -41,7 +41,9 @@
       "answers": "wrong",
       "reports": [
         {"at": {"false_alarm": "F1"}, "lang": "pl",
-         "text": "Ogromna dziura w jezdni tutaj!!! Zróbcie coś."}
+         "text": "Ogromna dziura w jezdni tutaj!!! Zróbcie coś."},
+        {"at": {"false_alarm": "F2"}, "lang": "pl",
+         "text": "Zapadnięta nawierzchnia na jezdni, samochody hamują."}
       ]
     },
     {
@@ -99,6 +101,8 @@
       "reports": [
         {"at": {"false_alarm": "F2"}, "lang": "pl",
          "text": "Chyba zapadł się tu asfalt na jezdni, proszę sprawdzić."},
+        {"at": {"false_alarm": "F1"}, "lang": "pl",
+         "text": "Dziura w jezdni, chyba coś się tu zapadło."},
         {"at": {"spot": 19}, "lang": "pl",
          "text": "Na Świętokrzyskiej przy Mazowieckiej leżą worki ze śmieciami od kilku dni."}
       ]

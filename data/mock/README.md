@@ -40,7 +40,7 @@ app: Profile → Sign in → demo sign-in. Personas and their actions: [`persona
 
 | Area | Content |
 |---|---|
-| Complaints | ~370 citizen complaints over the last 14 days (19115 imports from `scripts/gen_complaints.py`, Polish with some English) + 13 app reports from the personas (7 with generated photos) |
+| Complaints | ~370 citizen complaints over the last 14 days (19115 imports from `scripts/gen_complaints.py`, Polish with some English) + 15 app reports from the personas (7 with generated photos; 4 of them are the false alarms) |
 | Sensors | 50 back-dated simulated bus and tram rides + 6 rides "now" (`scripts/simulate_buses.py`, ground truth `data/demo/sim_world.json`). Buses drive the **real routes of ZTM lines 171, 159, 107 and 160** (from the Warsaw GTFS feed, `data/demo/bus_lines.json`), tram 17 drives Marszałkowska |
 | Road health | ~1,300 measured segments over many streets: fresh along lines 171, 159 and 160 (rides until today), **stale along line 107** (Nowolipki, Krucza: last rides 11–12 days ago), tram 17 rails |
 | Incidents | Every state: candidate, likely, verified, dismissed (2 false alarms), found before any report (~25), awaiting a vehicle (~8) |

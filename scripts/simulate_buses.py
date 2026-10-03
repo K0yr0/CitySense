@@ -561,6 +561,7 @@ CITIZEN_TEXTS = [
     "Wyrwa w asfalcie na prawym pasie, niebezpiecznie dla rowerzystów.",
 ]
 LATE_REPORT_TEXT = "Nowa dziura w jezdni tutaj, uważajcie!"
+SCENARIO_CITIZEN = "scenario.citizen@cityecho.test"  # demo sign-in account of scenario 1's late report
 
 
 def scenario_buses(spot: dict) -> tuple[str, str]:
@@ -573,8 +574,10 @@ class Api:
     def __init__(self, base: str, token: str | None = None):
         self.base, self.token = base.rstrip("/"), token
 
-    def _req(self, method: str, path: str, data: bytes | None = None, ctype: str | None = None) -> dict:
-        headers = {"Authorization": f"Bearer {self.token}"} if self.token else {}
+    def _req(self, method: str, path: str, data: bytes | None = None, ctype: str | None = None,
+             token: str | None = None) -> dict:
+        token = token or self.token
+        headers = {"Authorization": f"Bearer {token}"} if token else {}
         if ctype:
             headers["Content-Type"] = ctype
         req = urllib.request.Request(self.base + path, data, headers, method=method)
@@ -590,9 +593,25 @@ class Api:
     def post_json(self, path: str, body: dict) -> dict:
         return self._req("POST", path, json.dumps(body).encode(), "application/json")
 
-    def post_form(self, path: str, fields: dict) -> dict:
+    def post_form(self, path: str, fields: dict, token: str | None = None) -> dict:
         from urllib.parse import urlencode
-        return self._req("POST", path, urlencode(fields).encode(), "application/x-www-form-urlencoded")
+        return self._req("POST", path, urlencode(fields).encode(), "application/x-www-form-urlencoded", token)
+
+    def dev_sign_in(self, email: str) -> str:
+        """POST /auth/dev (local stack only) -> bearer token."""
+        return self.post_json("/auth/dev", {"email": email})["token"]
+
+
+def admin_token(api: Api) -> str | None:
+    """Admin endpoints (/incidents, /reports/bulk) need an admin: sign in as the first ADMIN_EMAILS entry."""
+    from backend.config import settings
+
+    if not settings.admin_emails:
+        return None
+    try:
+        return api.dev_sign_in(settings.admin_emails[0])
+    except (RuntimeError, OSError):  # dev sign-in off, or the API is unreachable
+        return None
 
 
 def find_incident(api: Api, spot: dict, issue_type: str = "road_damage", radius_m: float = 40.0) -> dict | None:
@@ -623,6 +642,8 @@ class Scenario:
     def __init__(self, args, keys: dict[str, str], defects: list[dict]):
         self.args, self.keys, self.defects = args, keys, defects
         self.api = Api(args.api, args.token)
+        if self.api.token is None:  # the incident detail and bulk reports are admin-only
+            self.api.token = admin_token(self.api)
         self.trip = 0  # alternate directions across the whole show
 
     def say(self, text: str) -> None:
@@ -655,10 +676,10 @@ class Scenario:
         print(f"    after the first bus: {describe(find_incident(self.api, NEW_POTHOLE))}")
         self.drive(second, extra=[NEW_POTHOLE])
         print(f"    after a second bus:  {describe(find_incident(self.api, NEW_POTHOLE))}")
-        r = self.api.post_form("/reports", {"text": LATE_REPORT_TEXT,
-                                            "lon": NEW_POTHOLE["lon"], "lat": NEW_POTHOLE["lat"],
-                                            "contributor": "scenario-citizen-1"})
-        print(f"    a citizen reports it later -> report joins incident #{r.get('incident_id')}")
+        citizen = self.api.dev_sign_in(SCENARIO_CITIZEN)
+        r = self.api.post_form("/mobile/reports", {"text": LATE_REPORT_TEXT, "lon": NEW_POTHOLE["lon"],
+                                                   "lat": NEW_POTHOLE["lat"]}, token=citizen)
+        print(f"    a citizen reports it in the app later -> report joins incident #{(r.get('incident') or {}).get('id')}")
         print(f"    now: {describe(find_incident(self.api, NEW_POTHOLE))}")
 
     def report_then_verify(self) -> None:

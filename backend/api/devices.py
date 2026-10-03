@@ -135,7 +135,9 @@ def _finish(request: Request, device_id: str, hashed: str, samples: list[dict], 
         raise HTTPException(400, f"could not parse device samples: {exc}") from exc
     if df is None or len(df) == 0:
         raise HTTPException(400, "device ride has no usable samples")
-    source_file = rides._save_stream_csv(df, f"device_{device_id}") or f"device:{device_id}"
+    # No CSV copy (unlike /rides/stream): a device ride is ~100k samples, ~8 MB, and the simulated
+    # fleet sends hundreds; they are reproducible from the simulator's seed instead.
+    source_file = f"device:{device_id}"
     with db_session(request.app) as conn:
         _touch_device(conn, device_id, hashed, vehicle_line, mode)
         return rides.process_and_fuse(conn, df, vehicle_line=vehicle_line, mode=mode,

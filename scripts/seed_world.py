@@ -347,7 +347,7 @@ def say(text: str) -> None:
     print(text, flush=True)
 
 
-def history(api: Client, plan: Plan, keys: dict[str, str], pool: ProcessPoolExecutor) -> None:
+def history(api: Client, plan: Plan, keys: dict[str, str], pool: ProcessPoolExecutor, admin_token: str) -> None:
     events = timeline(plan)
     rides = [e[1] for e in events if e[0] == "ride"]
     futures = {id(r): pool.submit(render_ride, (r, plan.defects, plan.seed)) for r in rides}
@@ -355,7 +355,7 @@ def history(api: Client, plan: Plan, keys: dict[str, str], pool: ProcessPoolExec
     t0, sent, done_rides = time.monotonic(), 0, 0
     for kind, item in events:
         if kind == "reports":
-            api.post("/reports/bulk", body={"reports": [
+            api.post("/reports/bulk", token=admin_token, body={"reports": [
                 {"text": r["text"], "created_at": r["created_at"], "lon": r["lon"], "lat": r["lat"], "source": "19115"}
                 for r in item]})
             sent += len(item)
@@ -385,10 +385,6 @@ def people(api: Client, plan: Plan) -> dict[str, str]:
     rng = random.Random(plan.seed + 7)
     tokens = {p["key"]: sign_in(api, p["email"])[0] for p in plan.personas["personas"]}
     say(f"people: {len(tokens)} demo citizens signed in")
-    for fa in plan.world["false_alarm_anonymous_reports"]:
-        lon, lat = jitter(*plan.targets[f"false_alarm:{fa['false_alarm']}"], rng)
-        api.post("/reports", form={"text": fa["text"], "lon": lon, "lat": lat,
-                                   "contributor": f"mock-anonymous-{fa['false_alarm'].lower()}"})
     n_reports = n_photos = 0
     for p in plan.personas["personas"]:
         for k, rep in enumerate(p.get("reports", [])):
@@ -401,8 +397,7 @@ def people(api: Client, plan: Plan) -> dict[str, str]:
             api.post("/mobile/reports", token=tokens[p["key"]], form=form, files=files,
                      headers={"Accept-Language": rep.get("lang", "pl")})
             n_reports += 1
-    say(f"  {n_reports} reports from the app ({n_photos} with photos), "
-        f"{len(plan.world['false_alarm_anonymous_reports'])} anonymous false alarms")
+    say(f"  {n_reports} reports from the app ({n_photos} with photos)")
     answers(api, plan, tokens)
     n_routes = 0
     for p in plan.personas["personas"]:
@@ -479,7 +474,7 @@ def check(api: Client, plan_personas: dict, *, admin_email: str, fast: bool) -> 
     want = 80 if fast else 300
     add("complaints", stats.get("reports_total", 0) >= want, f"{stats.get('reports_total')} reports (want >= {want})")
     for status in ("candidate", "likely", "verified", "dismissed"):
-        n = len(api.get(f"/incidents?status={status}&limit=5000")["incidents"])
+        n = len(api.get(f"/incidents?status={status}&limit=5000", token=admin_token)["incidents"])
         add(f"incidents {status}", n > 0, f"{n}")
     add("found before any report", stats.get("found_before_report", 0) > 0, f"{stats.get('found_before_report')}")
     add("awaiting a vehicle", stats.get("awaiting_verification", 0) > 0, f"{stats.get('awaiting_verification')}")
@@ -568,7 +563,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     say(f"seeding the {'fast' if args.fast else 'full'} mock world (seed {seed}) into {args.api}")
     with ProcessPoolExecutor() as pool:
-        history(api, plan, keys, pool)
+        history(api, plan, keys, pool, admin_token)
         people(api, plan)
         city_work(api, plan, admin_token)
         final(api, plan, keys, pool)
