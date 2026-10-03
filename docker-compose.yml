@@ -65,6 +65,8 @@ services:
       # Local stack only: POST /auth/dev lets the mock seeder (and teammates) sign in as demo
       # citizens/admins without Google. Never enable this on a deployed API.
       AUTH_DEV_LOGIN: "1"
+      # The mock world's admin (data/mock/README.md) unless .env sets its own ADMIN_EMAILS.
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-admin@cityecho.test}
     # Entrypoint (docker/api-entrypoint.sh): wait for db -> init_db.py -> load_osm.py
     # --from-geojson data/osm/segments_demo.geojson --skip-if-loaded -> this command.
     command: ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000",
@@ -131,6 +133,8 @@ services:
     # simulated rides, work_status). Definitions live in data/mock/. See docs/ROADMAP.md, task S6.
     <<: *api-common
     profiles: ["mock"]
+    environment:
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-admin@cityecho.test}   # same admin as the api service
     entrypoint: ["python"]
     command: ["scripts/seed_world.py", "--api", "http://api:8000"]
     depends_on:
