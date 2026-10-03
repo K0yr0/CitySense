@@ -6,12 +6,13 @@
 const en = {
   /** The question, worded for the incident type. */
   ask: {
-    road_damage: 'Do you see a pothole within 25 m of you?',
-    tram_track: 'Do you see a track defect within 25 m of you?',
-    streetlight: 'Do you see a streetlight that is out within 25 m of you?',
+    road_damage: 'Is there a pothole here?',
+    tram_track: 'Is there a track defect here?',
+    streetlight: 'Is this streetlight out?',
     /** Any other type; `label` is typeLabel(type). */
-    other: (label: string) => `Do you see this problem within 25 m of you? (${label})`,
+    other: (label: string) => `Is this problem here? (${label})`,
   },
+  closeA11y: 'Dismiss',
   yesA11y: 'Yes, I see it',
   noA11y: "No, I don't see it",
   notNow: 'Not now',
@@ -30,11 +31,12 @@ const en = {
 
 const pl: typeof en = {
   ask: {
-    road_damage: 'Czy widzisz w promieniu 25 m dziurę w jezdni?',
-    tram_track: 'Czy widzisz w promieniu 25 m usterkę torowiska?',
-    streetlight: 'Czy widzisz w promieniu 25 m niedziałającą latarnię?',
-    other: (label: string) => `Czy widzisz w promieniu 25 m ten problem? (${label})`,
+    road_damage: 'Czy jest tu dziura w jezdni?',
+    tram_track: 'Czy jest tu usterka torowiska?',
+    streetlight: 'Czy ta latarnia nie świeci?',
+    other: (label: string) => `Czy ten problem tu jest? (${label})`,
   },
+  closeA11y: 'Zamknij',
   yesA11y: 'Tak, widzę',
   noA11y: 'Nie, nie widzę',
   notNow: 'Nie teraz',
@@ -51,11 +53,12 @@ const pl: typeof en = {
 
 const uk: typeof en = {
   ask: {
-    road_damage: 'Чи бачите ви вибоїну в радіусі 25 м?',
-    tram_track: 'Чи бачите ви дефект колії в радіусі 25 м?',
-    streetlight: 'Чи бачите ви в радіусі 25 м ліхтар, який не світить?',
-    other: (label: string) => `Чи бачите ви цю проблему в радіусі 25 м? (${label})`,
+    road_damage: 'Тут є вибоїна?',
+    tram_track: 'Тут є дефект колії?',
+    streetlight: 'Цей ліхтар не світить?',
+    other: (label: string) => `Ця проблема тут є? (${label})`,
   },
+  closeA11y: 'Закрити',
   yesA11y: 'Так, бачу',
   noA11y: 'Ні, не бачу',
   notNow: 'Не зараз',
