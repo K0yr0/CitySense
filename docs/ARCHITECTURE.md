@@ -300,7 +300,7 @@ FastAPI app `backend.main:app`, CORS from `settings.cors_origins`, static
 Orchestration:
 * `/rides/upload`, `/rides/stream` (final chunk): `process_ride → ingest_evidence → check_ride_verifications`
 * `/reports`: `process_report → ingest_evidence →` if incident has no sensor evidence, is candidate/likely and has no pending request → `request_verification`
-* `/incidents/{id}/responses`: `trust.contributor_for → record_vote → refresh_incident`
+* `/incidents/{id}/responses` and `/mobile/incidents/{id}/answer`: `mobile.record_answer` (sign-in, GPS ≤ 25 m, within 100 m, once per user) `→ record_vote → refresh_incident`
 * `/reports/bulk`: same without verification requests (fast import)
 
 ## 6. HTTP API (JSON shapes — the frontend codes against these)
@@ -338,9 +338,11 @@ GET  /incidents/{id}
 
 POST /incidents/{id}/verify -> {"incident_id", "status", "vehicle", "eta_min"}
 
-POST /incidents/{id}/responses  {"answer": "yes" | "no", "contributor": "<browser token, 8–200 chars>"}
+POST /incidents/{id}/responses  (Bearer)  {"answer": "yes" | "no", "lon", "lat", "accuracy_m"}
   -> {"incident_id", "status", "confidence", "sensor_confidence", "citizen_confidence",
-      "yes_count", "no_count", "contributor_trust"}        # 404 unknown, 409 dismissed/closed
+      "yes_count", "no_count", "contributor_trust"}
+     # 401 not signed in, 422 GPS > 25 m, 403 farther than 100 m, 404 unknown,
+     # 409 fixed / not open / already answered. No anonymous votes (docs/SECURITY.md A1).
 
 POST /reports   (multipart/form-data: text (req), lon?, lat?, photo? file, contributor? token)
   -> ReportStatus
@@ -429,7 +431,7 @@ GET  /users/me     (Bearer) -> User    # fresh from the DB; 401 without token or
 GET  /mobile/ping  -> {"ok": true}                      # A's router; more mobile routes go here
 GET  /admin/ping   (Bearer, admin) -> {"ok": true, "user": User}   # B's router
 POST /devices/stream  (X-Device-Key) -> buffered ride per device, 401 without a valid key (8.5)
-POST /incidents/{id}/responses       # unchanged (§6), moved to backend/api/responses.py (owner A)
+POST /incidents/{id}/responses       # §6; backend/api/responses.py (owner A); sign-in + 100 m since A1
 ```
 
 ### 8.3 Database (`db/migrations/`)

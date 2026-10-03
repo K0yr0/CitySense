@@ -15,7 +15,7 @@ all `/mobile/*` write endpoints require sign-in, photos are anonymised, SQL is p
 
 ## 📱 Person A
 
-### A1. Anyone can vote on any problem, from anywhere 🔴 High
+### A1. Anyone can vote on any problem, from anywhere ✅ Fixed (A, commit b5c8b99)
 - **Where:** `backend/api/responses.py`, `POST /incidents/{id}/responses`
 - **Problem:** the old web voting endpoint needs no sign-in and no location (the 25 m rule does not
   apply), and every new random "contributor" token counts as a new person.
@@ -25,6 +25,15 @@ all `/mobile/*` write endpoints require sign-in, photos are anonymised, SQL is p
 - **Fix:** the app uses `/mobile/incidents/{id}/answer` (sign-in + 25 m) and the web admin has no
   citizen pages any more, so remove this endpoint, or require sign-in plus the same 25 m check.
 - **Affects C:** the S6 contract lists this endpoint; C switches to `/mobile/incidents/{id}/answer`.
+- **Fix done:** the endpoint now needs sign-in and the phone's position (GPS ≤ 25 m) and accepts the
+  answer only within 100 m, through the same function as the app (`mobile.record_answer`); the
+  random token alone no longer counts. C's scripts do not call it, so nothing changes for C.
+- **B's outdated tests removed (by A, at the team lead's request):** the three tests in
+  `backend/tests/test_api.py` that tested the old anonymous voting
+  (`test_citizen_yes_no_is_recorded_weighted_and_reassessed`,
+  `test_answers_on_verified_incident_do_not_earn_trust`, `test_citizen_response_validation`) and their
+  helpers (`_respond_fixture`, `RESPONSE_KEYS`). The endpoint is now tested in A's
+  `backend/tests/test_mobile_api.py`.
 
 ### A2. Anonymous complaint spam 🔴 High
 - **Where:** `backend/api/reports.py`, `POST /reports` and `POST /reports/bulk`

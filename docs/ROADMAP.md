@@ -17,7 +17,7 @@ Citizens use the **mobile** app, the city uses the **web**; the **simulation** o
 | Trust earned before sign-in | **Carries over to the account** at Google sign-in |
 | Admin access | Sees **all departments** |
 | Sensor data | **No real sensors / ESP32, everything is simulated** (person C). The simulator sends data in the same format to the `/devices/stream` endpoint a real device would use. The web `/ride` page is deleted |
-| "Is there a pothole around you?" radius | **25 m**; asked only while GPS accuracy is ≤ 25 m |
+| "Is there a pothole around you?" radius | The pop-up appears within **25 m**; a Yes/No answer counts within **100 m**; both only with GPS accuracy ≤ 25 m |
 | Mobile app languages | **English, Polish, Ukrainian** (no Turkish); the backend's citizen messages follow `Accept-Language` |
 
 ## Project structure

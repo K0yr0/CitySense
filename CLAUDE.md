@@ -76,7 +76,7 @@ git push                                  # 5. small, frequent pushes
 - The web `/ride` phone recording page **will be deleted**.
 - Trust earned before signing in **carries over to the account** at Google sign-in.
 - The admin sees **all departments** (ZDM, Tramwaje Warszawskie, MPWiK, Straż Miejska).
-- The "do you see a pothole around you?" question has a **25 m** radius. It is asked only when the phone's GPS accuracy is ≤ 25 m.
+- The automatic "is there a pothole here?" **pop-up appears within 25 m**. A Yes/No answer (pop-up or a tapped problem on the map) **counts within 100 m**. Both need the phone's GPS accuracy ≤ 25 m and sign-in; one answer per person per problem.
 - There are two separate status fields; never mix them: the **confidence status** (candidate / likely / verified / dismissed, set by the engine) and the **work status** `work_status` (not started / in progress / done, set by the city).
 - **When "done" is set:** the question stops, trust scores are settled, and NO answers that arrive after the repair don't count against anyone.
 - Citizens **don't see** sensor data, the evidence timeline or facts; those are admin-only. Citizens see road health **only as a colour**.
