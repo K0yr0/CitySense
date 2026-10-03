@@ -1,0 +1,306 @@
+{
+ "seed": 2026,
+ "note": "SIMULATED ground truth for scripts/simulate_buses.py",
+ "defects": [
+  {
+   "kind": "bump",
+   "mode": "road",
+   "street": "Marszałkowska",
+   "line": "MAR",
+   "lon": 21.015035,
+   "lat": 52.224546,
+   "amp": 8.16,
+   "freq": 8.35,
+   "id": "D001"
+  },
+  {
+   "kind": "bump",
+   "mode": "road",
+   "street": "Marszałkowska",
+   "line": "MAR",
+   "lon": 21.016287,
+   "lat": 52.222833,
+   "amp": 9.09,
+   "freq": 6.52,
+   "id": "D002"
+  },
+  {
+   "kind": "bump",
+   "mode": "road",
+   "street": "Marszałkowska",
+   "line": "MAR",
+   "lon": 21.019807,
+   "lat": 52.21674,
+   "amp": 8.35,
+   "freq": 7.65,
+   "id": "D003"
+  },
+  {
+   "kind": "bump",
+   "mode": "road",
+   "street": "Marszałkowska",
+   "line": "MAR",
+   "lon": 21.009563,
+   "lat": 52.233698,
+   "amp": 5.3,
+   "freq": 7.11,
+   "id": "D004"
+  },
+  {
+   "kind": "bump",
+   "mode": "road",
+   "street": "Marszałkowska",
+   "line": "MAR",
+   "lon": 21.0113,
+   "lat": 52.230763,
+   "amp": 5.19,
+   "freq": 6.02,
+   "id": "D005"
+  },
+  {
+   "kind": "dark_lamp",
+   "mode": "road",
+   "street": "Marszałkowska",
+   "line": "MAR",
+   "lon": 21.00583,
+   "lat": 52.238832,
+   "id": "D006"
+  },
+  {
+   "kind": "dark_lamp",
+   "mode": "road",
+   "street": "Marszałkowska",
+   "line": "MAR",
+   "lon": 21.012976,
+   "lat": 52.227992,
+   "id": "D007"
+  },
+  {
+   "kind": "bump",
+   "mode": "road",
+   "street": "Aleje Jerozolimskie",
+   "line": "JER",
+   "lon": 20.993832,
+   "lat": 52.226119,
+   "amp": 8.83,
+   "freq": 6.1,
+   "id": "D008"
+  },
+  {
+   "kind": "bump",
+   "mode": "road",
+   "street": "Aleje Jerozolimskie",
+   "line": "JER",
+   "lon": 21.006456,
+   "lat": 52.228808,
+   "amp": 5.01,
+   "freq": 7.07,
+   "id": "D009"
+  },
+  {
+   "kind": "bump",
+   "mode": "road",
+   "street": "Aleje Jerozolimskie",
+   "line": "JER",
+   "lon": 20.999695,
+   "lat": 52.22735,
+   "amp": 5.52,
+   "freq": 6.52,
+   "id": "D010"
+  },
+  {
+   "kind": "bump",
+   "mode": "road",
+   "street": "Aleje Jerozolimskie",
+   "line": "JER",
+   "lon": 21.025232,
+   "lat": 52.232614,
+   "amp": 7.45,
+   "freq": 6.03,
+   "id": "D011"
+  },
+  {
+   "kind": "bump",
+   "mode": "road",
+   "street": "Aleje Jerozolimskie",
+   "line": "JER",
+   "lon": 21.002098,
+   "lat": 52.227967,
+   "amp": 9.06,
+   "freq": 8.91,
+   "id": "D012"
+  },
+  {
+   "kind": "dark_lamp",
+   "mode": "road",
+   "street": "Aleje Jerozolimskie",
+   "line": "JER",
+   "lon": 21.029407,
+   "lat": 52.233483,
+   "id": "D013"
+  },
+  {
+   "kind": "dark_lamp",
+   "mode": "road",
+   "street": "Aleje Jerozolimskie",
+   "line": "JER",
+   "lon": 20.988538,
+   "lat": 52.22498,
+   "id": "D014"
+  },
+  {
+   "kind": "bump",
+   "mode": "road",
+   "street": "Świętokrzyska",
+   "line": "SWI",
+   "lon": 21.005964,
+   "lat": 52.234647,
+   "amp": 8.24,
+   "freq": 9.45,
+   "id": "D015"
+  },
+  {
+   "kind": "bump",
+   "mode": "road",
+   "street": "Świętokrzyska",
+   "line": "SWI",
+   "lon": 21.001976,
+   "lat": 52.233839,
+   "amp": 5.05,
+   "freq": 7.46,
+   "id": "D016"
+  },
+  {
+   "kind": "bump",
+   "mode": "road",
+   "street": "Świętokrzyska",
+   "line": "SWI",
+   "lon": 21.010746,
+   "lat": 52.235653,
+   "amp": 8.15,
+   "freq": 8.47,
+   "id": "D017"
+  },
+  {
+   "kind": "dark_lamp",
+   "mode": "road",
+   "street": "Świętokrzyska",
+   "line": "SWI",
+   "lon": 21.013715,
+   "lat": 52.236217,
+   "id": "D018"
+  },
+  {
+   "kind": "bump",
+   "mode": "tram",
+   "street": null,
+   "line": "17",
+   "builtin": true,
+   "lon": 21.00908,
+   "lat": 52.234232,
+   "amp": 9.18,
+   "freq": 7.92,
+   "id": "D019"
+  },
+  {
+   "kind": "bump",
+   "mode": "tram",
+   "street": null,
+   "line": "17",
+   "builtin": true,
+   "lon": 21.021269,
+   "lat": 52.214141,
+   "amp": 5.89,
+   "freq": 10.26,
+   "id": "D020"
+  },
+  {
+   "kind": "bump",
+   "mode": "tram",
+   "street": null,
+   "line": "17",
+   "builtin": true,
+   "lon": 21.003385,
+   "lat": 52.242679,
+   "amp": 9.4,
+   "freq": 9.14,
+   "id": "D021"
+  },
+  {
+   "kind": "bump",
+   "mode": "tram",
+   "street": null,
+   "line": "17",
+   "builtin": true,
+   "lon": 21.018506,
+   "lat": 52.2188,
+   "amp": 4.93,
+   "freq": 10.56,
+   "id": "D022"
+  },
+  {
+   "kind": "bump",
+   "mode": "tram",
+   "street": null,
+   "line": "17",
+   "builtin": true,
+   "lon": 21.015391,
+   "lat": 52.223655,
+   "amp": 8.88,
+   "freq": 9.88,
+   "id": "D023"
+  },
+  {
+   "kind": "bump",
+   "mode": "tram",
+   "street": null,
+   "line": "17",
+   "builtin": true,
+   "lon": 21.013709,
+   "lat": 52.22649,
+   "amp": 5.13,
+   "freq": 8.21,
+   "id": "D024"
+  },
+  {
+   "kind": "dark_lamp",
+   "mode": "tram",
+   "street": null,
+   "line": "17",
+   "builtin": true,
+   "lon": 21.004858,
+   "lat": 52.240891,
+   "id": "D025"
+  },
+  {
+   "kind": "dark_lamp",
+   "mode": "tram",
+   "street": null,
+   "line": "17",
+   "builtin": true,
+   "lon": 21.011016,
+   "lat": 52.230995,
+   "id": "D026"
+  },
+  {
+   "kind": "dark_lamp",
+   "mode": "tram",
+   "street": null,
+   "line": "17",
+   "builtin": true,
+   "lon": 21.016336,
+   "lat": 52.222389,
+   "id": "D027"
+  },
+  {
+   "kind": "dark_lamp",
+   "mode": "tram",
+   "street": null,
+   "line": "17",
+   "builtin": true,
+   "lon": 21.017477,
+   "lat": 52.220456,
+   "id": "D028"
+  }
+ ]
+}

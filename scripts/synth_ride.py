@@ -35,6 +35,12 @@ G = 9.81
 WORLD_SEED = 1717         # fixed: same defects/lamps for every ride on a line
 ACC, DEC = 1.0, 1.2       # tram acceleration / braking, m/s²
 BOGIE_M = 9.0             # second bogie hits the same defect this many metres later
+# Per vehicle kind: acceleration / braking (m/s²), second axle/bogie offset (m), cruise speed range (km/h).
+VEHICLES = {
+    "tram": {"acc": ACC, "dec": DEC, "axle_m": BOGIE_M, "vmax_kmh": (30, 45)},
+    "bus": {"acc": 1.2, "dec": 1.5, "axle_m": 6.0, "vmax_kmh": (25, 50)},
+}
+ON_ROUTE_M = 4.0          # a world defect farther than this from a route's path is not driven over
 LAMP_SPACING_M = 33.0
 N_BROKEN_LAMPS = 4
 
@@ -76,10 +82,15 @@ DEFAULT_START = {False: "2026-09-29T07:10:00Z", True: "2026-09-30T19:40:00Z"}  #
 # --------------------------------------------------------------------------- geometry
 
 class Route:
-    def __init__(self, line: str):
-        if line not in ROUTES:
+    """A line's driving path with stops. `cfg` (same shape as a ROUTES entry) overrides the built-in lines."""
+
+    def __init__(self, line: str, cfg: dict | None = None):
+        if cfg is None and line not in ROUTES:
             raise ValueError(f"unknown line {line!r}; known: {sorted(ROUTES)}")
-        cfg = ROUTES[line]
+        cfg = cfg if cfg is not None else ROUTES[line]
+        self.line = line
+        self.mode = cfg.get("mode", "tram")
+        self.vehicle = VEHICLES["tram" if self.mode == "tram" else "bus"]
         self.names = [s[0] for s in cfg["stops"]]
         path = cfg.get("path") or [(lon, lat) for _, lon, lat in cfg["stops"]]
         self.lon = np.array([p[0] for p in path], dtype=float)
@@ -91,10 +102,14 @@ class Route:
         if self.stop_s[0] > 0.01 or self.stop_s[-1] < self.length - 0.01 or np.any(np.diff(self.stop_s) <= 0):
             raise ValueError(f"line {line}: stops must run along the path from its first to its last point")
         self.stop_s[0], self.stop_s[-1] = 0.0, self.length  # the ride starts and ends at a stop
-        self.crossing_s = [self.stop_s[self.names.index(n)] + 30.0 for n in cfg["crossings"]]
+        self.crossing_s = [self.stop_s[self.names.index(n)] + 30.0 for n in cfg.get("crossings", [])]
 
     def project(self, lon: float, lat: float) -> float:
         """Along-route distance (metres) of the path point closest to (lon, lat)."""
+        return self.locate(lon, lat)[0]
+
+    def locate(self, lon: float, lat: float) -> tuple[float, float]:
+        """(along-route distance, distance from the path) in metres of the path point closest to (lon, lat)."""
         kx = 111_320 * np.cos(np.radians(self.lat.mean()))  # local equirectangular metres
         x, y = (self.lon - lon) * kx, (self.lat - lat) * 110_540
         dx, dy = np.diff(x), np.diff(y)
@@ -102,7 +117,7 @@ class Route:
         t = np.clip(-(x[:-1] * dx + y[:-1] * dy) / np.where(seg2 > 0, seg2, 1.0), 0.0, 1.0)
         d2 = (x[:-1] + t * dx) ** 2 + (y[:-1] + t * dy) ** 2
         i = int(np.argmin(d2))
-        return float(self.vertex_s[i] + t[i] * (self.vertex_s[i + 1] - self.vertex_s[i]))
+        return float(self.vertex_s[i] + t[i] * (self.vertex_s[i + 1] - self.vertex_s[i])), float(np.sqrt(d2[i]))
 
     def at(self, s) -> tuple[np.ndarray, np.ndarray]:
         """(lon, lat) at along-route distance s (metres)."""
@@ -138,6 +153,37 @@ def _world(route: Route, n_bumps: int) -> dict:
         if all(abs(k - b) > 2 for b in broken):
             broken.append(k)
     return {"bumps": bumps, "joints": joints, "joint_amp": joint_amp,
+            "lamps": lamps, "lamp_power": power, "broken": sorted(broken)}
+
+
+def world_on_route(route: Route, defects: list[dict], *, seed: int = WORLD_SEED) -> dict:
+    """The physical world one route drives through, from defects at fixed coordinates.
+
+    `defects`: dicts with kind "bump" (pothole / track defect: amp m/s² at 30 km/h, freq Hz) or
+    "dark_lamp" (broken streetlight), plus lon/lat. Only those within ON_ROUTE_M of the path count,
+    so every line over the same street hits the same defects. Lamps stand every ~33 m (fixed per
+    line by `seed`); a broken lamp replaces the lamp nearest to it. No rail joints (they are tram-17
+    specific, see _world).
+    """
+    bumps, dark = [], []
+    for d in defects:
+        s, off = route.locate(d["lon"], d["lat"])
+        if off > ON_ROUTE_M or not 0.0 < s < route.length:
+            continue
+        if d["kind"] == "bump":
+            bumps.append((s, float(d["amp"]), float(d["freq"])))
+        elif d["kind"] == "dark_lamp":
+            dark.append(s)
+    rng = np.random.default_rng([seed, 3, sum(map(ord, route.line))])
+    lamps = np.arange(10.0, route.length, LAMP_SPACING_M)
+    lamps = lamps + rng.uniform(-2.0, 2.0, size=lamps.size)
+    power = rng.uniform(14, 22, size=lamps.size)
+    broken = set()
+    for s in dark:
+        k = int(np.argmin(np.abs(lamps - s)))
+        lamps[k] = s
+        broken.add(k)
+    return {"bumps": sorted(bumps), "joints": np.array([]), "joint_amp": np.array([]),
             "lamps": lamps, "lamp_power": power, "broken": sorted(broken)}
 
 
@@ -177,8 +223,9 @@ def _speed_profile(route: Route, world: dict, rng: np.random.Generator):
     v = np.zeros_like(s_grid)
     for (a, _), (b, _) in zip(halts[:-1], halts[1:]):
         m = (s_grid >= a) & (s_grid <= b)
-        vmax = rng.uniform(30, 45) / 3.6
-        v[m] = np.minimum(vmax, np.minimum(np.sqrt(2 * ACC * (s_grid[m] - a)), np.sqrt(2 * DEC * (b - s_grid[m]))))
+        vmax = rng.uniform(*route.vehicle["vmax_kmh"]) / 3.6
+        acc, dec = route.vehicle["acc"], route.vehicle["dec"]
+        v[m] = np.minimum(vmax, np.minimum(np.sqrt(2 * acc * (s_grid[m] - a)), np.sqrt(2 * dec * (b - s_grid[m]))))
     v = np.maximum(v, 0.3)  # creep speed avoids infinite time at the halts
     t_move = np.concatenate([[0.0], np.cumsum(ds / (0.5 * (v[1:] + v[:-1])))])
 
@@ -208,10 +255,15 @@ def _speed_profile(route: Route, world: dict, rng: np.random.Generator):
 
 
 def generate_ride(*, line: str = "17", seed: int = 1, night: bool = False, bumps: int = 6,
-                  start: str | datetime | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Simulate one ride. Returns (samples with SAMPLE_COLUMNS, truth with kind/lon/lat)."""
-    route = Route(line)
-    world = _world(route, bumps)
+                  start: str | datetime | None = None, route: Route | None = None,
+                  world: dict | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Simulate one ride. Returns (samples with SAMPLE_COLUMNS, truth with kind/lon/lat).
+
+    Default: built-in `line` with its fixed _world (`bumps` defects). The simulator passes its own
+    `route` (any line, bus or tram) and `world` (see world_on_route) instead.
+    """
+    route = route or Route(line)
+    world = world if world is not None else _world(route, bumps)
     rng = np.random.default_rng([seed, 17])
     t, s_t, v_t, dwells = _speed_profile(route, world, rng)
     n = t.size
@@ -230,7 +282,7 @@ def generate_ride(*, line: str = "17", seed: int = 1, night: bool = False, bumps
         tb = t_at(s_b)
         a = amp * hit_scale(tb)
         _add_pulse(vert, tb, a, freq, 0.08)
-        _add_pulse(vert, tb + BOGIE_M / max(np.interp(tb, t, v_t), 1.0), 0.5 * a, freq, 0.08)
+        _add_pulse(vert, tb + route.vehicle["axle_m"] / max(np.interp(tb, t, v_t), 1.0), 0.5 * a, freq, 0.08)
     for s_j, amp in zip(world["joints"], world["joint_amp"]):            # rail joints
         _add_pulse(vert, t_at(s_j), amp * hit_scale(t_at(s_j)), 14.0, 0.04)
     for s_c in route.crossing_s:                                          # track crossings: clatter
