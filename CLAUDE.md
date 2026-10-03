@@ -131,7 +131,7 @@ cd web-admin && npm install && npm run dev                                      
 
 ## 8. Mevcut durum (bu dosyayı güncel tut)
 
-- ✅ Backend: sensör hattı, şikayet triyajı, füzyon, güven motoru, güven puanı (trust), doğrulama döngüsü. 200 test geçiyor (`.venv/bin/pytest`).
+- ✅ Backend: sensör hattı, şikayet triyajı, füzyon, güven motoru, güven puanı (trust), doğrulama döngüsü. 278 test geçiyor (`.venv/bin/pytest`; PostGIS testleri `CITYECHO_TEST_DB=1` ile).
 - ✅ Gün 0: tüm router'lar kayıtlı; giriş iskeleti (`backend/auth/`: `current_user`, `require_admin`, Google + dev girişi, güvenin hesaba taşınması); migration sistemi ve 100/200/300 migration'ları (`users`, `work_status`, `devices`); Docker; mobil iskeleti (Expo SDK 57).
 - ✅ Web arayüzü `web-admin/` içinde. Kullanıcı sayfaları hâlâ içinde; B, W0'da siler.
 - ✅ Herkese açık demo sitesi: https://cityecho-gules.vercel.app (demo verisiyle). Yalnızca A'nın push'larıyla güncellenir (bölüm 7).
@@ -139,15 +139,17 @@ cd web-admin && npm install && npm run dev                                      
 - ✅ Canlı Varşova araç konumları çalışıyor (yeni API, aşağıya bak).
 - ✅ Sahiplik kontrolü: `OWNERS` + `.githooks/pre-commit` + `scripts/check_owners.py`.
 - ✅ Harita (S0): 11.833 segment (9.057 yol, 2.776 ray), gerçek kırılganlık verisiyle; `data/osm/segments_demo.geojson` repoda, yükleme saniyeler sürer. Demo tramvay sürüşleri gerçek raylarla hizalı (%100).
-- ⏳ `/devices/stream` 501 döndürüyor (C, S1'de yazar); `scripts/simulate_buses.py` henüz yok (C, S2).
-- ❌ Bilinen eksik: tramvay, yol çukurunu doğrulayamıyor (tramvay tespitleri yalnızca ray olaylarıyla eşleşir). Simüle otobüsler yol çukurlarını doğrular.
+- ✅ Sensör simülasyonu (C, S1–S5): `/devices/stream` (`X-Device-Key`, cihaz başına tampon); `scripts/simulate_buses.py` sanal filo (cihaz adları `bus-MAR|JER|SWI-NN`, `tram-17-NN`; `docker compose --profile sim up simulator`); sabit ground truth `data/demo/sim_world.json`; yol sağlığı son 5 geçişin medyanı + `health_updated_at` (tazelik) + `health_weight` (301); doğruluk raporu `data/demo/sim_accuracy.md` (`--eval`, simülasyonda ölçüldü); sahne senaryoları `--scenario all` (temiz veritabanında ~15 sn).
+- ✅ Tramvay yol çukurunu doğrulayamaz (tasarım gereği); yol çukurlarını simüle otobüsler doğrular (MAR hattı tramvay 17'ye paralel).
 - ❌ Bilinen eksik (B ve C): tramvay hattı iki paralel raydan oluşuyor; bir sürüşün GPS'i iki ray arasında gidip geliyor. Füzyonun "≥ 2 sürüş aynı segmentte" kuralı iki rayı tek sayacak şekilde ele alınmalı.
-- ℹ️ Demo verisi tutarsızlığı (C, S5): Świętokrzyska'da 38 şikayet "ray kusuru" diyor ama sentetik tramvay sürüşleri orada kusur içermiyor; temiz geçişler güveni %45'e düşürüyor. Motor doğru çalışıyor; demo senaryoları hizalanmalı.
+- ✅ Demo verisi hizalandı (S5): şikayet kümelerine kusur kondu (`ANCHORS`); Świętokrzyska'daki 40 "ray kusuru" şikayeti `seed_demo` sonrası %97 ile doğrulanıyor. Doğrulanmış olay temiz geçişle kapanmaz; onarımı B'nin `work_status = done` akışı kapatır.
 - ℹ️ `nearest_segment(...)` Marszałkowska'da en yakın yolu ~16 m'de, rayı ~24 m'de buluyor; yalnızca ray ararken 50 m yarıçap gerekebilir.
 
 ## 9. Tuzaklar
 
 - **Varşova canlı araç API'si değişti.** Adres: `POST https://dane.um.warszawa.pl/api/action/get_ztm_lokalizacja_pojazdow`, gövde `{"type": 1|2}` (1 = otobüs, 2 = tramvay), token `Authorization` başlığında. Eski `busestrams_get` + `apikey=` artık çalışmıyor. Kod bunu kullanıyor (`backend/fusion/verify.py`).
+- **Docker + Colima'da `--reload` dosya değişikliğini görmez:** kod değişince `docker compose restart api`, `.env` değişince `docker compose up -d --force-recreate api`.
+- **`seed_demo` ~8–9 dakika sürer** (367 şikayet triyajı). Sunumdan önce hazırlayın.
 - **Overpass (OpenStreetMap) yavaş** ve sık zaman aşımına uğruyor. İndirmeler `data/cache/osmnx` içinde önbelleğe alınıyor.
 - `frontend/AGENTS.md`: bu Next.js sürümünde API'ler değişmiş olabilir. Yeni Next özelliği yazmadan önce `node_modules/next/dist/docs/` belgelerine bak.
 - Doğruluk sayıları (kategori %97 vb.) **sentetik veriden** geliyor. Sunumda "simülasyonda ölçüldü" diye sun.

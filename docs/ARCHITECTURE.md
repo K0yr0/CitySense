@@ -117,9 +117,9 @@ YES/NO per contributor per incident, plus one implicit YES per located report)
 (see schema.sql for every column). `db/functions.sql` (DB agent) adds:
 
 * `nearest_segment(lon float8, lat float8, p_mode text default null, max_dist_m float8 default 20) returns bigint`
-* `recompute_segment_health() returns void` — for each segment with `ride_segments`
-  rows: `health = 1 - clamp(median(rms) / p99(median rms over all segments), 0, 1)`,
-  `health_rides = count(distinct ride_id)`.
+* `recompute_segment_health() returns void` (plpgsql) — for each segment with `ride_segments`
+  rows: `health = 1 - clamp(median(rms of the 5 newest passes) / p99(median rms over all segments), 0, 1)`,
+  `health_rides = count(distinct ride_id)`, `health_updated_at`, `health_weight` (see §8.3).
 
 ## 5. Python module contracts
 
@@ -428,7 +428,7 @@ POST /auth/dev     {"email": str, "contributor"?: str}
 GET  /users/me     (Bearer) -> User    # fresh from the DB; 401 without token or deleted account
 GET  /mobile/ping  -> {"ok": true}                      # A's router; more mobile routes go here
 GET  /admin/ping   (Bearer, admin) -> {"ok": true, "user": User}   # B's router
-POST /devices/stream  (X-Device-Key) -> 501 until C implements it (8.5)
+POST /devices/stream  (X-Device-Key) -> buffered ride per device, 401 without a valid key (8.5)
 POST /incidents/{id}/responses       # unchanged (§6), moved to backend/api/responses.py (owner A)
 ```
 
@@ -444,13 +444,16 @@ migration, add a new one (see `db/migrations/README.md`). Day 0 migrations:
 | `100_users.sql` | `users(id, google_sub unique, email unique, name, role default 'citizen', contributor_id unique → contributors, created_at)` |
 | `200_work_status.sql` | `incidents.work_status text not null default 'todo'` check `todo`/`in_progress`/`done`, `work_status_changed_at`, `work_status_by → users` |
 | `300_devices.sql` | `devices(id text pk, key_hash, vehicle_line, mode road/tram, last_seen_at, created_at)`, `segments.health_updated_at` |
+| `301_segment_health_weight.sql` (S3) | `segments.health_weight real not null default 0` |
 
 * **`work_status`** (`backend.models.WorkStatus`): `todo` → `in_progress` → `done`. Written **only by B**
   (web admin workflow, sets `work_status_changed_at` / `work_status_by`; on `done` B calls
   `trust.settle(conn, id, real=True)`). Independent of the confidence `status`. A reads it: no
   "is it still there?" question when `done`.
-* **`segments.health`, `health_rides`, `health_updated_at`**: written **only by C** (sensor pipeline /
-  `recompute_segment_health`). A and B only read them.
+* **`segments.health`, `health_rides`, `health_updated_at`, `health_weight`**: written **only by C** (sensor pipeline /
+  `recompute_segment_health`). A and B only read them. `health` = median vibration of the 5 newest passes
+  (so repairs show after ~3 clean passes); `health_updated_at` = newest measurement (freshness);
+  `health_weight` = sum of 0.5^(age / 7 days) per pass (1.0 ≈ one fresh ride, 0 = never measured / stale).
 
 ### 8.4 Public (citizen) incident view, for A
 

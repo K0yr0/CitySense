@@ -2,7 +2,7 @@
 #   web  http://localhost:3000      api  http://localhost:8000/docs      db  localhost:5433
 # One-shot jobs (profiles):
 #   docker compose --profile seed run --rm seed     # fill the demo database through the API
-#   docker compose --profile sim up simulator       # virtual bus fleet (person C, not written yet)
+#   docker compose --profile sim up simulator       # virtual bus/tram fleet -> /devices/stream (person C)
 # Reset everything (database included):  docker compose down -v
 # More: docker/README.md
 
@@ -109,10 +109,9 @@ services:
     restart: "no"
 
   simulator:
-    # PLACEHOLDER for person C (task S2): scripts/simulate_buses.py does not exist yet.
-    # It will stream simulated bus/tram sensor data to the API's /devices/stream.
-    # Until the script lands, `docker compose --profile sim up simulator` exits with
-    # "No such file or directory".
+    # Person C (S2): scripts/simulate_buses.py streams simulated bus/tram sensor rides to the API's
+    # /devices/stream, one vehicle per DEVICE_KEYS entry (.env). Other modes, e.g. the stage scenarios:
+    #   docker compose --profile sim run --rm simulator scripts/simulate_buses.py --api http://api:8000 --scenario all
     <<: *api-common
     profiles: ["sim"]
     entrypoint: ["python"]

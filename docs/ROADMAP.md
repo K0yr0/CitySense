@@ -82,7 +82,7 @@ Tam ve kesin liste `OWNERS` dosyasıdır; bu tablo özetidir. İkisi çelişirse
 | B → A | `incidents.work_status` sütunu (`todo` / `in_progress` / `done`) | Mobil, `done` olaylarda 25 m sorusunu durdurur |
 | B → A | `incidents.confidence`, `incidents.status` sütunları | Mobildeki kısa olay görünümü |
 | B → C | `fusion.incidents.ingest_evidence(conn, evidence_ids)` ve `verify.check_ride_verifications(conn, ride_id)` (zaten var) | C'nin sensör kanıtını olaylara bağlamak; geçişleri doğrulama olarak saymak |
-| C → B ve A | `segments.health`, `segments.health_rides` sütunları (+ S3'te tazelik sütunu) | B'nin canlı haritası, A'nın yol renkleri. Yalnızca C yazar |
+| C → B ve A | `segments.health`, `segments.health_rides`, `segments.health_updated_at` (tazelik), `segments.health_weight` (zaman ağırlıklı veri miktarı) sütunları | B'nin canlı haritası, A'nın yol renkleri. Yalnızca C yazar |
 | C → B | `/devices/stream` veri formatı (`docs/ARCHITECTURE.md`'ye yazılır) | Simülatör, gerçek bir cihaz gibi bu formatta gönderir |
 
 Sözleşme değişikliği gerekirse: grupta duyurulur, ilgili kişiler onaylar, değişiklik ayrı bir SHARED commit'iyle `docs/`'a yazılır.
