@@ -9,6 +9,7 @@ const en = {
   zoomInForColors: 'Zoom in to see road colours',
   loadFailed: (error: string) => `Couldn't load map data. ${error}`,
   locateLabel: 'Show my location',
+  zoomOutLabel: 'Zoom out',
   /** GPS accuracy chip while following the user. */
   accuracy: (m: number) => `Location ±${m} m`,
   /** Same chip when the GPS is too imprecise for the "problem near you?" question. */
@@ -36,6 +37,7 @@ const pl: typeof en = {
   zoomInForColors: 'Przybliż, aby zobaczyć kolory dróg',
   loadFailed: (error: string) => `Nie udało się wczytać danych mapy. ${error}`,
   locateLabel: 'Pokaż moją lokalizację',
+  zoomOutLabel: 'Oddal mapę',
   accuracy: (m: number) => `Lokalizacja ±${m} m`,
   accuracyTooLow: (m: number, limit: number) =>
     `Lokalizacja ±${m} m · pytania o okolicę wymagają GPS z dokładnością do ${limit} m`,
@@ -66,6 +68,7 @@ const uk: typeof en = {
   zoomInForColors: 'Наблизьте мапу, щоб побачити кольори доріг',
   loadFailed: (error: string) => `Не вдалося завантажити дані мапи. ${error}`,
   locateLabel: 'Показати моє місцезнаходження',
+  zoomOutLabel: 'Віддалити мапу',
   accuracy: (m: number) => `Місцезнаходження ±${m} м`,
   accuracyTooLow: (m: number, limit: number) =>
     `Місцезнаходження ±${m} м · для запитань про околиці потрібна точність GPS до ${limit} м`,

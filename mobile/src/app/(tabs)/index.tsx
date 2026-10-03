@@ -11,13 +11,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IncidentCard } from '@/components/map/incident-card';
 import { IncidentMap } from '@/components/map/incident-map';
-import { Banner, Chip, HealthLegend, LocateButton } from '@/components/map/map-controls';
+import { Banner, Chip, HealthLegend, LocateButton, ZoomOutButton } from '@/components/map/map-controls';
 import type { IncidentMapHandle } from '@/components/map/types';
 import { useMapData } from '@/components/map/use-map-data';
 import { Spacing } from '@/constants/theme';
 import { useLocation } from '@/hooks/use-location';
 import type { PublicIncident } from '@/lib/api';
-import { WARSAW_REGION } from '@/lib/geo';
+import { MAX_ZOOM_OUT_DELTA, WARSAW_REGION, zoomedOut } from '@/lib/geo';
 import { useText } from '@/lib/i18n';
 import { commonText } from '@/i18n/common';
 import { mapText } from '@/i18n/map';
@@ -60,6 +60,12 @@ export default function MapScreen() {
     setFollowing(true);
     mapRef.current?.animateTo({ ...coords, ...USER_ZOOM });
   }
+
+  // One step out around the current centre; the user's dot (if shown) stays on the map.
+  function zoomOut() {
+    mapRef.current?.animateTo(zoomedOut(data.region));
+  }
+  const atWidest = Math.max(data.region.latitudeDelta, data.region.longitudeDelta) >= MAX_ZOOM_OUT_DELTA * 0.99;
 
   // Keep the card in sync with refreshed data; keep the last copy if it scrolled out of the box.
   const current = selected ? (data.incidents.find((i) => i.id === selected.id) ?? selected) : null;
@@ -132,7 +138,12 @@ export default function MapScreen() {
               </Chip>
             )}
           </View>
-          {!IS_WEB && <LocateButton onPress={locate} busy={locating} active={user !== null} />}
+          {!IS_WEB && (
+            <View style={styles.fabs}>
+              <ZoomOutButton onPress={zoomOut} disabled={atWidest} />
+              <LocateButton onPress={locate} busy={locating} active={user !== null} />
+            </View>
+          )}
         </View>
 
         {card && <IncidentCard incident={card} onClose={() => setSelected(null)} />}
@@ -159,6 +170,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
+    gap: Spacing.two,
+  },
+  fabs: {
     gap: Spacing.two,
   },
   chips: {

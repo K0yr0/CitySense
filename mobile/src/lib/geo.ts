@@ -53,3 +53,13 @@ export function formatDistance(m: number): string {
   if (m < 1000) return `${Math.round(m)} ${units.m}`;
   return `${formatNumber(Math.round(m / 100) / 10)} ${units.km}`;
 }
+
+/** Widest view the zoom-out button goes to (all of Warsaw and its edges). */
+export const MAX_ZOOM_OUT_DELTA = 0.4;
+
+/** The same centre with a wider view: each step doubles the visible area's height and width. */
+export function zoomedOut(region: Region, factor = 2): Region {
+  const scale = Math.min(factor, MAX_ZOOM_OUT_DELTA / Math.max(region.latitudeDelta, region.longitudeDelta, 1e-9));
+  if (scale <= 1) return region;
+  return { ...region, latitudeDelta: region.latitudeDelta * scale, longitudeDelta: region.longitudeDelta * scale };
+}

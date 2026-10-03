@@ -69,6 +69,32 @@ export function LocateButton({ onPress, busy, active }: { onPress: () => void; b
   );
 }
 
+/** Zooms the map out one step (doubles the visible area); disabled at the widest view. */
+export function ZoomOutButton({ onPress, disabled = false }: { onPress: () => void; disabled?: boolean }) {
+  const theme = useTheme();
+  const s = useText(mapText);
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={s.zoomOutLabel}
+      accessibilityState={{ disabled }}
+      style={({ pressed }) => [
+        styles.locate,
+        { backgroundColor: theme.background },
+        disabled && styles.disabled,
+        pressed && styles.pressed,
+      ]}>
+      <SymbolView
+        name={{ ios: 'minus.magnifyingglass', android: 'zoom_out', web: 'zoom_out' }}
+        tintColor={theme.tint}
+        size={24}
+      />
+    </Pressable>
+  );
+}
+
 /** Thin banner under the legend: hints, errors (with retry), loading. */
 export function Banner({
   children,
@@ -160,5 +186,8 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.6,
+  },
+  disabled: {
+    opacity: 0.4,
   },
 });
