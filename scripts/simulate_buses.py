@@ -7,14 +7,16 @@ broken streetlights sit at known coordinates in data/demo/sim_world.json (the gr
 every vehicle whose route passes over a defect feels it. Lines sharing a street hit the same
 potholes; the tram on Marszałkowska never hits the road potholes 20 m beside its tracks.
 
-Fleet = DEVICE_KEYS in .env, ids `<bus|tram>-<line>-<nn>`, e.g. bus-MAR-01, tram-17-01. Each
+Fleet = DEVICE_KEYS in .env, ids `<bus|tram>-<line>-<nn>`, e.g. bus-171-01, tram-17-01. Each
 vehicle drives its line back and forth (`--rides` trips) in its own thread, sending a chunk
 every `--chunk-s` seconds of ride data; `--speed 1` paces chunks in real time, 0 = flat out.
-Line labels (MAR, JER, SWI) are simulation corridors, not ZTM timetable lines.
+Bus lines are real ZTM lines (171, 159, 107, 160) driven along their real routes, taken from the
+Warsaw GTFS feed and cut to the demo map (data/demo/bus_lines.json, rebuilt with --import-gtfs).
 
   .venv/bin/python scripts/simulate_buses.py --dry-run                 # generate + score, no API
   .venv/bin/python scripts/simulate_buses.py --api http://localhost:8000 --rides 2
   .venv/bin/python scripts/simulate_buses.py --make-world              # rewrite sim_world.json
+  .venv/bin/python scripts/simulate_buses.py --import-gtfs             # rebuild bus_lines.json from GTFS
   docker compose --profile sim up simulator
   .venv/bin/python scripts/simulate_buses.py --eval                    # accuracy report (S4), no API
   .venv/bin/python scripts/simulate_buses.py --scenario all            # stage demo scenarios (S5)
@@ -51,24 +53,25 @@ WORLD_FILE = REPO_ROOT / "data" / "demo" / "sim_world.json"
 REPORT_FILE = REPO_ROOT / "data" / "demo" / "sim_accuracy.md"
 LOG_DIR = REPO_ROOT / "data" / "rides"
 WORLD_SEED = 2026
-OFF_STREET_PENALTY = 3.0   # path search: edges of other streets cost 3x, so buses stay on their corridor
+BUS_LINES_FILE = REPO_ROOT / "data" / "demo" / "bus_lines.json"
+GTFS_ZIP = REPO_ROOT / "data" / "cache" / "gtfs" / "warsaw.zip"     # gitignored download, only for --import-gtfs
+GTFS_URL = "https://mkuran.pl/gtfs/warsaw.zip"
+DEMO_BBOX = (20.9646, 52.1974, 21.0375, 52.2546)  # extent of segments_demo.geojson (lon/lat min, max)
+KX, KY = 111_320 * math.cos(math.radians(52.23)), 110_540.0  # local metres per degree
+STOP_MAX_OFF_M = 30.0      # a GTFS stop farther than this from the line's shape is not on this variant
+MIN_STOP_GAP_M = 40.0      # platforms of one stop / loops: keep stops at least this far apart along the line
+ON_ROAD_M = 8.0            # simulated defects only where the map has a road segment (so they map-match)
 
-# Simulated bus corridors: stops in driving order, each snapped to the named street.
+# Real ZTM bus lines, driven along their GTFS shape (direction 0, most frequent variant) inside the demo map,
+# and the defects each one gets in the simulated world. Picked for long, many-street paths over the map's
+# road network that share streets (Jerozolimskie, Piękna/Myśliwiecka, Solidarności), so lines confirm each other.
 BUS_LINES = {
-    "MAR": {"street": "Marszałkowska", "potholes": 5, "dark_lamps": 2, "stops": [
-        ("pl. Bankowy", 21.0036, 52.2423), ("Królewska", 21.0065, 52.2384),
-        ("Świętokrzyska", 21.0086, 52.2352), ("Centrum", 21.0120, 52.2301),
-        ("Hoża", 21.0144, 52.2256), ("pl. Konstytucji", 21.0166, 52.2223),
-        ("pl. Zbawiciela", 21.0182, 52.2196), ("pl. Unii Lubelskiej", 21.0215, 52.2139)]},
-    "JER": {"street": "Aleje Jerozolimskie", "potholes": 5, "dark_lamps": 2, "stops": [
-        ("pl. Zawiszy", 20.9857, 52.2241), ("Dw. Centralny", 21.0036, 52.2282),
-        ("Centrum", 21.0120, 52.2301), ("rondo de Gaulle'a", 21.0218, 52.2319),
-        ("Muzeum Narodowe", 21.0259, 52.2328), ("Most Poniatowskiego", 21.0322, 52.2341)]},
-    "SWI": {"street": "Świętokrzyska", "potholes": 3, "dark_lamps": 1, "stops": [
-        ("rondo ONZ", 20.9988, 52.2330), ("Emilii Plater", 21.0040, 52.2342),
-        ("Marszałkowska", 21.0094, 52.2354), ("Mazowiecka", 21.0128, 52.2360),
-        ("Nowy Świat", 21.0187, 52.2371)]},
+    "171": {"potholes": 5, "dark_lamps": 2},  # Leszno, Solidarności, pl. Bankowy, Marszałkowska, Jerozolimskie
+    "159": {"potholes": 4, "dark_lamps": 2},  # Jerozolimskie, Chałubińskiego, Koszykowa, Piękna, Myśliwiecka
+    "107": {"potholes": 4, "dark_lamps": 1},  # Nowolipki, Anielewicza, Wierzbowa, Krucza, Piękna, Myśliwiecka
+    "160": {"potholes": 3, "dark_lamps": 1},  # Solidarności, Jana Pawła II, rondo ONZ
 }
+
 TRAM_LINES = {"17": {"defects": 6}}  # built-in synth_ride routes; their defects come from synth._world
 
 # Defects placed where the synthetic citizen complaints (data/complaints_synth.json, owner A) cluster on a
@@ -80,100 +83,126 @@ ANCHORS = [
      "amp": 8.0, "freq": 9.0, "anchor": "complaints issue 2: tram track, Marszałkowska x Świętokrzyska (40 reports)"},
     {"kind": "bump", "mode": "tram", "line": "17", "street": "Marszałkowska", "lon": 21.005973, "lat": 52.238853,
      "amp": 8.5, "freq": 8.5, "anchor": "complaints issue 1: tram track, Marszałkowska x Królewska (12 reports)"},
-    {"kind": "bump", "mode": "road", "line": "MAR", "street": "Marszałkowska", "lon": 21.011257, "lat": 52.230832,
+    {"kind": "bump", "mode": "road", "line": "171", "street": "Marszałkowska", "lon": 21.011257, "lat": 52.230832,
      "amp": 7.5, "freq": 8.0, "anchor": "complaints issue 3: pothole, Marszałkowska near Centrum (22 reports)"},
 ]
 DEMO_RIDES = [("tram17_day_01", 1, False), ("tram17_night_01", 2, True)]  # (name, seed, night) for seed_demo.py
 
 
-# --------------------------------------------------------------------------- routes over the OSM road graph
+# --------------------------------------------------------------------------- real bus lines (GTFS) on the road map
+
+def _m(lon, lat) -> tuple[float, float]:
+    return lon * KX, lat * KY
+
+
+def _inside(lon: float, lat: float) -> bool:
+    return DEMO_BBOX[0] <= lon <= DEMO_BBOX[2] and DEMO_BBOX[1] <= lat <= DEMO_BBOX[3]
+
 
 @lru_cache(maxsize=1)
-def road_graph(path: Path = GEOJSON):
-    """Undirected graph of `road` segments: (node lon/lat, edge list, csr builder inputs)."""
-    feats = [f for f in json.loads(Path(path).read_text(encoding="utf-8"))["features"] if f["properties"]["mode"] == "road"]
-    nodes: dict[tuple[float, float], int] = {}
+def road_index(path: Path = GEOJSON):
+    """STRtree over the map's road segments in local metres: (tree, geometries, street names)."""
+    from shapely import STRtree
+    from shapely.geometry import LineString
 
-    def nid(c) -> int:
-        return nodes.setdefault((round(c[0], 7), round(c[1], 7)), len(nodes))
-
-    edges = []  # (a, b, length_m, street name, coords a->b)
-    for f in feats:
-        cs = [tuple(c) for c in f["geometry"]["coordinates"]]
-        edges.append((nid(cs[0]), nid(cs[-1]), float(f["properties"]["length_m"]), f["properties"]["name"], cs))
-    xy = np.array(list(nodes), dtype=float)
-    return xy, edges
+    feats = [f for f in json.loads(Path(path).read_text(encoding="utf-8"))["features"]
+             if f["properties"]["mode"] == "road"]
+    geoms = [LineString([_m(x, y) for x, y in f["geometry"]["coordinates"]]) for f in feats]
+    return STRtree(geoms), geoms, [f["properties"]["name"] for f in feats]
 
 
-def _shortest(street: str, a: int, b: int) -> list[tuple[float, float]]:
-    from scipy.sparse import coo_matrix
-    from scipy.sparse.csgraph import dijkstra
+def road_distance(lon: float, lat: float) -> float:
+    """Metres to the nearest road segment of the map (inf beyond 50 m)."""
+    from shapely.geometry import Point
 
-    xy, edges = road_graph()
-    n = len(xy)
-    rows, cols, w = [], [], []
-    for i, j, length, name, _ in edges:
-        cost = max(length, 0.01) * (1.0 if name == street else OFF_STREET_PENALTY)
-        rows += [i, j]
-        cols += [j, i]
-        w += [cost, cost]
-    graph = coo_matrix((w, (rows, cols)), shape=(n, n)).tocsr()  # duplicates summed: fine, parallel edges rare
-    _, pred = dijkstra(graph, indices=a, return_predecessors=True)
-    if pred[b] < 0 and a != b:
-        raise ValueError(f"{street}: no road path between nodes {a} and {b}")
-    by_pair = {}
-    for i, j, length, _, cs in edges:
-        for key, coords in (((i, j), cs), ((j, i), cs[::-1])):
-            if key not in by_pair or length < by_pair[key][0]:
-                by_pair[key] = (length, coords)
-    chain = [b]
-    while chain[-1] != a:
-        chain.append(int(pred[chain[-1]]))
-    chain.reverse()
-    out: list[tuple[float, float]] = [tuple(xy[a])]
-    for i, j in zip(chain[:-1], chain[1:]):
-        out += by_pair[(i, j)][1][1:]
+    tree, geoms, _ = road_index()
+    p = Point(_m(lon, lat))
+    near = tree.query(p.buffer(50))
+    return min((geoms[i].distance(p) for i in near), default=math.inf)
+
+
+def street_at(lon: float, lat: float) -> str | None:
+    """Name of the nearest road segment of the map."""
+    from shapely.geometry import Point
+
+    tree, geoms, names = road_index()
+    p = Point(_m(lon, lat))
+    near = list(tree.query(p.buffer(50)))
+    return names[min(near, key=lambda i: geoms[i].distance(p))] if near else None
+
+
+def import_gtfs(zip_path: Path = GTFS_ZIP, lines=tuple(BUS_LINES)) -> dict:
+    """Each line's most frequent direction-0 shape, cut to its longest run of stops inside the demo map,
+    with those stops projected onto it. Result = data/demo/bus_lines.json (small, committed)."""
+    import zipfile
+
+    from shapely.geometry import LineString, Point
+    from shapely.ops import substring
+
+    z = zipfile.ZipFile(zip_path)
+    feed = pd.read_csv(z.open("feed_info.txt"), dtype=str).iloc[0]
+    routes = pd.read_csv(z.open("routes.txt"), dtype=str)
+    routes = routes[routes["route_short_name"].isin(lines) & (routes["route_type"] == "3")]
+    trips = pd.read_csv(z.open("trips.txt"), dtype=str, usecols=["trip_id", "route_id", "shape_id", "direction_id"])
+    trips = trips[trips["route_id"].isin(routes["route_id"]) & (trips["direction_id"] == "0")]
+    top = (trips.groupby(["route_id", "shape_id"]).size().reset_index(name="n")
+           .sort_values(["n", "shape_id"], ascending=[False, True]).drop_duplicates("route_id"))
+    sample = {sid: sorted(trips.loc[trips["shape_id"] == sid, "trip_id"])[0] for sid in top["shape_id"]}
+    shapes = pd.read_csv(z.open("shapes.txt"), dtype={"shape_id": str})
+    shapes = shapes[shapes["shape_id"].isin(set(top["shape_id"]))]
+    stop_times = pd.concat(
+        ch[ch["trip_id"].isin(set(sample.values()))]
+        for ch in pd.read_csv(z.open("stop_times.txt"), dtype=str, usecols=["trip_id", "stop_id", "stop_sequence"],
+                              chunksize=2_000_000))
+    stops = pd.read_csv(z.open("stops.txt"), dtype=str, usecols=["stop_id", "stop_name", "stop_lat", "stop_lon"])
+    stops = stops.set_index("stop_id")
+    out = {"source": "ZTM Warszawa timetable via the GTFS feed of Mikołaj Kuranowski (" + GTFS_URL + "); bus "
+                     "shapes based on © OpenStreetMap contributors (ODbL)",
+           "feed_version": str(feed.get("feed_version", "")), "lines": {}}
+    for row in top.itertuples():
+        route = routes[routes["route_id"] == row.route_id].iloc[0]
+        pts = shapes[shapes["shape_id"] == row.shape_id].astype({"shape_pt_sequence": int}).sort_values("shape_pt_sequence")
+        geom = LineString([_m(lo, la) for lo, la in zip(pts["shape_pt_lon"], pts["shape_pt_lat"])])
+        seq = stop_times[stop_times["trip_id"] == sample[row.shape_id]].astype({"stop_sequence": int})
+        runs, cur = [], []
+        for sid in seq.sort_values("stop_sequence")["stop_id"]:
+            st = stops.loc[sid]
+            lo, la = float(st["stop_lon"]), float(st["stop_lat"])
+            p = Point(_m(lo, la))
+            d = geom.project(p)
+            if _inside(lo, la) and geom.distance(p) <= STOP_MAX_OFF_M:
+                if not cur or d > cur[-1][1] + MIN_STOP_GAP_M:
+                    cur.append((str(st["stop_name"]), d))
+            elif cur:
+                runs.append(cur)
+                cur = []
+        runs.append(cur)
+        run = max(runs, key=lambda r: r[-1][1] - r[0][1] if len(r) > 1 else 0.0)
+        part = substring(geom, run[0][1], run[-1][1])
+        path = [(round(x / KX, 6), round(y / KY, 6)) for x, y in part.coords]
+        path = [p for k, p in enumerate(path) if k == 0 or p != path[k - 1]]
+        stop_pts = [(name, *(round(c, 6) for c in (lambda q: (q.x / KX, q.y / KY))(geom.interpolate(d))))
+                    for name, d in run]
+        stop_pts[0], stop_pts[-1] = (stop_pts[0][0], *path[0]), (stop_pts[-1][0], *path[-1])
+        samples = [part.interpolate(t) for t in np.arange(0, part.length, 25.0)]
+        on_road = float(np.mean([road_distance(q.x / KX, q.y / KY) <= 20 for q in samples]))
+        out["lines"][str(route["route_short_name"])] = {
+            "name": str(route["route_long_name"]), "shape_id": row.shape_id, "length_m": round(part.length),
+            "on_road_network": round(on_road, 2), "stops": stop_pts, "path": path}
     return out
 
 
-def _snap(street: str, lon: float, lat: float) -> int:
-    """Nearest graph node that is an end of a segment of `street`."""
-    xy, edges = road_graph()
-    cand = sorted({i for e in edges if e[3] == street for i in e[:2]})
-    if not cand:
-        raise ValueError(f"street {street!r} not in {GEOJSON.name}")
-    kx = 111_320 * math.cos(math.radians(lat))
-    d = ((xy[cand, 0] - lon) * kx) ** 2 + ((xy[cand, 1] - lat) * 110_540) ** 2
-    return cand[int(np.argmin(d))]
-
-
-def _dedupe(path: list[tuple[float, float]], min_m: float = 0.5) -> list[tuple[float, float]]:
-    out = [path[0]]
-    for p in path[1:]:
-        if float(synth._haversine_m(out[-1][1], out[-1][0], p[1], p[0])) >= min_m:
-            out.append(p)
-    return out
+@lru_cache(maxsize=1)
+def bus_lines() -> dict:
+    return json.loads(BUS_LINES_FILE.read_text(encoding="utf-8"))["lines"]
 
 
 @lru_cache(maxsize=None)
 def bus_route_cfg(line: str) -> dict:
-    """ROUTES-style config (mode, path, stops) for a simulated bus corridor."""
-    spec = BUS_LINES[line]
-    nodes = [_snap(spec["street"], lon, lat) for _, lon, lat in spec["stops"]]
-    xy, _ = road_graph()
-    path: list[tuple[float, float]] = [tuple(xy[nodes[0]])]
-    for a, b in zip(nodes[:-1], nodes[1:]):
-        path += _shortest(spec["street"], a, b)[1:]
-    path = _dedupe(path)
-    stops = [(name, *path_point(path, xy[n])) for (name, _, _), n in zip(spec["stops"], nodes)]
-    stops[0], stops[-1] = (stops[0][0], *path[0]), (stops[-1][0], *path[-1])
-    return {"mode": "road", "path": path, "stops": stops, "crossings": []}
-
-
-def path_point(path, p) -> tuple[float, float]:
-    """The path vertex closest to p (stops must lie on the path)."""
-    arr = np.asarray(path)
-    return tuple(arr[int(np.argmin(((arr - np.asarray(p)) ** 2).sum(axis=1)))])
+    """ROUTES-style config (mode, path, stops) of a real bus line, from data/demo/bus_lines.json."""
+    spec = bus_lines()[line]
+    return {"mode": "road", "path": [tuple(p) for p in spec["path"]],
+            "stops": [tuple(s) for s in spec["stops"]], "crossings": []}
 
 
 def route_for(mode: str, line: str, reverse: bool = False) -> synth.Route:
@@ -206,34 +235,34 @@ def _mirror(world: dict, length: float) -> dict:
 def make_world(seed: int = WORLD_SEED) -> dict:
     """Defects at fixed coordinates: potholes + dark lamps on the bus corridors, the tram lines' track defects."""
     defects = [dict(a) for a in ANCHORS]
+    taken = [(a["lon"], a["lat"]) for a in ANCHORS if a["mode"] == "road"]  # road defects of every line so far
+
+    def pick(route, rng, n: int, *, margin: float, stop_gap: float, gap: float) -> list[tuple[float, float]]:
+        """n spots on the line: on the map's roads, away from stops and from every road defect placed so far."""
+        out = []
+        for _ in range(20000):
+            if len(out) >= n:
+                break
+            s = float(rng.uniform(margin, route.length - margin))
+            lon, lat = (float(v) for v in route.at(s))
+            if (np.min(np.abs(route.stop_s - s)) > stop_gap and road_distance(lon, lat) <= ON_ROAD_M
+                    and all(float(synth._haversine_m(lat, lon, q[1], q[0])) > gap for q in taken)):
+                out.append((lon, lat))
+                taken.append((lon, lat))
+        return out
+
     for line, spec in BUS_LINES.items():
         route = route_for("road", line)
         rng = np.random.default_rng([seed, sum(map(ord, line))])
-        anchored = [route.locate(a["lon"], a["lat"])[0] for a in ANCHORS if a["mode"] == "road" and a["line"] == line]
-        placed: list[float] = []
-        for _ in range(20000):
-            if len(placed) >= spec["potholes"]:
-                break
-            s = float(rng.uniform(60, route.length - 60))
-            if np.min(np.abs(route.stop_s - s)) > 50 and all(abs(s - p) > 120 for p in placed + anchored):
-                placed.append(s)
-                lon, lat = route.at(s)
-                defects.append({"kind": "bump", "mode": "road", "street": spec["street"], "line": line,
-                                "lon": round(float(lon), 6), "lat": round(float(lat), 6),
-                                "amp": round(float(rng.uniform(5.0, 9.5)), 2),
-                                "freq": round(float(rng.uniform(6.0, 10.0)), 2)})
+        for lon, lat in pick(route, rng, spec["potholes"], margin=60, stop_gap=50, gap=120):
+            defects.append({"kind": "bump", "mode": "road", "street": street_at(lon, lat), "line": line,
+                            "lon": round(lon, 6), "lat": round(lat, 6),
+                            "amp": round(float(rng.uniform(5.0, 9.5)), 2),
+                            "freq": round(float(rng.uniform(6.0, 10.0)), 2)})
         # lamp detection needs the lit rhythm on both sides: keep broken lamps off the ends and stops
-        lamps: list[float] = []
-        for _ in range(20000):
-            if len(lamps) >= spec["dark_lamps"]:
-                break
-            s = float(rng.uniform(200, route.length - 200))
-            if np.min(np.abs(route.stop_s - s)) > 60 and all(abs(s - x) > 200 for x in lamps + placed + anchored):
-                lamps.append(s)
-        for s in lamps:
-            lon, lat = route.at(s)
-            defects.append({"kind": "dark_lamp", "mode": "road", "street": spec["street"], "line": line,
-                            "lon": round(float(lon), 6), "lat": round(float(lat), 6)})
+        for lon, lat in pick(route, rng, spec["dark_lamps"], margin=200, stop_gap=60, gap=200):
+            defects.append({"kind": "dark_lamp", "mode": "road", "street": street_at(lon, lat), "line": line,
+                            "lon": round(lon, 6), "lat": round(lat, 6)})
     for line in TRAM_LINES:  # recorded for the truth; synth._world drives them
         route, world = _builtin_world(line)
         for s, amp, freq in world["bumps"]:
@@ -301,8 +330,7 @@ EVAL_CONDITIONS: list[tuple[str, dict]] = [
     ("GPS error 10 m", {"gps_m": 10.0}),
     ("hard: noise x2 + slow + GPS 5 m", {"noise": 2.0, "speed": 0.6, "gps_m": 5.0}),
 ]
-EVAL_VEHICLES = [("bus-MAR-01", "road", "MAR"), ("bus-JER-01", "road", "JER"),
-                 ("bus-SWI-01", "road", "SWI"), ("tram-17-01", "tram", "17")]
+EVAL_VEHICLES = [*((f"bus-{line}-01", "road", line) for line in BUS_LINES), ("tram-17-01", "tram", "17")]
 BUMP_RADIUS_M, LAMP_RADIUS_M = 20.0, 25.0
 
 
@@ -381,7 +409,7 @@ def write_report(rows: pd.DataFrame, path: Path, *, seeds: int) -> str:
         "",
         f"Setup: the real detectors (`backend/sensor/detect.py`, `backend/sensor/lights.py`) run on simulated night "
         f"rides over the fixed ground truth `data/demo/sim_world.json`: {len(EVAL_VEHICLES)} lines "
-        f"(bus MAR, JER, SWI; tram 17) x 2 directions x {seeds} seeds per condition. A detection counts if it is "
+        f"(bus {', '.join(BUS_LINES)}; tram 17) x 2 directions x {seeds} seeds per condition. A detection counts if it is "
         f"within {BUMP_RADIUS_M:.0f} m (defects) / {LAMP_RADIUS_M:.0f} m (lamps) of a true defect the vehicle drove "
         f"over. Recall = share of passed defects detected; precision = share of detections that are real. One "
         f"factor is changed at a time from the baseline (noise x1, normal speed, phone in a random pose, GPS 2.5 m).",
@@ -402,7 +430,7 @@ def write_report(rows: pd.DataFrame, path: Path, *, seeds: int) -> str:
 # --------------------------------------------------------------------------- fleet + streaming
 
 def parse_device(device_id: str) -> tuple[str, str] | None:
-    """`bus-MAR-01` -> ("road", "MAR"); `tram-17-02` -> ("tram", "17"); None if not a known line."""
+    """`bus-171-01` -> ("road", "171"); `tram-17-02` -> ("tram", "17"); None if not a known line."""
     parts = device_id.split("-")
     if len(parts) < 3:
         return None
@@ -522,15 +550,21 @@ def fleet(device_keys: dict[str, str], only: list[str] | None) -> list[tuple[str
 # --------------------------------------------------------------------------- stage scenarios (S5)
 
 # Fixed spots with no defect and no complaint within 80 m, away from stops (seeded, repeatable).
-NEW_POTHOLE = {"id": "S5-NEW", "kind": "bump", "mode": "road", "line": "JER", "street": "Aleje Jerozolimskie",
-               "lon": 21.015902, "lat": 52.230809, "amp": 8.0, "freq": 8.0}
-HIDDEN_POTHOLE = {"id": "S5-REPORTED", "kind": "bump", "mode": "road", "line": "SWI", "street": "Świętokrzyska",
-                  "lon": 21.016533, "lat": 52.236764, "amp": 7.5, "freq": 8.5}
+NEW_POTHOLE = {"id": "S5-NEW", "kind": "bump", "mode": "road", "line": "159", "street": "Aleje Jerozolimskie",
+               "lon": 20.972611, "lat": 52.220435, "amp": 8.0, "freq": 8.0}
+HIDDEN_POTHOLE = {"id": "S5-REPORTED", "kind": "bump", "mode": "road", "line": "107", "street": "Mordechaja Anielewicza",
+                  "lon": 20.981055, "lat": 52.245071, "amp": 7.5, "freq": 8.5}
 SCENARIO_SEED = 5000
+# App reports carry the phone's position; no street names, which the geocoder could resolve elsewhere.
 CITIZEN_TEXTS = [
-    "Duża dziura w jezdni na Świętokrzyskiej przy Nowym Świecie, autobusy podskakują.",
-    "Świętokrzyska koło Nowego Światu: wyrwa w asfalcie, niebezpiecznie dla rowerzystów.",
+    "Duża dziura w jezdni, autobusy podskakują. Zgłaszam z miejsca.",
+    "Wyrwa w asfalcie na prawym pasie, niebezpiecznie dla rowerzystów.",
 ]
+LATE_REPORT_TEXT = "Nowa dziura w jezdni tutaj, uważajcie!"
+
+
+def scenario_buses(spot: dict) -> tuple[str, str]:
+    return f"bus-{spot['line']}-01", f"bus-{spot['line']}-02"
 
 
 class Api:
@@ -613,20 +647,24 @@ class Scenario:
         return res
 
     def new_pothole(self) -> None:
-        self.say("Scenario 1: a NEW pothole opens on Aleje Jerozolimskie. Nobody has reported it.")
+        first, second = scenario_buses(NEW_POTHOLE)
+        self.say(f"Scenario 1: a NEW pothole opens on {NEW_POTHOLE['street']} (line {NEW_POTHOLE['line']}). "
+                 "Nobody has reported it.")
         print(f"    before: {describe(find_incident(self.api, NEW_POTHOLE))}")
-        self.drive("bus-JER-01", extra=[NEW_POTHOLE])
+        self.drive(first, extra=[NEW_POTHOLE])
         print(f"    after the first bus: {describe(find_incident(self.api, NEW_POTHOLE))}")
-        self.drive("bus-JER-02", extra=[NEW_POTHOLE])
+        self.drive(second, extra=[NEW_POTHOLE])
         print(f"    after a second bus:  {describe(find_incident(self.api, NEW_POTHOLE))}")
-        r = self.api.post_form("/reports", {"text": "Nowa dziura na Alejach Jerozolimskich, uważajcie!",
+        r = self.api.post_form("/reports", {"text": LATE_REPORT_TEXT,
                                             "lon": NEW_POTHOLE["lon"], "lat": NEW_POTHOLE["lat"],
                                             "contributor": "scenario-citizen-1"})
         print(f"    a citizen reports it later -> report joins incident #{r.get('incident_id')}")
         print(f"    now: {describe(find_incident(self.api, NEW_POTHOLE))}")
 
     def report_then_verify(self) -> None:
-        self.say("Scenario 2: citizens report a pothole on Świętokrzyska; the next bus checks it.")
+        first, second = scenario_buses(HIDDEN_POTHOLE)
+        self.say(f"Scenario 2: citizens report a pothole on {HIDDEN_POTHOLE['street']} (line {HIDDEN_POTHOLE['line']}); "
+                 "the next bus checks it.")
 
         def report_first(ride_s: float) -> None:  # the reports come in before the bus sets off
             t0 = datetime.now(timezone.utc).timestamp() - ride_s - 120
@@ -636,19 +674,20 @@ class Scenario:
                 for k, text in enumerate(CITIZEN_TEXTS)]})
             print(f"    after {len(CITIZEN_TEXTS)} reports: {describe(find_incident(self.api, HIDDEN_POTHOLE))}")
 
-        self.drive("bus-SWI-01", extra=[HIDDEN_POTHOLE], before_send=report_first)
+        self.drive(first, extra=[HIDDEN_POTHOLE], before_send=report_first)
         print(f"    after the next bus:  {describe(find_incident(self.api, HIDDEN_POTHOLE))}")
-        self.drive("bus-SWI-02", extra=[HIDDEN_POTHOLE])
+        self.drive(second, extra=[HIDDEN_POTHOLE])
         print(f"    after another bus:   {describe(find_incident(self.api, HIDDEN_POTHOLE))}")
 
     def repair(self) -> None:
-        self.say("Scenario 3: the Jerozolimskie pothole is REPAIRED; buses keep driving over the spot.")
+        first, second = scenario_buses(NEW_POTHOLE)
+        self.say(f"Scenario 3: the {NEW_POTHOLE['street']} pothole is REPAIRED; buses keep driving over the spot.")
         if find_incident(self.api, NEW_POTHOLE) is None:
             print("    (scenario 1 has not run on this database yet: running it first)")
             self.new_pothole()
         before = find_incident(self.api, NEW_POTHOLE)
         print(f"    before: {describe(before)}; road health there {segment_health(self.api, NEW_POTHOLE)}")
-        for dev in ("bus-JER-01", "bus-JER-02", "bus-JER-01"):
+        for dev in (first, second, first):
             self.drive(dev, removed={NEW_POTHOLE["id"]})
         after = find_incident(self.api, NEW_POTHOLE)
         felt = after["sensor_rides"] - before["sensor_rides"]
@@ -672,6 +711,8 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--speed", type=float, default=0.0, help="1 = real time, 10 = 10x, 0 = as fast as possible")
     ap.add_argument("--devices", nargs="*", help="only these device ids (default: all DEVICE_KEYS)")
     ap.add_argument("--world", default=str(WORLD_FILE), help="ground-truth defects JSON")
+    ap.add_argument("--import-gtfs", nargs="?", const=str(GTFS_ZIP), metavar="ZIP",
+                    help=f"rebuild {BUS_LINES_FILE.name} from the Warsaw GTFS zip ({GTFS_URL}) and exit")
     ap.add_argument("--make-world", action="store_true",
                     help="(re)write the world file and the tram 17 demo rides over it, then exit")
     ap.add_argument("--dry-run", action="store_true", help="generate rides and log truth, send nothing")
@@ -688,6 +729,16 @@ def main(argv: list[str] | None = None) -> None:
         rows = evaluate(load_world(Path(args.world))["defects"], seeds=args.eval_seeds)
         print(write_report(rows, Path(args.report), seeds=args.eval_seeds))
         print(f"{len(rows)} rides in {time.monotonic() - t0:.0f}s -> {args.report}")
+        return
+
+    if args.import_gtfs:
+        if not Path(args.import_gtfs).exists():
+            sys.exit(f"{args.import_gtfs} not found: download {GTFS_URL} there first")
+        lines = import_gtfs(Path(args.import_gtfs))
+        BUS_LINES_FILE.write_text(json.dumps(lines, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+        for line, d in lines["lines"].items():
+            print(f"line {line} ({d['name']}): {d['length_m']} m, {len(d['stops'])} stops, "
+                  f"{d['on_road_network']:.0%} on the map's roads")
         return
 
     if args.make_world:
@@ -709,7 +760,7 @@ def main(argv: list[str] | None = None) -> None:
     vehicles = fleet(settings.device_keys, args.devices)
     if not vehicles:
         sys.exit("no simulated vehicles: set DEVICE_KEYS in .env, e.g. "
-                 "DEVICE_KEYS=bus-MAR-01:<secret>,tram-17-01:<secret>")
+                 "DEVICE_KEYS=bus-171-01:<secret>,tram-17-01:<secret>")
     defects = load_world(Path(args.world))["defects"]
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     log_path = LOG_DIR / f"sim_{datetime.now(timezone.utc):%Y%m%dT%H%M%S}.jsonl"

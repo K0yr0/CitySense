@@ -3,55 +3,252 @@
   "seed": 2026,
   "history_days": 14,
   "snap_to_route_m": 60,
-  "extra_defects": [
-    {"id": "M01", "kind": "bump", "mode": "road", "line": "JER", "street": "Aleje Jerozolimskie",
-     "lon": 21.004228, "lat": 52.228368, "amp": 8.0, "freq": 8.5,
-     "anchor": "complaints spot 13: pothole, Al. Jerozolimskie x Emilii Plater (projected onto the JER line)"}
-  ],
+  "extra_defects": [],
   "false_alarms": [
-    {"id": "F1", "line": "MAR", "category": "road_damage", "street": "Marszałkowska", "lon": 21.007535, "lat": 52.237097,
-     "why": "reported pothole that does not exist: buses drive over it and feel nothing -> dismissed"},
-    {"id": "F2", "line": "JER", "category": "road_damage", "street": "Aleje Jerozolimskie", "lon": 20.996797, "lat": 52.226743,
-     "why": "reported subsidence that does not exist -> dismissed"}
+    {
+      "id": "F1",
+      "line": "171",
+      "category": "road_damage",
+      "street": "Aleja Solidarności",
+      "lon": 20.985124,
+      "lat": 52.239158,
+      "why": "reported pothole that does not exist: buses drive over it and feel nothing -> dismissed"
+    },
+    {
+      "id": "F2",
+      "line": "160",
+      "category": "road_damage",
+      "street": "Aleja Solidarności",
+      "lon": 21.01726,
+      "lat": 52.247245,
+      "why": "reported subsidence that does not exist -> dismissed"
+    }
   ],
   "false_alarm_anonymous_reports": [
-    {"false_alarm": "F1", "text": "Dziura w jezdni, samochody hamują."},
-    {"false_alarm": "F2", "text": "Zapadnięta nawierzchnia na jezdni."}
+    {
+      "false_alarm": "F1",
+      "text": "Dziura w jezdni, samochody hamują."
+    },
+    {
+      "false_alarm": "F2",
+      "text": "Zapadnięta nawierzchnia na jezdni."
+    }
   ],
   "rides": {
     "full": {
-      "day": {"MAR": [13, 11, 9, 7, 5, 3, 1, 0.2], "JER": [13, 11, 9, 7, 5, 3, 1, 0.2], "17": [12, 9, 6, 3, 1], "SWI": [12, 11]},
-      "night": {"MAR": [2], "JER": [6], "17": [4], "SWI": [11]}
+      "day": {
+        "171": [
+          13,
+          9,
+          6,
+          3,
+          1,
+          0.2
+        ],
+        "159": [
+          13,
+          9,
+          6,
+          3,
+          1,
+          0.2
+        ],
+        "160": [
+          12,
+          8,
+          5,
+          2
+        ],
+        "17": [
+          12,
+          9,
+          6,
+          3,
+          1
+        ],
+        "107": [
+          12,
+          11
+        ]
+      },
+      "night": {
+        "171": [
+          3
+        ],
+        "159": [
+          6
+        ],
+        "17": [
+          4
+        ],
+        "107": [
+          11
+        ]
+      }
     },
     "fast": {
-      "day": {"MAR": [2, 0.2], "JER": [2, 0.2], "17": [1], "SWI": [10]},
-      "night": {"MAR": [1]}
+      "day": {
+        "171": [
+          2,
+          0.2
+        ],
+        "159": [
+          2
+        ],
+        "160": [
+          1
+        ],
+        "17": [
+          1
+        ],
+        "107": [
+          10
+        ]
+      },
+      "night": {
+        "171": [
+          1
+        ]
+      }
     },
-    "devices": {"MAR": ["bus-MAR-01", "bus-MAR-02"], "JER": ["bus-JER-01", "bus-JER-02"],
-                "SWI": ["bus-SWI-01", "bus-SWI-02"], "17": ["tram-17-01", "tram-17-02"]},
-    "final_passes": {"JER": 3, "MAR": 3}
+    "devices": {
+      "171": [
+        "bus-171-01",
+        "bus-171-02"
+      ],
+      "159": [
+        "bus-159-01",
+        "bus-159-02"
+      ],
+      "107": [
+        "bus-107-01",
+        "bus-107-02"
+      ],
+      "160": [
+        "bus-160-01",
+        "bus-160-02"
+      ],
+      "17": [
+        "tram-17-01",
+        "tram-17-02"
+      ]
+    },
+    "final_passes": {
+      "171": 3,
+      "160": 3
+    }
   },
-  "fast_spots": [1, 2, 3, 4, 5, 7, 9, 10, 11, 13, 15, 18, 19, 23, 28, 34],
+  "fast_spots": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    7,
+    9,
+    10,
+    11,
+    13,
+    15,
+    18,
+    19,
+    23,
+    28,
+    34
+  ],
   "fast_max_reports_per_spot": 6,
   "answers": {
-    "anna":   {"spots": [9, 10, 23, 26], "false_alarms": ["F1", "F2"]},
-    "tomasz": {"spots": [7, 10, 23], "false_alarms": ["F1", "F2"]},
-    "piotr":  {"spots": [7, 23], "false_alarms": ["F1", "F2"]},
-    "james":  {"spots": [9, 26], "false_alarms": []},
-    "kasia":  {"spots": [9], "false_alarms": []},
-    "marek":  {"spots": [7, 9, 10, 23], "false_alarms": ["F2"]}
+    "anna": {
+      "spots": [
+        9,
+        10,
+        23,
+        26
+      ],
+      "false_alarms": [
+        "F1",
+        "F2"
+      ]
+    },
+    "tomasz": {
+      "spots": [
+        7,
+        10,
+        23
+      ],
+      "false_alarms": [
+        "F1",
+        "F2"
+      ]
+    },
+    "piotr": {
+      "spots": [
+        7,
+        23
+      ],
+      "false_alarms": [
+        "F1",
+        "F2"
+      ]
+    },
+    "james": {
+      "spots": [
+        9,
+        26
+      ],
+      "false_alarms": []
+    },
+    "kasia": {
+      "spots": [
+        9
+      ],
+      "false_alarms": []
+    },
+    "marek": {
+      "spots": [
+        7,
+        9,
+        10,
+        23
+      ],
+      "false_alarms": [
+        "F2"
+      ]
+    }
   },
   "work": {
     "done": [
-      {"spot": 7, "note": "Pothole filled by the ZDM road crew."},
-      {"spot": 23, "note": "Asphalt patched, lane reopened."},
-      {"spot": 4, "note": "Rail joint welded by Tramwaje Warszawskie."},
-      {"spot": 3, "note": "Pothole at Rondo Dmowskiego repaired overnight.", "repairs_defect": "D003"}
+      {
+        "spot": 7,
+        "note": "Pothole filled by the ZDM road crew."
+      },
+      {
+        "spot": 23,
+        "note": "Asphalt patched, lane reopened."
+      },
+      {
+        "spot": 4,
+        "note": "Rail joint welded by Tramwaje Warszawskie."
+      },
+      {
+        "spot": 3,
+        "note": "Pothole at Rondo Dmowskiego repaired overnight.",
+        "repairs_defect": "D003"
+      }
     ],
     "in_progress": [
-      {"spot": 2, "note": "Track renewal scheduled with Tramwaje Warszawskie."},
-      {"spot": 13, "note": "Crew assigned, temporary signs placed."},
-      {"spot": 11, "note": "Waiting for the asphalt plant."}
+      {
+        "spot": 2,
+        "note": "Track renewal scheduled with Tramwaje Warszawskie."
+      },
+      {
+        "spot": 13,
+        "note": "Crew assigned, temporary signs placed."
+      },
+      {
+        "spot": 11,
+        "note": "Waiting for the asphalt plant."
+      }
     ]
   }
 }

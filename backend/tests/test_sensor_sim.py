@@ -28,18 +28,37 @@ def world():
 
 
 @pytest.mark.parametrize("line", sorted(sim.BUS_LINES))
-def test_bus_routes_follow_their_street(line):
+def test_bus_lines_follow_their_real_route(line):
+    """Real ZTM line (GTFS shape + stops), over many streets of the map's road network, not one straight street."""
+    spec = sim.bus_lines()[line]
     route = sim.route_for("road", line)
-    spec = sim.BUS_LINES[line]
-    assert route.mode == "road" and route.names == [s[0] for s in spec["stops"]]
-    assert 1000 < route.length < 5000
-    # every stop is on the route (stops are graph nodes of the street, rounded to ~10 m)
+    assert route.mode == "road" and route.names == [st[0] for st in spec["stops"]] and len(route.names) >= 6
+    assert 4000 < route.length < 8000 and route.length == pytest.approx(spec["length_m"], rel=0.01)
     for _, lon, lat in spec["stops"]:
-        assert route.locate(lon, lat)[1] < 15
+        assert route.locate(lon, lat)[1] < 1.0
+    probes = [tuple(float(v) for v in route.at(t)) for t in np.arange(0, route.length, 50.0)]
+    on_road = [p for p in probes if sim.road_distance(*p) <= 20]
+    assert len(on_road) / len(probes) >= 0.8
+    streets = {sim.street_at(*p) for p in on_road}
+    assert len(streets) >= 5, streets  # it turns through the city
+
+
+def test_bus_lines_file_names_its_source():
+    data = json.loads(sim.BUS_LINES_FILE.read_text(encoding="utf-8"))
+    assert "ZTM" in data["source"] and "OpenStreetMap" in data["source"] and data["feed_version"]
+    assert set(data["lines"]) == set(sim.BUS_LINES)
+
+
+def test_lines_share_streets_and_potholes(world):
+    """Lines over the same street feel the same potholes, so one line confirms another."""
+    felt = {line: {p["id"] for p in sim.vehicle_world(sim.route_for("road", line), world)[1]} for line in sim.BUS_LINES}
+    owner = {d["id"]: d["line"] for d in world}
+    shared = {i for line, ids in felt.items() for i in ids if owner[i] != line}
+    assert shared
 
 
 def test_reverse_route_is_the_same_path_backwards():
-    fwd, rev = sim.route_for("road", "MAR"), sim.route_for("road", "MAR", reverse=True)
+    fwd, rev = sim.route_for("road", "171"), sim.route_for("road", "171", reverse=True)
     assert rev.length == pytest.approx(fwd.length)
     assert rev.names == fwd.names[::-1]
     assert (rev.lon[0], rev.lat[0]) == (fwd.lon[-1], fwd.lat[-1])
@@ -56,16 +75,16 @@ def test_world_file_is_current(world):
 
 def test_vehicles_only_feel_defects_of_their_mode_and_street(world):
     _, tram = sim.vehicle_world(sim.route_for("tram", "17"), world)
-    _, mar = sim.vehicle_world(sim.route_for("road", "MAR"), world)
+    _, bus = sim.vehicle_world(sim.route_for("road", "171"), world)
     by_id = {d["id"]: d for d in world}
     assert tram and all(by_id[p["id"]]["mode"] == "tram" for p in tram)
-    assert mar and all(by_id[p["id"]]["line"] == "MAR" for p in mar)
-    # Marszałkowska potholes sit ~20 m beside the tram tracks: the tram never drives over them
-    assert not {p["id"] for p in tram} & {p["id"] for p in mar}
+    assert bus and all(by_id[p["id"]]["mode"] == "road" for p in bus)
+    # line 171's Marszałkowska potholes sit beside the tram tracks: the tram never drives over them
+    assert not {p["id"] for p in tram} & {p["id"] for p in bus}
 
 
 def test_shared_world_across_lines_on_the_same_street():
-    route = sim.route_for("road", "MAR")
+    route = sim.route_for("road", "159")
     lon, lat = route.at(route.length / 2)
     pothole = {"id": "X1", "kind": "bump", "mode": "road", "lon": float(lon), "lat": float(lat), "amp": 7, "freq": 8}
     far = {**pothole, "id": "X2", "lat": float(lat) + 0.001}  # ~110 m off the street
@@ -74,7 +93,7 @@ def test_shared_world_across_lines_on_the_same_street():
     assert len(w["bumps"]) == 1 and w["bumps"][0][0] == pytest.approx(route.length / 2, abs=1.0)
 
 
-@pytest.mark.parametrize("mode,line", [("tram", "17"), ("road", "SWI")])
+@pytest.mark.parametrize("mode,line", [("tram", "17"), ("road", "160")])
 def test_return_trip_hits_the_same_places(world, mode, line):
     fwd_world, fwd = sim.vehicle_world(sim.route_for(mode, line), world)
     rev_route = sim.route_for(mode, line, reverse=True)
@@ -93,25 +112,25 @@ def test_tram_17_forward_world_is_the_demo_world():
 
 
 def test_parse_device():
-    assert sim.parse_device("bus-MAR-01") == ("road", "MAR")
+    assert sim.parse_device("bus-171-01") == ("road", "171")
     assert sim.parse_device("tram-17-02") == ("tram", "17")
     assert sim.parse_device("bus-999-01") is None
-    assert sim.parse_device("tram-MAR-01") is None
+    assert sim.parse_device("tram-171-01") is None
     assert sim.parse_device("bus") is None
-    vehicles = sim.fleet({"bus-SWI-01": "a", "nope": "b", "tram-17-01": "c"}, None)
-    assert [v[:4] for v in vehicles] == [("bus-SWI-01", "a", "road", "SWI"), ("tram-17-01", "c", "tram", "17")]
-    assert sim.fleet({"bus-SWI-01": "a", "tram-17-01": "c"}, ["tram-17-01"])[0][0] == "tram-17-01"
+    vehicles = sim.fleet({"bus-160-01": "a", "nope": "b", "tram-17-01": "c"}, None)
+    assert [v[:4] for v in vehicles] == [("bus-160-01", "a", "road", "160"), ("tram-17-01", "c", "tram", "17")]
+    assert sim.fleet({"bus-160-01": "a", "tram-17-01": "c"}, ["tram-17-01"])[0][0] == "tram-17-01"
 
 
 def test_ride_seeds_differ_per_device_and_trip():
-    seeds = {sim.ride_seed(1, d, t) for d in ("bus-MAR-01", "bus-MAR-02") for t in range(3)}
-    assert len(seeds) == 6 and sim.ride_seed(1, "bus-MAR-01", 0) == sim.ride_seed(1, "bus-MAR-01", 0)
+    seeds = {sim.ride_seed(1, d, t) for d in ("bus-171-01", "bus-171-02") for t in range(3)}
+    assert len(seeds) == 6 and sim.ride_seed(1, "bus-171-01", 0) == sim.ride_seed(1, "bus-171-01", 0)
 
 
 def test_bus_ride_detects_the_potholes_it_passed(world):
-    df, passed, _ = sim.build_ride("bus-SWI-01", "road", "SWI", 1, seed=3, night=False, defects=world)
+    df, passed, _ = sim.build_ride("bus-160-01", "road", "160", 1, seed=3, night=False, defects=world)
     truth = pd.DataFrame([p for p in passed if p["kind"] == "bump"]).assign(kind="bump")
-    assert len(truth) == 3 and not any(p["kind"] == "dark_lamp" for p in passed)  # lamps: night only
+    assert len(truth) >= 3 and not any(p["kind"] == "dark_lamp" for p in passed)  # lamps: night only
     score = synth.score_detections(detect_bumps(df), truth)
     assert score["recall"] == 1.0 and score["precision"] == 1.0
 
@@ -125,11 +144,11 @@ def test_stream_ride_chunks_and_final(monkeypatch):
 
     monkeypatch.setattr(sim, "post_chunk", fake_post)
     samples = [{"t": i / 100} for i in range(2500)]
-    res = sim.stream_ride("http://x", "bus-SWI-01:k", "SWI", "road", samples,
+    res = sim.stream_ride("http://x", "bus-160-01:k", "160", "road", samples,
                           chunk_s=10, speed=0, stop=threading.Event())
     assert res == {"ride_id": 1}
     assert [s[3:] for s in sent] == [(1000, False), (1000, False), (500, True)]
-    assert {s[:3] for s in sent} == {("bus-SWI-01:k", "SWI", "road")}
+    assert {s[:3] for s in sent} == {("bus-160-01:k", "160", "road")}
 
 
 def test_to_samples_drops_nan_lux():
@@ -188,13 +207,16 @@ def test_match_counts():
 
 
 def test_eval_ride_and_report(world, tmp_path):
-    row = sim.eval_ride(("baseline", {}, ("bus-SWI-01", "road", "SWI"), 0, 1000, world))
+    row = sim.eval_ride(("baseline", {}, ("bus-160-01", "road", "160"), 0, 1000, world))
+    _, passed = sim.vehicle_world(sim.route_for("road", "160"), world)
     assert row["condition"] == "baseline" and row["mode"] == "road"
-    assert row["bump_hit"] + row["bump_miss"] == 3 and row["lamp_hit"] + row["lamp_miss"] == 1
+    assert row["bump_hit"] + row["bump_miss"] == sum(p["kind"] == "bump" for p in passed)
+    assert row["lamp_hit"] + row["lamp_miss"] == sum(p["kind"] == "dark_lamp" for p in passed)
     rows = pd.DataFrame([row, {**row, "condition": "GPS error 10 m", "bump_hit": 1, "bump_miss": 2}])
     text = sim.write_report(rows, tmp_path / "acc.md", seeds=1)
     assert "MEASURED IN SIMULATION" in text and (tmp_path / "acc.md").read_text(encoding="utf-8") == text
-    assert "| baseline | 1 | 3 | 100.0% |" in text and "| GPS error 10 m | 1 | 3 | 33.3% |" in text
+    n = row["bump_hit"] + row["bump_miss"]
+    assert f"| baseline | 1 | {n} | 100.0% |" in text and "| GPS error 10 m | 1 | 3 | 33.3% |" in text
 
 
 def test_committed_report_is_labelled_as_simulation():
@@ -263,7 +285,8 @@ def test_scenario_reports_are_dated_before_the_ride(monkeypatch, world):
     monkeypatch.setattr(sim, "stream_ride", lambda *a, **k: sent.append(a) or {"bumps": 4, "ride_id": 9})
     monkeypatch.setattr(sim, "find_incident", lambda api, spot, *a, **k: None)
     args = types_ns(api="http://x", token=None, chunk_s=10, speed=0)
-    show = sim.Scenario(args, {"bus-SWI-01": "k1", "bus-SWI-02": "k2"}, world)
+    first, second = sim.scenario_buses(sim.HIDDEN_POTHOLE)
+    show = sim.Scenario(args, {first: "k1", second: "k2"}, world)
     show.api = FakeApi([])
     show.report_then_verify()
     (path, body), = show.api.posts
@@ -271,7 +294,7 @@ def test_scenario_reports_are_dated_before_the_ride(monkeypatch, world):
     ride_s = sent[0][4][-1]["t"]  # samples of the first ride, relative seconds
     newest = max(datetime.fromisoformat(r["created_at"]) for r in body["reports"])
     assert (datetime.now(timezone.utc) - newest).total_seconds() > ride_s  # before the ride started
-    assert [a[1] for a in sent] == ["bus-SWI-01:k1", "bus-SWI-02:k2"]
+    assert [a[1] for a in sent] == [f"{first}:k1", f"{second}:k2"]
 
 
 def types_ns(**kw):

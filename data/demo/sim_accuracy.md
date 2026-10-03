@@ -4,21 +4,21 @@
 > numbers as *measured in simulation*, never as field results. Regenerate with
 > `.venv/bin/python scripts/simulate_buses.py --eval`.
 
-Setup: the real detectors (`backend/sensor/detect.py`, `backend/sensor/lights.py`) run on simulated night rides over the fixed ground truth `data/demo/sim_world.json`: 4 lines (bus MAR, JER, SWI; tram 17) x 2 directions x 10 seeds per condition. A detection counts if it is within 20 m (defects) / 25 m (lamps) of a true defect the vehicle drove over. Recall = share of passed defects detected; precision = share of detections that are real. One factor is changed at a time from the baseline (noise x1, normal speed, phone in a random pose, GPS 2.5 m).
+Setup: the real detectors (`backend/sensor/detect.py`, `backend/sensor/lights.py`) run on simulated night rides over the fixed ground truth `data/demo/sim_world.json`: 5 lines (bus 171, 159, 107, 160; tram 17) x 2 directions x 10 seeds per condition. A detection counts if it is within 20 m (defects) / 25 m (lamps) of a true defect the vehicle drove over. Recall = share of passed defects detected; precision = share of detections that are real. One factor is changed at a time from the baseline (noise x1, normal speed, phone in a random pose, GPS 2.5 m).
 
 | condition | rides | pothole/track defects passed | defect recall | defect precision | broken lamps passed | lamp recall | lamp precision |
 |---|---|---|---|---|---|---|---|
-| baseline | 80 | 440 | 100.0% | 100.0% | 180 | 96.1% | 100.0% |
-| vibration noise x1.5 | 80 | 440 | 100.0% | 100.0% | 180 | 96.1% | 100.0% |
-| vibration noise x2 | 80 | 440 | 100.0% | 92.3% | 180 | 96.1% | 100.0% |
-| vibration noise x3 | 80 | 440 | 100.0% | 16.1% | 180 | 96.1% | 100.0% |
-| slow traffic (speed x0.6) | 80 | 440 | 93.9% | 100.0% | 180 | 96.1% | 100.0% |
-| fast (speed x1.3) | 80 | 440 | 100.0% | 100.0% | 180 | 98.9% | 100.0% |
-| phone lying flat | 80 | 440 | 100.0% | 100.0% | 180 | 96.1% | 100.0% |
-| phone upright (holder/pocket) | 80 | 440 | 100.0% | 100.0% | 180 | 96.1% | 100.0% |
-| GPS error 5 m | 80 | 440 | 100.0% | 100.0% | 180 | 82.2% | 94.4% |
-| GPS error 10 m | 80 | 440 | 88.4% | 88.4% | 180 | 62.2% | 50.4% |
-| hard: noise x2 + slow + GPS 5 m | 80 | 440 | 92.7% | 100.0% | 180 | 73.3% | 93.8% |
+| baseline | 100 | 560 | 100.0% | 100.0% | 200 | 97.5% | 100.0% |
+| vibration noise x1.5 | 100 | 560 | 100.0% | 99.8% | 200 | 97.5% | 100.0% |
+| vibration noise x2 | 100 | 560 | 100.0% | 84.6% | 200 | 97.5% | 100.0% |
+| vibration noise x3 | 100 | 560 | 100.0% | 9.2% | 200 | 97.5% | 100.0% |
+| slow traffic (speed x0.6) | 100 | 560 | 95.7% | 100.0% | 200 | 96.0% | 100.0% |
+| fast (speed x1.3) | 100 | 560 | 100.0% | 100.0% | 200 | 99.0% | 100.0% |
+| phone lying flat | 100 | 560 | 100.0% | 100.0% | 200 | 97.5% | 100.0% |
+| phone upright (holder/pocket) | 100 | 560 | 100.0% | 100.0% | 200 | 97.5% | 100.0% |
+| GPS error 5 m | 100 | 560 | 100.0% | 100.0% | 200 | 79.0% | 94.8% |
+| GPS error 10 m | 100 | 560 | 85.7% | 85.7% | 200 | 65.5% | 33.5% |
+| hard: noise x2 + slow + GPS 5 m | 100 | 560 | 95.0% | 100.0% | 200 | 79.0% | 95.3% |
 
 Baseline by vehicle type:
 - **bus (road potholes)**: recall 100.0%, precision 100.0%

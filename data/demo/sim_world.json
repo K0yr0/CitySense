@@ -29,7 +29,7 @@
   {
    "kind": "bump",
    "mode": "road",
-   "line": "MAR",
+   "line": "171",
    "street": "Marszałkowska",
    "lon": 21.011257,
    "lat": 52.230832,
@@ -41,190 +41,232 @@
   {
    "kind": "bump",
    "mode": "road",
-   "street": "Marszałkowska",
-   "line": "MAR",
-   "lon": 21.015035,
-   "lat": 52.224546,
-   "amp": 8.16,
-   "freq": 8.35,
+   "street": "Leszno",
+   "line": "171",
+   "lon": 20.977942,
+   "lat": 52.238145,
+   "amp": 7.79,
+   "freq": 7.45,
    "id": "D004"
   },
   {
    "kind": "bump",
    "mode": "road",
-   "street": "Marszałkowska",
-   "line": "MAR",
-   "lon": 21.016287,
-   "lat": 52.222833,
-   "amp": 9.09,
-   "freq": 6.52,
+   "street": "Aleja „Solidarności”",
+   "line": "171",
+   "lon": 20.995885,
+   "lat": 52.242713,
+   "amp": 5.85,
+   "freq": 9.33,
    "id": "D005"
   },
   {
    "kind": "bump",
    "mode": "road",
    "street": "Marszałkowska",
-   "line": "MAR",
-   "lon": 21.019807,
-   "lat": 52.21674,
-   "amp": 8.35,
-   "freq": 7.65,
+   "line": "171",
+   "lon": 21.008241,
+   "lat": 52.235908,
+   "amp": 6.04,
+   "freq": 8.27,
    "id": "D006"
   },
   {
    "kind": "bump",
    "mode": "road",
    "street": "Marszałkowska",
-   "line": "MAR",
-   "lon": 21.009563,
-   "lat": 52.233698,
-   "amp": 5.3,
-   "freq": 7.11,
+   "line": "171",
+   "lon": 21.009696,
+   "lat": 52.233465,
+   "amp": 7.1,
+   "freq": 7.46,
    "id": "D007"
   },
   {
    "kind": "bump",
    "mode": "road",
-   "street": "Marszałkowska",
-   "line": "MAR",
-   "lon": 21.004774,
-   "lat": 52.240677,
-   "amp": 5.02,
-   "freq": 7.04,
+   "street": "Książęca",
+   "line": "171",
+   "lon": 21.025434,
+   "lat": 52.22991,
+   "amp": 7.75,
+   "freq": 6.61,
    "id": "D008"
   },
   {
    "kind": "dark_lamp",
    "mode": "road",
    "street": "Marszałkowska",
-   "line": "MAR",
-   "lon": 21.012348,
-   "lat": 52.229155,
+   "line": "171",
+   "lon": 21.004212,
+   "lat": 52.241674,
    "id": "D009"
   },
   {
    "kind": "dark_lamp",
    "mode": "road",
-   "street": "Marszałkowska",
-   "line": "MAR",
-   "lon": 21.00583,
-   "lat": 52.238832,
+   "street": "Aleja „Solidarności”",
+   "line": "171",
+   "lon": 20.991638,
+   "lat": 52.241306,
    "id": "D010"
   },
   {
    "kind": "bump",
    "mode": "road",
-   "street": "Aleje Jerozolimskie",
-   "line": "JER",
-   "lon": 20.993832,
-   "lat": 52.226119,
-   "amp": 8.83,
-   "freq": 6.1,
+   "street": "Myśliwiecka",
+   "line": "159",
+   "lon": 21.031942,
+   "lat": 52.223795,
+   "amp": 5.19,
+   "freq": 9.59,
    "id": "D011"
   },
   {
    "kind": "bump",
    "mode": "road",
    "street": "Aleje Jerozolimskie",
-   "line": "JER",
-   "lon": 21.006456,
-   "lat": 52.228808,
-   "amp": 5.01,
-   "freq": 7.07,
+   "line": "159",
+   "lon": 20.999139,
+   "lat": 52.227229,
+   "amp": 6.24,
+   "freq": 6.87,
    "id": "D012"
   },
   {
    "kind": "bump",
    "mode": "road",
    "street": "Aleje Jerozolimskie",
-   "line": "JER",
-   "lon": 20.999695,
-   "lat": 52.22735,
-   "amp": 5.52,
-   "freq": 6.52,
+   "line": "159",
+   "lon": 20.994878,
+   "lat": 52.226341,
+   "amp": 5.6,
+   "freq": 7.06,
    "id": "D013"
   },
   {
    "kind": "bump",
    "mode": "road",
-   "street": "Aleje Jerozolimskie",
-   "line": "JER",
-   "lon": 21.025232,
-   "lat": 52.232614,
-   "amp": 7.45,
-   "freq": 6.03,
+   "street": "Piękna",
+   "line": "159",
+   "lon": 21.023183,
+   "lat": 52.223851,
+   "amp": 7.66,
+   "freq": 6.17,
    "id": "D014"
   },
   {
-   "kind": "bump",
+   "kind": "dark_lamp",
    "mode": "road",
-   "street": "Aleje Jerozolimskie",
-   "line": "JER",
-   "lon": 21.002098,
-   "lat": 52.227967,
-   "amp": 9.06,
-   "freq": 8.91,
+   "street": "Koszykowa",
+   "line": "159",
+   "lon": 21.013398,
+   "lat": 52.222595,
    "id": "D015"
   },
   {
    "kind": "dark_lamp",
    "mode": "road",
-   "street": "Aleje Jerozolimskie",
-   "line": "JER",
-   "lon": 21.029407,
-   "lat": 52.233483,
+   "street": "Piękna",
+   "line": "159",
+   "lon": 21.01898,
+   "lat": 52.223534,
    "id": "D016"
   },
   {
-   "kind": "dark_lamp",
+   "kind": "bump",
    "mode": "road",
-   "street": "Aleje Jerozolimskie",
-   "line": "JER",
-   "lon": 20.988538,
-   "lat": 52.22498,
+   "street": "Nowolipki",
+   "line": "107",
+   "lon": 20.990042,
+   "lat": 52.244303,
+   "amp": 5.22,
+   "freq": 6.97,
    "id": "D017"
   },
   {
    "kind": "bump",
    "mode": "road",
-   "street": "Świętokrzyska",
-   "line": "SWI",
-   "lon": 21.005964,
-   "lat": 52.234647,
-   "amp": 8.24,
-   "freq": 9.45,
+   "street": "Generała Władysława Andersa",
+   "line": "107",
+   "lon": 20.999416,
+   "lat": 52.246675,
+   "amp": 5.64,
+   "freq": 8.83,
    "id": "D018"
   },
   {
    "kind": "bump",
    "mode": "road",
-   "street": "Świętokrzyska",
-   "line": "SWI",
-   "lon": 21.001976,
-   "lat": 52.233839,
-   "amp": 5.05,
-   "freq": 7.46,
+   "street": "Nowolipki",
+   "line": "107",
+   "lon": 20.99602,
+   "lat": 52.24631,
+   "amp": 8.94,
+   "freq": 9.53,
    "id": "D019"
   },
   {
    "kind": "bump",
    "mode": "road",
-   "street": "Świętokrzyska",
-   "line": "SWI",
-   "lon": 21.010746,
-   "lat": 52.235653,
-   "amp": 8.15,
-   "freq": 8.47,
+   "street": "Plac Bankowy",
+   "line": "107",
+   "lon": 21.001453,
+   "lat": 52.243712,
+   "amp": 8.37,
+   "freq": 6.23,
    "id": "D020"
   },
   {
    "kind": "dark_lamp",
    "mode": "road",
-   "street": "Świętokrzyska",
-   "line": "SWI",
-   "lon": 21.013715,
-   "lat": 52.236217,
+   "street": "Krucza",
+   "line": "107",
+   "lon": 21.016273,
+   "lat": 52.230826,
    "id": "D021"
+  },
+  {
+   "kind": "bump",
+   "mode": "road",
+   "street": "Aleja Jana Pawła II",
+   "line": "160",
+   "lon": 20.999541,
+   "lat": 52.231059,
+   "amp": 7.79,
+   "freq": 8.03,
+   "id": "D022"
+  },
+  {
+   "kind": "bump",
+   "mode": "road",
+   "street": "Aleja „Solidarności”",
+   "line": "160",
+   "lon": 21.006203,
+   "lat": 52.245982,
+   "amp": 8.15,
+   "freq": 7.38,
+   "id": "D023"
+  },
+  {
+   "kind": "bump",
+   "mode": "road",
+   "street": "Aleja Jana Pawła II",
+   "line": "160",
+   "lon": 20.997047,
+   "lat": 52.235849,
+   "amp": 7.35,
+   "freq": 8.18,
+   "id": "D024"
+  },
+  {
+   "kind": "dark_lamp",
+   "mode": "road",
+   "street": "Aleja „Solidarności”",
+   "line": "160",
+   "lon": 21.026469,
+   "lat": 52.251198,
+   "id": "D025"
   },
   {
    "kind": "bump",
@@ -236,7 +278,7 @@
    "lat": 52.234232,
    "amp": 9.18,
    "freq": 7.92,
-   "id": "D022"
+   "id": "D026"
   },
   {
    "kind": "bump",
@@ -248,7 +290,7 @@
    "lat": 52.214141,
    "amp": 5.89,
    "freq": 10.26,
-   "id": "D023"
+   "id": "D027"
   },
   {
    "kind": "bump",
@@ -260,7 +302,7 @@
    "lat": 52.242679,
    "amp": 9.4,
    "freq": 9.14,
-   "id": "D024"
+   "id": "D028"
   },
   {
    "kind": "bump",
@@ -272,7 +314,7 @@
    "lat": 52.2188,
    "amp": 4.93,
    "freq": 10.56,
-   "id": "D025"
+   "id": "D029"
   },
   {
    "kind": "bump",
@@ -284,7 +326,7 @@
    "lat": 52.223655,
    "amp": 8.88,
    "freq": 9.88,
-   "id": "D026"
+   "id": "D030"
   },
   {
    "kind": "bump",
@@ -296,7 +338,7 @@
    "lat": 52.22649,
    "amp": 5.13,
    "freq": 8.21,
-   "id": "D027"
+   "id": "D031"
   },
   {
    "kind": "dark_lamp",
@@ -306,7 +348,7 @@
    "builtin": true,
    "lon": 21.004858,
    "lat": 52.240891,
-   "id": "D028"
+   "id": "D032"
   },
   {
    "kind": "dark_lamp",
@@ -316,7 +358,7 @@
    "builtin": true,
    "lon": 21.011016,
    "lat": 52.230995,
-   "id": "D029"
+   "id": "D033"
   },
   {
    "kind": "dark_lamp",
@@ -326,7 +368,7 @@
    "builtin": true,
    "lon": 21.016336,
    "lat": 52.222389,
-   "id": "D030"
+   "id": "D034"
   },
   {
    "kind": "dark_lamp",
@@ -336,7 +378,7 @@
    "builtin": true,
    "lon": 21.017477,
    "lat": 52.220456,
-   "id": "D031"
+   "id": "D035"
   }
  ]
 }

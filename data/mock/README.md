@@ -17,7 +17,7 @@ Running it twice does nothing the second time. On a database that already holds 
 
 **Needs** (in `.env`): `AUTH_DEV_LOGIN=1` (the Docker stack turns it on), `ADMIN_EMAILS` containing the
 admin below (the seeder signs in as the first `ADMIN_EMAILS` entry), and `DEVICE_KEYS` for
-`bus-MAR-01/02, bus-JER-01/02, bus-SWI-01/02, tram-17-01/02` (format in `.env.example`).
+`bus-171-01/02, bus-159-01/02, bus-107-01/02, bus-160-01/02, tram-17-01/02` (format in `.env.example`).
 
 ## Demo accounts
 
@@ -28,10 +28,10 @@ app: Profile → Sign in → demo sign-in. Personas and their actions: [`persona
 |---|---|---|
 | `admin@cityecho.test` | Urszula, ZDM dispatcher (**admin**) | Web admin: the whole queue, work status history, stats |
 | `anna.kowalska@cityecho.test` | Reliable reporter | Highest trust (~0.8), 3 reports with photos; one is a pothole the buses had already found |
-| `piotr.nowak@cityecho.test` | Commuter | 3 favourite routes (Marszałkowska, tram 17, Jerozolimskie) with "bad road ahead" warnings |
+| `piotr.nowak@cityecho.test` | Commuter | 3 favourite routes (Marszałkowska, tram 17, Dw. Centralny → Most Poniatowskiego) with "bad road ahead" warnings |
 | `marek.zielinski@cityecho.test` | Unreliable | Lowest trust (~0.3): reported a pothole that isn't there (dismissed), answered wrongly |
 | `olena.shevchenko@cityecho.test` | Newcomer, writes in Ukrainian | A fresh streetlight report waiting for a vehicle to check it |
-| `james.miller@cityecho.test` | Expat, writes in English | Flooding report with photo, a saved bus line |
+| `james.miller@cityecho.test` | Expat, writes in English | Flooding report with photo, bus line 159 saved |
 | `katarzyna.wojcik@cityecho.test` | Night-shift nurse | Streetlight reports (Plac Konstytucji, Rakowiecka) |
 | `tomasz.lewandowski@cityecho.test` | Cyclist | Road damage with photos; one pothole the buses had already found |
 | `zofia.dabrowska@cityecho.test` | Retiree | Reported subsidence that isn't there (dismissed) |
@@ -41,8 +41,8 @@ app: Profile → Sign in → demo sign-in. Personas and their actions: [`persona
 | Area | Content |
 |---|---|
 | Complaints | ~370 citizen complaints over the last 14 days (19115 imports from `scripts/gen_complaints.py`, Polish with some English) + 13 app reports from the personas (7 with generated photos) |
-| Sensors | 50 back-dated simulated bus and tram rides + 6 rides "now" (`scripts/simulate_buses.py`, ground truth `data/demo/sim_world.json`) |
-| Road health | Fresh on Marszałkowska and Aleje Jerozolimskie (rides until today), **stale on Świętokrzyska** (last rides 11–12 days ago), tram 17 rails |
+| Sensors | 50 back-dated simulated bus and tram rides + 6 rides "now" (`scripts/simulate_buses.py`, ground truth `data/demo/sim_world.json`). Buses drive the **real routes of ZTM lines 171, 159, 107 and 160** (from the Warsaw GTFS feed, `data/demo/bus_lines.json`), tram 17 drives Marszałkowska |
+| Road health | ~1,300 measured segments over many streets: fresh along lines 171, 159 and 160 (rides until today), **stale along line 107** (Nowolipki, Krucza: last rides 11–12 days ago), tram 17 rails |
 | Incidents | Every state: candidate, likely, verified, dismissed (2 false alarms), found before any report (~25), awaiting a vehicle (~8) |
 | Citizen answers | ~23 "is it still there?" answers; trust settles when the city closes a job or an incident is dismissed |
 | City work | 4 done (one repair is visible to the sensors), 3 in progress, the rest to do |
@@ -53,7 +53,8 @@ Incident ids change from run to run; find them by place.
 ## On stage
 
 **Mobile app**
-1. Map, not signed in: road colours along Marszałkowska, Jerozolimskie and Świętokrzyska; pins across the city.
+1. Map, not signed in: road colours along the routes of bus lines 171, 159, 107, 160 and tram 17 (Leszno, Solidarności,
+   Marszałkowska, Jerozolimskie, Piękna, Nowolipki, Krucza, …); pins across the city.
 2. Sign in as **Piotr** → Routes: "Home → office (Marszałkowska)" shows the road quality and the problems ahead.
 3. Sign in as **Anna** → Profile: high trust, her reports and their status ("the city is on it", "fixed").
 4. Sign in as **Olena** → her streetlight report: a vehicle has been asked to check it.
@@ -63,9 +64,8 @@ Incident ids change from run to run; find them by place.
    track** (40 reports, many sensor rides, verified, in progress).
 2. Incident detail of that one: sensor signal, evidence timeline, citizen answers, confidence breakdown.
 3. **Marszałkowska at Rondo Dmowskiego** pothole: verified, marked **done**, and the buses no longer feel it.
-4. Filter **dismissed**: the two false alarms (Marszałkowska between Królewska and Świętokrzyska, Aleje
-   Jerozolimskie west of Dworzec Centralny): citizens reported, buses drove over and felt nothing, truthful
-   citizens said no.
+4. Filter **dismissed**: the two false alarms on Aleja Solidarności (one on line 171 by the Wola - Ratusz stop, one on line
+   160 by the Stare Miasto stop): citizens reported, buses drove over and felt nothing, truthful citizens said no.
 5. Stats: funnel report → incident → verified → done, repair times, load per department, 14-day trend.
 
 ## How it stays one world

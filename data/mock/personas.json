@@ -13,7 +13,7 @@
       "reports": [
         {"at": {"spot": 7}, "lang": "pl", "photo": "road_damage",
          "text": "Głęboka dziura na Puławskiej przy Madalińskiego, przy samym przejściu dla pieszych. Zdjęcie w załączniku."},
-        {"at": {"defect": "D004"}, "lang": "pl", "photo": "road_damage",
+        {"at": {"defect": "D012"}, "lang": "pl", "photo": "road_damage",
          "text": "Wyrwa w asfalcie na prawym pasie, autobusy w nią wjeżdżają. Zgłaszam z miejsca."},
         {"at": {"spot": 28}, "lang": "pl", "photo": "waste",
          "text": "Przepełnione kosze na Nowym Świecie przy Chmielnej, śmieci fruwają po chodniku."}
@@ -22,7 +22,7 @@
     {
       "key": "piotr",
       "email": "piotr.nowak@cityecho.test",
-      "who": "Piotr Nowak, commuter: tram 17 and the Marszałkowska / Jerozolimskie buses every day, saved routes",
+      "who": "Piotr Nowak, commuter: tram 17 and buses 171 / 159 every day, saved routes",
       "answers": "truthful",
       "reports": [
         {"at": {"spot": 3}, "lang": "pl",
@@ -64,7 +64,7 @@
          "text": "The underpass on Aleje Jerozolimskie by Dworzec Zachodni is flooded again after the rain, the drains are blocked."}
       ],
       "routes": [
-        {"name": "Bus JER to work", "kind": "line", "line": "JER", "mode": "road"}
+        {"name": "Bus 159 to work", "kind": "line", "line": "159", "mode": "road"}
       ]
     },
     {

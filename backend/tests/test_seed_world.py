@@ -66,9 +66,9 @@ def test_rides_use_known_devices_and_alternate_directions(plan):
 
 
 def test_stale_corridor_has_only_old_rides(plan):
-    swi = [r for r in plan.rides + plan.final_rides if r.line == "SWI"]
-    assert swi and all(r.start is not None and r.start < NOW - timedelta(days=9) for r in swi)
-    for line in ("MAR", "JER"):
+    stale = [r for r in plan.rides + plan.final_rides if r.line == "107"]
+    assert stale and all(r.start is not None and r.start < NOW - timedelta(days=9) for r in stale)
+    for line in ("171", "159"):
         assert any(r.start and r.start > NOW - timedelta(days=1) for r in plan.rides if r.line == line)
 
 

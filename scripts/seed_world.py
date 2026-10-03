@@ -10,7 +10,7 @@ one consistent, realistic world, through the public HTTP API only (never SQL int
 What it builds (definitions: data/mock/world.json, data/mock/personas.json; accounts: data/mock/README.md):
   1. history, last 14 days, in time order: ~370 citizen complaints (19115 imports, scripts/gen_complaints.py)
      interleaved with simulated bus/tram rides (scripts/simulate_buses.py) streamed to /devices/stream,
-     back-dated so road health has fresh corridors (MAR, JER) and a stale one (SWI);
+     back-dated, along the real routes of bus lines 171, 159, 160 (fresh) and 107 (stale) and tram 17;
   2. now: demo users sign in (/auth/dev), report with photos (/mobile/reports), answer "is it still there?"
      (/mobile/incidents/{id}/answer), save favourite routes; two false alarms are reported;
   3. the city (admin) moves incidents to in progress / done (/admin/incidents/{id}/work);
@@ -485,7 +485,8 @@ def check(api: Client, plan_personas: dict, *, admin_email: str, fast: bool) -> 
     add("awaiting a vehicle", stats.get("awaiting_verification", 0) > 0, f"{stats.get('awaiting_verification')}")
     add("road health measured", stats.get("segments_measured", 0) >= 100, f"{stats.get('segments_measured')} segments")
     lines = {(x["line"], x["mode"]) for x in api.get("/mobile/lines")["lines"]}
-    add("bus and tram lines", {("MAR", "road"), ("JER", "road"), ("SWI", "road"), ("17", "tram")} <= lines,
+    want_lines = {(line, "road") for line in sim.BUS_LINES} | {(line, "tram") for line in sim.TRAM_LINES}
+    add("bus and tram lines", want_lines <= lines,
         ", ".join(sorted(f"{a}/{b}" for a, b in lines)))
     adm = api.get("/admin/stats", token=admin_token)
     todo = sum(int(d.get("todo") or 0) for d in adm.get("departments", []))
