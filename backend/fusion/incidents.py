@@ -17,7 +17,7 @@ from backend.db import fetch_one
 from backend.fusion import confidence, trust
 from backend.fusion.routing import department_for
 from backend.fusion.score import priority_score
-from backend.models import IncidentStatus, Source
+from backend.models import IncidentStatus, Source, WorkStatus
 
 MATCH_RADIUS_M = 40
 MATCH_WINDOW_DAYS = 7
@@ -79,7 +79,7 @@ where id = %(incident_id)s
 """
 
 SQL_INCIDENT_CONTEXT = """
-select i.id, i.type, i.status, i.address, i.sensor_misses, s.name as segment_name,
+select i.id, i.type, i.status, i.address, i.sensor_misses, i.work_status, s.name as segment_name,
        coalesce(s.vulnerability, 0) as vulnerability
 from incidents i
 left join segments s on s.id = i.segment_id
@@ -265,6 +265,9 @@ def refresh_incident(conn, incident_id: int) -> dict:
         "no_count": sum(1 for yes, _ in votes if not yes),
     }
     row = fetch_one(conn, SQL_UPDATE, params)
-    if status != inc["status"] and status in (IncidentStatus.VERIFIED, IncidentStatus.DISMISSED):
+    # Once the city marked it done, trust was already settled (admin W3); NO answers about the
+    # repaired spot must not count against anyone, so a later status change settles nothing.
+    repaired = inc.get("work_status") == WorkStatus.DONE
+    if status != inc["status"] and status in (IncidentStatus.VERIFIED, IncidentStatus.DISMISSED) and not repaired:
         trust.settle(conn, incident_id, real=status == IncidentStatus.VERIFIED)
     return dict(row) if row else {}

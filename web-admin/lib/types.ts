@@ -115,6 +115,26 @@ export interface IncidentDetail extends IncidentSummary {
   responses: CitizenResponse[];
 }
 
+/** One change of the city work status (newest first). */
+export interface WorkHistoryEntry {
+  from_status: WorkStatus | null;
+  to_status: WorkStatus;
+  by_email: string | null;
+  by_name: string | null;
+  note: string | null;
+  at: string;
+}
+
+/** GET/POST /admin/incidents/{id}/work (admin only). */
+export interface WorkInfo {
+  incident_id: number;
+  work_status: WorkStatus;
+  changed_at: string | null;
+  changed_by: { id: number; email: string; name: string | null } | null;
+  history: WorkHistoryEntry[];
+  settled_contributors?: number; // POST only: contributors whose trust was settled by marking it done
+}
+
 /** POST /incidents/{id}/verify */
 export interface VerifyResult {
   incident_id: number;

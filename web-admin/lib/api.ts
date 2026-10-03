@@ -13,6 +13,8 @@ import type {
   Vehicle,
   VehicleKind,
   VerifyResult,
+  WorkInfo,
+  WorkStatus,
 } from "./types";
 
 export const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
@@ -153,6 +155,21 @@ export async function getIncidents(
 
 export async function getIncident(id: number): Promise<IncidentDetail | null> {
   return request(`incident`, `/incidents/${id}`, undefined, () => mock.mockIncidentDetail(id));
+}
+
+/** W3: the city work status of an incident and who changed it (admin only). */
+export async function getWork(id: number): Promise<WorkInfo | null> {
+  return request(`work`, `/admin/incidents/${id}/work`, undefined, () => mock.mockGetWork(id));
+}
+
+/**
+ * Move an incident to todo / in_progress / done. Throws ApiError (no demo fallback: a change that did not
+ * reach the backend must not look saved). Marking it done settles contributor trust on the backend.
+ */
+export async function setWork(id: number, status: WorkStatus, note?: string): Promise<WorkInfo> {
+  const session = getSession();
+  if (USE_MOCK) return mock.mockSetWork(id, status, note ?? null, session?.user.email ?? null, session?.user.name ?? null);
+  return postJson<WorkInfo>(`/admin/incidents/${id}/work`, { status, note: note || null });
 }
 
 export async function requestVerification(id: number): Promise<VerifyResult> {

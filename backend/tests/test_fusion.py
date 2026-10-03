@@ -252,6 +252,19 @@ def test_refresh_dismisses_after_clean_passes_and_settles_trust(fake_db):
     assert db.executed(trust.SQL_SETTLE)[0]["real"] is False
 
 
+def test_refresh_after_repair_never_settles_trust(fake_db):
+    """W3: the city marked it done (trust settled then); NO answers about the fixed spot count against nobody."""
+    context = {"id": 6, "type": "road_damage", "status": "candidate", "address": None, "sensor_misses": 5,
+               "work_status": "done", "segment_name": None, "vulnerability": 0.0}
+    aggregate = {"report_count": 1, "sensor_count": 0, "sensor_rides": 0, "max_severity": 0, "max_urgency": 2,
+                 "first_seen": T0, "last_seen": T0, "first_report_ts": T0, "nth_ride_ts": None,
+                 "location_text": None, "ride_severities": None}
+    db, row = _refresh(fake_db, context, aggregate, votes=[(True, 0.6), (False, 0.9)])
+    assert row["status"] == "dismissed"                  # confidence still follows the evidence
+    assert db.executed(trust.SQL_SETTLE) == []
+    assert "i.work_status" in incidents.SQL_INCIDENT_CONTEXT
+
+
 def test_refresh_terminal_status_is_sticky(fake_db):
     context = {"id": 7, "type": "road_damage", "status": "verified", "address": None, "sensor_misses": 9,
                "segment_name": None, "vulnerability": 0.0}

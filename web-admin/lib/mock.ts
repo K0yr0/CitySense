@@ -18,6 +18,8 @@ import type {
   Vehicle,
   VehicleKind,
   VerifyResult,
+  WorkHistoryEntry,
+  WorkInfo,
   WorkStatus,
 } from "./types";
 
@@ -686,6 +688,62 @@ export function mockStats(): Stats {
 
 // ---------------------------------------------------------------- write endpoints
 
+// W3 work flow history per incident (newest first); seeds with a work status start with one entry.
+const workLogs = new Map<number, WorkHistoryEntry[]>();
+
+function workLog(seed: IncidentSeed): WorkHistoryEntry[] {
+  let log = workLogs.get(seed.id);
+  if (!log) {
+    log = [];
+    if (seed.work) {
+      const by = { by_email: "dyspozytor@um.warszawa.pl", by_name: "Dyspozytor ZDM" };
+      if (seed.work.status === "done") {
+        log.push({ from_status: "in_progress", to_status: "done", ...by, note: "Repaired, crew 3", at: minutesAgo(seed.work.min) });
+        log.push({ from_status: "todo", to_status: "in_progress", ...by, note: null, at: minutesAgo(seed.work.min + 26 * 60) });
+      } else {
+        log.push({ from_status: "todo", to_status: seed.work.status, ...by, note: "Work order sent", at: minutesAgo(seed.work.min) });
+      }
+    }
+    workLogs.set(seed.id, log);
+  }
+  return log;
+}
+
+function workInfo(seed: IncidentSeed): WorkInfo {
+  const inc = summaryFromSeed(seed);
+  const log = workLog(seed);
+  const last = log[0];
+  return {
+    incident_id: seed.id,
+    work_status: inc.work_status,
+    changed_at: inc.work_status_changed_at,
+    changed_by: last?.by_email ? { id: 0, email: last.by_email, name: last.by_name } : null,
+    history: log,
+  };
+}
+
+export function mockGetWork(id: number): WorkInfo | null {
+  const seed = SEEDS.find((s) => s.id === id);
+  return seed ? workInfo(seed) : null;
+}
+
+/** Demo version of POST /admin/incidents/{id}/work (same rules: no-op when nothing changes). */
+export function mockSetWork(id: number, status: WorkStatus, note: string | null, email: string | null, name: string | null): WorkInfo {
+  const seed = SEEDS.find((s) => s.id === id);
+  if (!seed) throw new Error(`incident ${id} not found`);
+  const before = summaryFromSeed(seed);
+  const cleanNote = note?.trim() || null;
+  let settled = 0;
+  if (status !== before.work_status || cleanNote) {
+    const at = new Date().toISOString();
+    workLog(seed).unshift({ from_status: before.work_status, to_status: status, by_email: email, by_name: name, note: cleanNote, at });
+    overrides.set(id, { ...overrides.get(id), work_status: status, work_status_changed_at: at });
+    // Like trust.settle: contributors with an unsettled answer (here: the explicit answers).
+    if (status === "done" && before.work_status !== "done") settled = (seed.yes ?? 0) + (seed.no ?? 0);
+  }
+  return { ...workInfo(seed), settled_contributors: settled };
+}
+
 export function mockVerify(id: number): VerifyResult {
   const seed = SEEDS.find((s) => s.id === id);
   if (!seed) return { incident_id: id, status: null, vehicle: null, eta_min: null };
@@ -693,6 +751,6 @@ export function mockVerify(id: number): VerifyResult {
   if (inc.has_sensor) return { incident_id: id, status: inc.status, vehicle: inc.verify_vehicle, eta_min: null };
   const vehicle = inc.verify_vehicle ?? (seed.street === JEROZOLIMSKIE ? "bus 175" : "tram 17");
   const eta = inc.verify_eta_min ?? 5;
-  overrides.set(id, { verify_vehicle: vehicle, verify_eta_min: eta, awaiting_verification: true });
+  overrides.set(id, { ...overrides.get(id), verify_vehicle: vehicle, verify_eta_min: eta, awaiting_verification: true });
   return { incident_id: id, status: inc.status, vehicle, eta_min: eta };
 }

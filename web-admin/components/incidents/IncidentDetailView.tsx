@@ -14,6 +14,7 @@ import EvidenceTable from "./EvidenceTable";
 import PhotoGallery from "./PhotoGallery";
 import SignalChart from "./SignalChart";
 import Timeline from "./Timeline";
+import WorkflowCard from "./WorkflowCard";
 
 function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -207,6 +208,7 @@ export default function IncidentDetailView({ id }: { id: number }) {
         </div>
 
         <div className="flex min-w-0 flex-col gap-5">
+          <WorkflowCard incident={inc} onChanged={reload} now={now} />
           <Card title="Confidence">
             <ConfidenceBreakdown incident={inc} />
           </Card>
