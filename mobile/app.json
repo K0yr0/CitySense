@@ -5,10 +5,14 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "cityecho",
+    "scheme": [
+      "cityecho",
+      "com.cityecho.app"
+    ],
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.cityecho.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -17,7 +21,8 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.cityecho.app"
     },
     "web": {
       "output": "static",
@@ -31,6 +36,20 @@
           "backgroundColor": "#208AEF",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
+        }
+      ],
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "CityEcho konumunu haritada göstermek, bildirimine konum eklemek ve 25 m çevrendeki sorunları sormak için kullanır. Konum geçmişi saklanmaz."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Bildirimine fotoğraf eklemek için galerine erişir.",
+          "cameraPermission": "Sorunun fotoğrafını çekmek için kameraya erişir."
         }
       ]
     ],
