@@ -102,7 +102,11 @@ docker compose up --build                         # veritabanı + backend + web 
 docker compose --profile seed run --rm seed       # demo şikayetleri ve sürüşleri yükle
 docker compose down -v                            # her şeyi sıfırla
 ```
-Docker henüz gerçek bir makinede denenmedi. İlk çalıştıran sorun çıkarsa SHARED commit'iyle düzeltir.
+✅ Docker doğrulandı (Apple Silicon Mac, Colima): veritabanı, migration'lar, harita yükleme (saniyeler), API, canlı araçlar, web admin ve demo verisi (367 şikayet → 74 olay) uçtan uca çalışıyor.
+
+Docker Desktop yerine ücretsiz komut satırı sürümü (Mac): `brew install colima docker docker-compose && colima start --cpu 4 --memory 6`. Windows/Linux: Docker Desktop ya da Docker Engine.
+
+**Neden yerelde test:** Vercel'in ücretsiz planında özel repoda yalnızca repo sahibinin (A) commit'leri yayınlanır. B ve C'nin push'ları repoya girer ama siteye çıkmaz. Herkes değişikliğini kendi bilgisayarında Docker ile test eder.
 
 **Docker'sız yol:**
 ```bash
@@ -130,13 +134,15 @@ cd web-admin && npm install && npm run dev                                      
 - ✅ Backend: sensör hattı, şikayet triyajı, füzyon, güven motoru, güven puanı (trust), doğrulama döngüsü. 200 test geçiyor (`.venv/bin/pytest`).
 - ✅ Gün 0: tüm router'lar kayıtlı; giriş iskeleti (`backend/auth/`: `current_user`, `require_admin`, Google + dev girişi, güvenin hesaba taşınması); migration sistemi ve 100/200/300 migration'ları (`users`, `work_status`, `devices`); Docker; mobil iskeleti (Expo SDK 57).
 - ✅ Web arayüzü `web-admin/` içinde. Kullanıcı sayfaları hâlâ içinde; B, W0'da siler.
-- ✅ Herkese açık demo sitesi: https://cityecho-gules.vercel.app (demo verisiyle).
+- ✅ Herkese açık demo sitesi: https://cityecho-gules.vercel.app (demo verisiyle). Yalnızca A'nın push'larıyla güncellenir (bölüm 7).
+- ✅ Docker uçtan uca doğrulandı (bölüm 7).
 - ✅ Canlı Varşova araç konumları çalışıyor (yeni API, aşağıya bak).
 - ✅ Sahiplik kontrolü: `OWNERS` + `.githooks/pre-commit` + `scripts/check_owners.py`.
 - ✅ Harita (S0): 11.833 segment (9.057 yol, 2.776 ray), gerçek kırılganlık verisiyle; `data/osm/segments_demo.geojson` repoda, yükleme saniyeler sürer. Demo tramvay sürüşleri gerçek raylarla hizalı (%100).
 - ⏳ `/devices/stream` 501 döndürüyor (C, S1'de yazar); `scripts/simulate_buses.py` henüz yok (C, S2).
 - ❌ Bilinen eksik: tramvay, yol çukurunu doğrulayamıyor (tramvay tespitleri yalnızca ray olaylarıyla eşleşir). Simüle otobüsler yol çukurlarını doğrular.
 - ❌ Bilinen eksik (B ve C): tramvay hattı iki paralel raydan oluşuyor; bir sürüşün GPS'i iki ray arasında gidip geliyor. Füzyonun "≥ 2 sürüş aynı segmentte" kuralı iki rayı tek sayacak şekilde ele alınmalı.
+- ℹ️ Demo verisi tutarsızlığı (C, S5): Świętokrzyska'da 38 şikayet "ray kusuru" diyor ama sentetik tramvay sürüşleri orada kusur içermiyor; temiz geçişler güveni %45'e düşürüyor. Motor doğru çalışıyor; demo senaryoları hizalanmalı.
 - ℹ️ `nearest_segment(...)` Marszałkowska'da en yakın yolu ~16 m'de, rayı ~24 m'de buluyor; yalnızca ray ararken 50 m yarıçap gerekebilir.
 
 ## 9. Tuzaklar
