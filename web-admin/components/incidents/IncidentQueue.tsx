@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { getIncidents } from "@/lib/api";
+import { saveQueueOrder } from "@/lib/queueNav";
 import { DEPARTMENTS, deptLabel, STATUSES, statusLabel, timeAgo, typeLabel, WORK_STATUSES, workLabel } from "@/lib/format";
 import { useApi, useNow } from "@/lib/hooks";
 import type { IncidentSummary } from "@/lib/types";
@@ -144,6 +145,13 @@ export default function IncidentQueue() {
 
   const all = useMemo(() => data ?? [], [data]);
   const list = all.filter((i) => matches(i, filters));
+
+  // Remember this order for "previous / next" on the incident page.
+  const order = list.map((i) => i.id).join(",");
+  const queryString = params.toString();
+  useEffect(() => {
+    if (data) saveQueueOrder({ ids: order ? order.split(",").map(Number) : [], query: queryString });
+  }, [data, order, queryString]);
   const filtered = Boolean(filters.department || filters.status || filters.work || filters.q);
 
   const dept = facetCounts(all, filters, "department", (i) => i.department);

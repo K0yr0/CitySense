@@ -6,11 +6,13 @@ import { getIncident, photoUrl, requestVerification } from "@/lib/api";
 import { deptLabel, formatDateTime, timeAgo, typeLabel, vehicleLabel } from "@/lib/format";
 import { useApi, useNow } from "@/lib/hooks";
 import type { IncidentDetail, VerifyResult } from "@/lib/types";
-import { IconAlert, IconArrowLeft, IconCamera } from "../icons";
+import { IconAlert, IconCamera } from "../icons";
 import { Card, IncidentBadges, ScoreBar, SourceTag, StatusChip, verificationText, WorkChip } from "../ui";
 import ConfidenceBreakdown from "./ConfidenceBreakdown";
 import CitizenAnswers from "./CitizenAnswers";
 import EvidenceTable from "./EvidenceTable";
+import LocationMap from "./LocationMap";
+import QueueNav from "./QueueNav";
 import PhotoGallery from "./PhotoGallery";
 import SignalChart from "./SignalChart";
 import Timeline from "./Timeline";
@@ -102,16 +104,23 @@ function VerificationCard({ incident, onDone }: { incident: IncidentDetail; onDo
             : "No vehicle is passing this spot soon; the request stays open."}
         </p>
       )}
-      <button
-        type="button"
-        onClick={run}
-        disabled={busy || measured || resolved}
-        className="mt-4 w-full rounded-xl bg-accent px-4 py-3 text-base font-semibold text-accent-ink hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {busy ? "Requesting…" : measured ? "Already measured by sensors" : resolved ? "Already resolved" : awaiting ? "Request again" : "Request verification"}
-      </button>
-      {!measured && !resolved && (
-        <p className="mt-2 text-sm text-muted">Asks the next tram or bus through this segment to record it. A clean pass lowers confidence.</p>
+      {measured || resolved ? (
+        // Nothing to do here: say why instead of showing a dead button.
+        <p className="mt-2 text-sm text-muted">
+          {measured ? "Vehicle sensors already measured this spot, so no verification ride is needed." : "Confidence is final for this incident."}
+        </p>
+      ) : (
+        <>
+          <button
+            type="button"
+            onClick={run}
+            disabled={busy}
+            className="mt-4 w-full rounded-xl bg-accent px-4 py-3 text-base font-semibold text-accent-ink hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {busy ? "Requesting…" : awaiting ? "Request again" : "Request verification"}
+          </button>
+          <p className="mt-2 text-sm text-muted">Asks the next tram or bus through this segment to record it. A clean pass lowers confidence.</p>
+        </>
       )}
     </Card>
   );
@@ -140,9 +149,7 @@ export default function IncidentDetailView({ id }: { id: number }) {
 
   return (
     <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 lg:px-6 lg:py-8">
-      <Link href="/incidents" className="inline-flex items-center gap-1.5 text-base font-medium text-ink-2 hover:text-accent">
-        <IconArrowLeft width={18} height={18} /> Incident queue
-      </Link>
+      <QueueNav id={inc.id} />
 
       <header className="mt-4 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
@@ -177,6 +184,8 @@ export default function IncidentDetailView({ id }: { id: number }) {
               <p className="text-lg leading-relaxed">{summary}</p>
             </Card>
           )}
+
+          <LocationMap incident={inc} />
 
           {inc.signal ? (
             <Card title="Sensor signal" action={<span className="text-sm text-muted">{inc.sensor_rides} ride{inc.sensor_rides === 1 ? "" : "s"} · max severity {inc.max_severity?.toFixed(2) ?? "—"}</span>}>

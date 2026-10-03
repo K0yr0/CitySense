@@ -3,8 +3,8 @@
 import type { PickingInfo } from "@deck.gl/core";
 import { PathLayer, ScatterplotLayer } from "@deck.gl/layers";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { useMemo, useState } from "react";
-import Map, { NavigationControl, type ViewStateChangeEvent } from "react-map-gl/maplibre";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Map, { NavigationControl, type MapRef, type ViewStateChangeEvent } from "react-map-gl/maplibre";
 import { getIncidents, getSegments, getVehicles } from "@/lib/api";
 import { fmtScore, freshness, FRESHNESS_ALPHA, healthRGBA, healthWord, sourceKind, sourceRGBA, statusLabel, timeAgo, typeLabel, workLabel } from "@/lib/format";
 import { useApi, useNow, usePrefersDark } from "@/lib/hooks";
@@ -28,14 +28,17 @@ function padded(b: Box, f = 0.5): Box {
 
 const incidentRadius = (d: IncidentSummary) => 7 + 13 * Math.min(1, Math.max(0, (d.score ?? 0) / 1.5));
 
-export default function CityMap() {
+/** `focusId` (from /?incident=ID): select that incident and fly to it once the incidents have loaded. */
+export default function CityMap({ focusId = null }: { focusId?: number | null }) {
   const dark = usePrefersDark();
+  const mapRef = useRef<MapRef>(null);
+  const flownTo = useRef<number | null>(null);
   const [toggles, setToggles] = useState<LayerToggles>({ segments: true, incidents: true, vehicles: true, hideDone: true });
   // Re-evaluates segment freshness (fading) and tooltip ages once a minute.
   const now = useNow(60_000);
   const [box, setBox] = useState<Box>(INITIAL_BOX);
   const [zoomedOut, setZoomedOut] = useState(false);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(focusId);
   const [hovering, setHovering] = useState(false);
   // The map only renders in the browser (MapShell: ssr false), so window is available here.
   const [layersOpen, setLayersOpen] = useState(() => window.innerWidth >= 768);
@@ -55,7 +58,17 @@ export default function CityMap() {
     () => (incidents.data ?? []).filter((i) => !toggles.hideDone || i.work_status !== "done"),
     [incidents.data, toggles.hideDone],
   );
-  const selected = shownIncidents.find((i) => i.id === selectedId) ?? null;
+  // From all incidents: a deep link to finished work still opens its panel even when done ones are hidden.
+  const selected = incidents.data?.find((i) => i.id === selectedId) ?? null;
+
+  // Deep link: fly to the focused incident once, as soon as both the map and the incident are there.
+  const focused = focusId === null ? null : (incidents.data?.find((i) => i.id === focusId) ?? null);
+  const flyToFocus = () => {
+    if (!focused || flownTo.current === focused.id || !mapRef.current) return;
+    flownTo.current = focused.id;
+    mapRef.current.flyTo({ center: [focused.lon, focused.lat], zoom: 16.5, duration: 1200 });
+  };
+  useEffect(flyToFocus);
   const latestMeasurement = useMemo(
     () => (segments.data ?? []).reduce<string | null>((best, s) => (s.updated_at && (!best || s.updated_at > best) ? s.updated_at : best), null),
     [segments.data],
@@ -183,13 +196,17 @@ export default function CityMap() {
   return (
     <div className="absolute inset-0">
       <Map
+        ref={mapRef}
         initialViewState={WARSAW_VIEW}
         mapStyle={dark ? MAP_STYLE.dark : MAP_STYLE.light}
         workerUrl={MAPLIBRE_WORKER_URL}
         style={{ width: "100%", height: "100%" }}
         attributionControl={{ compact: true }}
         cursor={hovering ? "pointer" : "grab"}
-        onLoad={onViewSettled}
+        onLoad={(e) => {
+          onViewSettled(e);
+          flyToFocus();
+        }}
         onMoveEnd={onViewSettled}
         minZoom={10}
         maxZoom={19}
