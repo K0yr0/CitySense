@@ -86,7 +86,7 @@ The complete, authoritative list is the `OWNERS` file; this table is a summary. 
 | C → B and A | `segments.health`, `segments.health_rides`, `segments.health_updated_at` (freshness), `segments.health_weight` (time-weighted amount of data) columns | B's live map, A's road colours. Only C writes them |
 | C → B | `/devices/stream` data format (written in `docs/ARCHITECTURE.md`) | The simulator sends in this format, like a real device |
 | C → A | `data/complaints_synth.json` record shape stays stable: `text`, `created_at`, `true_issue_id`, `true_category`, `lon`, `lat`, `street` | A's triage evaluation (`eval_triage.py`) and tests read it |
-| A, B → C | The public HTTP API (`docs/ARCHITECTURE.md` §6 and §8): `/auth/dev`, `/reports`, `/reports/bulk`, `/incidents/{id}/responses`, `/mobile/*`, `/admin/incidents/{id}/work`, `/devices/stream` | C's mock seeder writes **only through these endpoints**, never straight into other people's tables. If an endpoint is missing or too slow, C asks its owner |
+| A, B → C | The public HTTP API (`docs/ARCHITECTURE.md` §6 and §8): `/auth/dev`, `/reports/bulk` (admin token), `/mobile/*` (citizen reports, answers, routes), `/admin/incidents/{id}/work`, `/incidents` (admin token, reads only), `/devices/stream` | C's mock seeder writes **only through these endpoints**, never straight into other people's tables. If an endpoint is missing or too slow, C asks its owner |
 | C → A, B | `data/mock/README.md`: the demo accounts (emails, roles), personas and what the seeded world contains | A and B know which accounts and incidents to show in the apps and on stage |
 
 If a contract must change: announce it in the group, the people involved approve, and the change is written to `docs/` in a separate SHARED commit.

@@ -79,9 +79,15 @@ all `/mobile/*` write endpoints require sign-in, photos are anonymised, SQL is p
 
 ## 📡 Person C
 
-No finding of C's own (the ride endpoints are intended, see the top). C updates the S6 seeder for
-A1, A2, A3 and B1 once they are fixed; the S6 contract table in `docs/ROADMAP.md` is updated in the
-same SHARED commit.
+No finding of C's own (the ride endpoints are intended, see the top). The S6 seeder and the S5
+scenarios are ready for A1, A2 and B1 (contract table in `docs/ROADMAP.md` updated):
+- ✅ A1: never used the anonymous voting endpoint; answers go through `/mobile/incidents/{id}/answer`.
+- ✅ A2 (prepared): no anonymous `POST /reports` any more (personas and scenario citizens report through
+  `/mobile/reports`); every `/reports/bulk` call already sends the admin token.
+- ✅ B1: `/incidents` reads use the admin token from dev sign-in (first `ADMIN_EMAILS` entry).
+- ⏳ A3: once dev sign-in needs the team secret, the seeder and the scenarios send that header.
+- Fixed in C's code: `/devices/stream` no longer stores a CSV copy of every device ride (~8 MB each);
+  the simulated fleet had filled a laptop disk with 2.7 GB in a day.
 
 ## 🔗 Shared (one person, SHARED commit, announced in the group)
 
