@@ -1,0 +1,107 @@
+{
+  "note": "Demo accounts of the S6 mock world (scripts/seed_world.py). Everyone signs in with POST /auth/dev (no password). The admin email must be listed in ADMIN_EMAILS; the seeder uses the first ADMIN_EMAILS entry.",
+  "admin": {
+    "email": "admin@cityecho.test",
+    "who": "Urszula, ZDM dispatcher: works the incident queue and closes repairs"
+  },
+  "personas": [
+    {
+      "key": "anna",
+      "email": "anna.kowalska@cityecho.test",
+      "who": "Anna Kowalska, reliable reporter: accurate reports with photos, answers truthfully -> highest trust",
+      "answers": "truthful",
+      "reports": [
+        {"at": {"spot": 7}, "lang": "pl", "photo": "road_damage",
+         "text": "Głęboka dziura na Puławskiej przy Madalińskiego, przy samym przejściu dla pieszych. Zdjęcie w załączniku."},
+        {"at": {"defect": "D004"}, "lang": "pl", "photo": "road_damage",
+         "text": "Wyrwa w asfalcie na prawym pasie, autobusy w nią wjeżdżają. Zgłaszam z miejsca."},
+        {"at": {"spot": 28}, "lang": "pl", "photo": "waste",
+         "text": "Przepełnione kosze na Nowym Świecie przy Chmielnej, śmieci fruwają po chodniku."}
+      ]
+    },
+    {
+      "key": "piotr",
+      "email": "piotr.nowak@cityecho.test",
+      "who": "Piotr Nowak, commuter: tram 17 and the Marszałkowska / Jerozolimskie buses every day, saved routes",
+      "answers": "truthful",
+      "reports": [
+        {"at": {"spot": 3}, "lang": "pl",
+         "text": "Na Marszałkowskiej przy Rondzie Dmowskiego dziura, autobus aż podskoczył."}
+      ],
+      "routes": [
+        {"name": "Home -> office (Marszałkowska)", "kind": "points", "start": [21.0036, 52.2423], "end": [21.0215, 52.2139]},
+        {"name": "Tram 17", "kind": "line", "line": "17", "mode": "tram"},
+        {"name": "Gym (Dworzec Centralny -> Most Poniatowskiego)", "kind": "points", "start": [21.0036, 52.2282], "end": [21.0322, 52.2341]}
+      ]
+    },
+    {
+      "key": "marek",
+      "email": "marek.zielinski@cityecho.test",
+      "who": "Marek Zieliński, unreliable: reports problems that are not there and answers wrongly -> lowest trust",
+      "answers": "wrong",
+      "reports": [
+        {"at": {"false_alarm": "F1"}, "lang": "pl",
+         "text": "Ogromna dziura w jezdni tutaj!!! Zróbcie coś."}
+      ]
+    },
+    {
+      "key": "olena",
+      "email": "olena.shevchenko@cityecho.test",
+      "who": "Olena Shevchenko, newcomer writing in Ukrainian: one fresh report waiting for a vehicle to check it",
+      "answers": "none",
+      "reports": [
+        {"at": {"lon": 21.0062, "lat": 52.2196}, "lang": "uk", "photo": "streetlight",
+         "text": "На вулиці Нововейській біля Політехніки не світить ліхтар, дуже темно ввечері."}
+      ]
+    },
+    {
+      "key": "james",
+      "email": "james.miller@cityecho.test",
+      "who": "James Miller, expat writing in English: flooding report, one saved route",
+      "answers": "truthful",
+      "reports": [
+        {"at": {"spot": 15}, "lang": "en", "photo": "flooding",
+         "text": "The underpass on Aleje Jerozolimskie by Dworzec Zachodni is flooded again after the rain, the drains are blocked."}
+      ],
+      "routes": [
+        {"name": "Bus JER to work", "kind": "line", "line": "JER", "mode": "road"}
+      ]
+    },
+    {
+      "key": "kasia",
+      "email": "katarzyna.wojcik@cityecho.test",
+      "who": "Katarzyna Wójcik, night-shift nurse: streetlight reports on her way home",
+      "answers": "truthful",
+      "reports": [
+        {"at": {"spot": 5}, "lang": "pl", "photo": "streetlight",
+         "text": "Na Placu Konstytucji znowu nie świecą latarnie, wracam po nocnej zmianie i jest kompletnie ciemno."},
+        {"at": {"spot": 34}, "lang": "pl",
+         "text": "Latarnia na Rakowieckiej przy Alei Niepodległości nie świeci od kilku dni."}
+      ]
+    },
+    {
+      "key": "tomasz",
+      "email": "tomasz.lewandowski@cityecho.test",
+      "who": "Tomasz Lewandowski, cyclist: road damage with photos, answers truthfully",
+      "answers": "truthful",
+      "reports": [
+        {"at": {"spot": 18}, "lang": "pl", "photo": "road_damage",
+         "text": "Rowerzysta uważaj: dziura na Świętokrzyskiej przy Emilii Plater, przy samym krawężniku."},
+        {"at": {"defect": "D014"}, "lang": "pl",
+         "text": "Wyrwa w asfalcie na buspasie, rowerem nie da się tędy przejechać. Jestem na miejscu."}
+      ]
+    },
+    {
+      "key": "zofia",
+      "email": "zofia.dabrowska@cityecho.test",
+      "who": "Zofia Dąbrowska, retiree: reports often, sometimes mistaken",
+      "answers": "none",
+      "reports": [
+        {"at": {"false_alarm": "F2"}, "lang": "pl",
+         "text": "Chyba zapadł się tu asfalt na jezdni, proszę sprawdzić."},
+        {"at": {"spot": 19}, "lang": "pl",
+         "text": "Na Świętokrzyskiej przy Mazowieckiej leżą worki ze śmieciami od kilku dni."}
+      ]
+    }
+  ]
+}

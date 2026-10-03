@@ -148,6 +148,10 @@ VAGUE = ["koło sklepu", "przy przystanku", "na mojej ulicy", "pod blokiem", "pr
          "na rogu", "obok apteki", "przy Biedronce", "koło Żabki", "na osiedlu", "przy przejściu dla pieszych",
          "niedaleko kościoła", "przy pętli", "u nas na ulicy", ""]
 
+# stable_places: vague phrases that name no shop, stop or landmark, so the geocoder can't move the
+# complaint to some far-away namesake (the triage then keeps the citizen's pin).
+STABLE_VAGUE = ["pod blokiem", "na mojej ulicy", "tam gdzie zawsze", "u nas na ulicy", "na osiedlu", ""]
+
 PROBLEMS: dict[str, list[str]] = {
     "road_damage": [
         "Ogromna dziura w jezdni {loc}.", "{Loc} jest wielka dziura, auta wpadają w nią kołami.",
@@ -261,11 +265,23 @@ def _style(text: str, rng: random.Random) -> str:
     return text
 
 
-def template_text(spot: tuple, rng: random.Random, vague: bool) -> str:
-    """One complaint about `spot` in a random style."""
+_HOLE = "\u00a7loc\u00a7"  # placeholder that _style can't touch (not alphabetic, survives case changes)
+
+
+def template_text(spot: tuple, rng: random.Random, vague: bool, stable_places: bool = False) -> str:
+    """One complaint about `spot` in a random style.
+
+    stable_places: at most 2 street / crossing phrases per spot, no landmarks, only STABLE_VAGUE vague
+    phrases, English texts say "here", and typos / missing diacritics never touch the place phrase. The
+    geocoder then sees few distinct location texts (each costs a 1 s Nominatim call the first time) and
+    none that resolve to a far-away namesake, which would win over the citizen's pin. Used by the mock
+    seeder (scripts/seed_world.py).
+    """
     street, _, _, cat, _, places, marks = spot
+    if stable_places:
+        places, marks = places[:2], []
     if vague:
-        loc = rng.choice(VAGUE)
+        loc = rng.choice(STABLE_VAGUE if stable_places else VAGUE)
     elif marks and rng.random() < 0.3:
         loc = rng.choice(marks)
     else:
@@ -273,6 +289,8 @@ def template_text(spot: tuple, rng: random.Random, vague: bool) -> str:
     roll = rng.random()
     if roll < 0.05:  # expat in English
         loc_en = rng.choice(["near the shop", "at the bus stop", "on my street", ""]) if vague else f"on {street}"
+        if stable_places:
+            loc_en = "here"
         body = PROBLEMS_EN[cat].format(loc=loc_en)
     elif roll < 0.15:  # terse / repeat reporter
         short = SHORT[cat]
@@ -293,7 +311,13 @@ def template_text(spot: tuple, rng: random.Random, vague: bool) -> str:
         parts.append(rng.choice(CLOSERS))
         body = " ".join(p for p in parts if p)
     body = re.sub(r"\s+([,.!?:])", r"\1", re.sub(r"\s{2,}", " ", body)).strip(" –")
-    return _style(_cap(body), rng)
+    if not (stable_places and loc):
+        return _style(_cap(body), rng)
+    held = _cap(body).replace(_cap(loc), _HOLE.upper()).replace(loc, _HOLE)
+    styled = _style(held, rng)
+    shout = styled.isupper() and _HOLE.upper() in styled
+    return (styled.replace(_HOLE.upper(), loc.upper() if shout else _cap(loc)).replace(_HOLE, loc)
+            if styled != styled.lower() else styled.replace(_HOLE, loc.lower()))
 
 
 # --------------------------------------------------------------------------- LLM generator
@@ -334,38 +358,44 @@ def _jitter(lon: float, lat: float, rng: random.Random, sigma_m: float = 8.0, ma
     return (round(lon + dx / (111_320 * math.cos(math.radians(lat))), 6), round(lat + dy / 111_320, 6))
 
 
-def _timestamps(n: int, now: datetime, rng: random.Random) -> list[datetime]:
-    """n timestamps clustered in a 0.3–4 day burst somewhere in the last WINDOW_DAYS days."""
+def _timestamps(n: int, now: datetime, rng: random.Random, window_days: float = WINDOW_DAYS) -> list[datetime]:
+    """n timestamps clustered in a 0.3–4 day burst somewhere in the last `window_days` days."""
     burst = timedelta(days=rng.uniform(0.3, 4.0))
-    start = now - timedelta(days=rng.uniform(0.2, WINDOW_DAYS - 0.2))
+    start = now - timedelta(days=rng.uniform(0.2, window_days - 0.2))
     start = min(start, now - burst - timedelta(minutes=10))
     offsets = sorted(rng.betavariate(1.2, 2.5) for _ in range(n))  # front-loaded: most reports early in the burst
     return [(start + burst * o).replace(microsecond=0) for o in offsets]
 
 
 def generate(seed: int = 19115, now: datetime | None = None, use_llm: bool = False,
-             stats: dict | None = None) -> list[dict]:
-    """All synthetic complaints, sorted by created_at. `stats` (optional) receives counts."""
+             stats: dict | None = None, *, spots: dict[int, tuple] | None = None,
+             window_days: float = WINDOW_DAYS, stable_places: bool = False) -> list[dict]:
+    """All synthetic complaints, sorted by created_at. `stats` (optional) receives counts.
+
+    `spots` {issue_id: spot} replaces SPOTS (the mock seeder moves, shrinks or drops spots);
+    `window_days` and `stable_places` (see template_text) default to this file's own output.
+    """
     now = (now or datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)).astimezone(timezone.utc)
     records: list[dict] = []
     n_vague = 0
-    for issue_id, spot in enumerate(SPOTS, start=1):
+    chosen = spots if spots is not None else dict(enumerate(SPOTS, start=1))
+    for issue_id, spot in chosen.items():
         street, lon, lat, cat, n, _, _ = spot
         rng = random.Random(seed * 1000 + issue_id)
         vague_flags = [rng.random() < VAGUE_RATE for _ in range(n)]
         texts = llm_texts(spot, n) if use_llm else None
         if texts:
-            texts = (texts + [template_text(spot, rng, v) for v in vague_flags])[:n]
+            texts = (texts + [template_text(spot, rng, v, stable_places) for v in vague_flags])[:n]
         else:
-            texts = [template_text(spot, rng, v) for v in vague_flags]
+            texts = [template_text(spot, rng, v, stable_places) for v in vague_flags]
             n_vague += sum(vague_flags)
-        for text, ts in zip(texts, _timestamps(n, now, rng)):
+        for text, ts in zip(texts, _timestamps(n, now, rng, window_days)):
             plon, plat = _jitter(lon, lat, rng)
             records.append({"text": text, "created_at": ts.isoformat(), "true_issue_id": issue_id,
                             "true_category": cat, "lon": plon, "lat": plat, "street": street})
     records.sort(key=lambda r: r["created_at"])
     if stats is not None:
-        stats.update(total=len(records), spots=len(SPOTS), vague=n_vague)
+        stats.update(total=len(records), spots=len(chosen), vague=n_vague)
     return records
 
 
