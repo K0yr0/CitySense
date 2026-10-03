@@ -144,4 +144,5 @@ def test_repo_day0_migrations_exist_and_define_the_contract():
     assert "create table if not exists devices" in devices and "key_hash text not null" in devices
     assert "check (mode in ('road', 'tram'))" in devices
     assert "alter table segments add column if not exists health_updated_at timestamptz" in devices
-    assert init_db.migration_tables(files)[:2] == ["users", "devices"]
+    tables = init_db.migration_tables(files)  # later migrations (101, 2xx, ...) may add tables in between
+    assert {"users", "devices"} <= set(tables) and tables.index("users") < tables.index("devices")
