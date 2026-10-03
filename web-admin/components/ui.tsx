@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { LIKELY_AT, VERIFIED_AT } from "@/lib/confidence";
-import { fmtPct, fmtScore, pctOf, scorePct, SOURCE_LABEL, SOURCE_VAR, sourceKind, STATUS_HINT, statusLabel, vehicleLabel } from "@/lib/format";
-import type { IncidentStatus, IncidentSummary } from "@/lib/types";
+import { fmtPct, fmtScore, pctOf, scorePct, SOURCE_LABEL, SOURCE_VAR, sourceKind, STATUS_HINT, statusLabel, vehicleLabel, workLabel } from "@/lib/format";
+import type { IncidentStatus, IncidentSummary, WorkStatus } from "@/lib/types";
 import { IconCheck, IconClock, IconEyeOff, IconRadar } from "./icons";
 
 export function Card({ title, children, className = "", action }: { title?: ReactNode; children: ReactNode; className?: string; action?: ReactNode }) {
@@ -50,6 +50,23 @@ export function StatusChip({ status, confidence }: { status: IncidentStatus | nu
       {s === "dismissed" && <IconEyeOff width={15} height={15} />}
       {statusLabel(s)}
       {showPct && <span className="tabular opacity-80">· {fmtPct(confidence)}</span>}
+    </span>
+  );
+}
+
+const WORK_STYLE: Record<WorkStatus, string> = {
+  todo: "border-line-strong text-ink-2",
+  in_progress: "border-accent text-accent",
+  done: "border-good text-good-ink",
+};
+
+/** City work status (to do / in progress / done). Outlined, so it never reads as a confidence chip. */
+export function WorkChip({ work }: { work: WorkStatus | null | undefined }) {
+  const w = work ?? "todo";
+  return (
+    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border-2 px-2 py-0.5 text-sm font-semibold ${WORK_STYLE[w] ?? WORK_STYLE.todo}`}>
+      {w === "done" ? <IconCheck width={14} height={14} /> : <span className={`h-2 w-2 rounded-full ${w === "in_progress" ? "bg-accent" : "bg-line-strong"}`} />}
+      {workLabel(w)}
     </span>
   );
 }
@@ -153,7 +170,7 @@ export function Segmented<T extends string>({
 }: {
   label: string;
   value: T;
-  options: { value: T; label: string }[];
+  options: { value: T; label: string; count?: number }[];
   onChange: (v: T) => void;
 }) {
   return (
@@ -169,9 +186,10 @@ export function Segmented<T extends string>({
             onClick={() => onChange(o.value)}
             className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
               on ? "border-accent bg-accent text-accent-ink" : "border-line-strong bg-surface text-ink-2 hover:bg-surface-2"
-            }`}
+            } ${!on && o.count === 0 ? "opacity-50" : ""}`}
           >
             {o.label}
+            {o.count !== undefined && <span className={`tabular ml-1.5 ${on ? "opacity-80" : "text-muted"}`}>{o.count}</span>}
           </button>
         );
       })}

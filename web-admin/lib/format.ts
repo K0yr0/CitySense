@@ -1,4 +1,4 @@
-import type { Department, IncidentStatus, IncidentSummary, IssueType } from "./types";
+import type { Department, IncidentStatus, IncidentSummary, IssueType, WorkStatus } from "./types";
 
 export const TYPE_LABEL: Record<IssueType, string> = {
   road_damage: "Road damage",
@@ -26,8 +26,21 @@ export const STATUS_HINT: Record<IncidentStatus, string> = {
   closed: "Handled by the city",
 };
 
-export const DEPARTMENTS: Department[] = ["ZDM", "Tramwaje Warszawskie", "MPWiK", "Straż Miejska"];
+export const DEPARTMENTS: Department[] = ["ZDM", "Tramwaje Warszawskie", "MPWiK", "Straż Miejska", "inne"];
 export const STATUSES: IncidentStatus[] = ["candidate", "likely", "verified", "dismissed", "closed"];
+
+/** City work (set by the admin), separate from the confidence status above. */
+export const WORK_STATUSES: WorkStatus[] = ["todo", "in_progress", "done"];
+
+export const WORK_LABEL: Record<WorkStatus, string> = {
+  todo: "To do",
+  in_progress: "In progress",
+  done: "Done",
+};
+
+export function workLabel(w: string | null | undefined): string {
+  return (w && WORK_LABEL[w as WorkStatus]) || WORK_LABEL.todo;
+}
 
 /** 0–1 -> "74%". Confidence is never certain, so anything below 1 shows at most 99%. */
 export function pctOf(x: number): number {

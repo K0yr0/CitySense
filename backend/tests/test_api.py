@@ -31,7 +31,7 @@ SUMMARY_KEYS = {
     "has_sensor", "has_report", "max_severity", "max_urgency",
     "first_seen", "last_seen", "verify_vehicle", "verify_eta_min",
     "confidence", "sensor_confidence", "citizen_confidence", "yes_count", "no_count",
-    "sensor_misses", "awaiting_verification",
+    "sensor_misses", "awaiting_verification", "work_status", "work_status_changed_at",
 }
 DETAIL_KEYS = SUMMARY_KEYS | {"summary", "reports", "evidence", "timeline", "signal"}
 REPORT_STATUS_KEYS = {"report_id", "incident_id", "status", "category", "department", "others_count",
@@ -251,6 +251,19 @@ def test_incident_list(env):
     assert params == {"limit": 50, "department": "ZDM", "statuses": ["candidate", "likely"]}
     assert first["confidence"] == 0.7 and first["citizen_confidence"] == 0.7 and first["sensor_confidence"] is None
     assert first["yes_count"] == 24 and first["awaiting_verification"] is False
+    assert first["work_status"] == "todo" and first["work_status_changed_at"] is None  # column absent -> default
+    assert "i.work_status" in sql
+
+
+def test_incident_list_work_status_filter_and_fields(env):
+    env.db.on("from incidents i", [incident_row(work_status="in_progress", work_status_changed_at=T0)])
+    r = env.client.get("/incidents", params={"work_status": "todo, in_progress", "type": "tram_track"})
+    assert r.status_code == 200
+    (inc,) = r.json()["incidents"]
+    assert inc["work_status"] == "in_progress" and inc["work_status_changed_at"] == "2026-10-01T08:00:00+00:00"
+    sql, params = env.db.sql_with("from incidents i")[-1]
+    assert "i.work_status = any(%(work_statuses)s)" in sql and "i.type = %(type)s" in sql
+    assert params == {"limit": 200, "work_statuses": ["todo", "in_progress"], "type": "tram_track"}
 
 
 def _detail_fixture(env, incident: dict, summarize=None):

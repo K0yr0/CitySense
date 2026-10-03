@@ -143,8 +143,10 @@ export async function getSegments(params: { bbox?: string; mode?: Mode; measured
   return r.segments ?? [];
 }
 
-export async function getIncidents(params: { department?: string; status?: string; limit?: number } = {}): Promise<IncidentSummary[]> {
-  const q = query({ department: params.department, status: params.status, limit: params.limit ?? 200 });
+export async function getIncidents(
+  params: { department?: string; status?: string; workStatus?: string; limit?: number } = {},
+): Promise<IncidentSummary[]> {
+  const q = query({ department: params.department, status: params.status, work_status: params.workStatus, limit: params.limit ?? 200 });
   const r = await request("incidents", `/incidents${q}`, undefined, () => ({ incidents: mock.mockIncidents(params) }));
   return [...(r.incidents ?? [])].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
 }

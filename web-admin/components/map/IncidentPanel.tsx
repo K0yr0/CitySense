@@ -6,7 +6,7 @@ import { deptLabel, timeAgo, typeLabel } from "@/lib/format";
 import { useNow } from "@/lib/hooks";
 import type { IncidentSummary } from "@/lib/types";
 import { IconArrowRight, IconX } from "../icons";
-import { ConfidenceMeter, IncidentBadges, ScoreBar, SourceTag, StatusChip, verificationText } from "../ui";
+import { ConfidenceMeter, IncidentBadges, ScoreBar, SourceTag, StatusChip, verificationText, WorkChip } from "../ui";
 
 function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -35,6 +35,7 @@ export default function IncidentPanel({ incident: i, onClose }: { incident: Inci
 
       <div className="mt-3 flex flex-wrap gap-2">
         <StatusChip status={i.status} confidence={i.confidence} />
+        <WorkChip work={i.work_status} />
         <IncidentBadges incident={i} />
       </div>
 

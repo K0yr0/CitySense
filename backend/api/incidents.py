@@ -23,7 +23,7 @@ select i.id, i.segment_id, i.type, i.status, i.score, i.department, i.address, i
        i.max_severity, i.max_urgency, i.first_seen, i.last_seen,
        i.verify_vehicle, i.verify_eta_min, i.verify_requested_at, i.verified_at,
        i.confidence, i.sensor_confidence, i.citizen_confidence, i.yes_count, i.no_count,
-       i.sensor_misses, i.last_miss_at
+       i.sensor_misses, i.last_miss_at, i.work_status, i.work_status_changed_at
 from incidents i
 """
 
@@ -87,12 +87,17 @@ def _lazy_summary(conn, incident: dict, reports: list[dict]) -> str | None:
     return summary
 
 
+def _csv(value: str) -> list[str]:
+    return [s.strip() for s in value.split(",") if s.strip()]
+
+
 @router.get("")
 def list_incidents(
     conn: DB,
     department: str | None = None,
     status: str | None = Query(None, description="one status or a comma-separated list"),
     issue_type: str | None = Query(None, alias="type"),
+    work_status: str | None = Query(None, description="todo / in_progress / done, or a comma-separated list"),
     limit: int = Query(200, ge=1, le=5000),
 ) -> dict:
     """Incident queue sorted by score (desc)."""
@@ -104,7 +109,10 @@ def list_incidents(
         params["department"] = department
     if status:
         where.append("i.status = any(%(statuses)s)")
-        params["statuses"] = [s.strip() for s in status.split(",") if s.strip()]
+        params["statuses"] = _csv(status)
+    if work_status:
+        where.append("i.work_status = any(%(work_statuses)s)")
+        params["work_statuses"] = _csv(work_status)
     if issue_type:
         where.append("i.type = %(type)s")
         params["type"] = issue_type

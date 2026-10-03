@@ -17,6 +17,7 @@ import type {
   Vehicle,
   VehicleKind,
   VerifyResult,
+  WorkStatus,
 } from "./types";
 
 type LonLat = [number, number];
@@ -163,6 +164,7 @@ interface IncidentSeed {
   firstMin: number; // minutes ago
   lastMin: number;
   verifyAfterMin?: number; // minutes from verification request to sensor confirmation
+  work?: { status: WorkStatus; min: number }; // city work (default todo), changed `min` minutes ago
   summary: string;
 }
 
@@ -171,6 +173,7 @@ const SEEDS: IncidentSeed[] = [
     id: 101, type: "tram_track", department: "Tramwaje Warszawskie", at: [21.0122, 52.2297], street: MARSZALKOWSKA,
     address: "Marszałkowska / Rondo Dmowskiego", reports: 24, sensorRides: 5, sensorCount: 6,
     sev: 0.86, urg: 4, vuln: 0.7, foundBefore: false, vehicle: "tram 17", eta: 6, firstMin: 26 * 60, lastMin: 35, verifyAfterMin: 7,
+    work: { status: "in_progress", min: 3 * 60 },
     summary: "Passengers report heavy jolts at a rail joint just south of Rondo Dmowskiego. Tram 17 measured a strong vertical shock at the same spot, confirming a track defect.",
   },
   {
@@ -195,12 +198,14 @@ const SEEDS: IncidentSeed[] = [
     id: 105, type: "road_damage", department: "ZDM", at: [21.0045, 52.2289], street: JEROZOLIMSKIE,
     address: "Al. Jerozolimskie / Dworzec Centralny", reports: 9, sensorRides: 3, sensorCount: 3,
     sev: 0.68, urg: 3, vuln: 0.9, foundBefore: false, vehicle: "bus 175", eta: 4, firstMin: 30 * 60, lastMin: 3 * 60, verifyAfterMin: 6,
+    work: { status: "in_progress", min: 10 * 60 },
     summary: "Cracked asphalt and a sunken manhole on the bus lane outside Warszawa Centralna, reported by citizens and confirmed by bus 175.",
   },
   {
     id: 106, type: "flooding", department: "MPWiK", at: [21.0063, 52.2296],
     address: "Przejście podziemne, Dworzec Centralny", reports: 14, sensorRides: 0, sensorCount: 0,
     sev: null, urg: 5, vuln: 0.9, foundBefore: false, vehicle: null, eta: null, firstMin: 5 * 60, lastMin: 20,
+    work: { status: "in_progress", min: 45 },
     summary: "The pedestrian underpass at Warszawa Centralna floods ankle-deep after rain; likely a blocked drain.",
   },
   {
@@ -243,12 +248,14 @@ const SEEDS: IncidentSeed[] = [
     id: 113, type: "road_damage", department: "ZDM", at: [20.9995, 52.2277], street: JEROZOLIMSKIE,
     address: "Al. Jerozolimskie / Emilii Plater", reports: 4, sensorRides: 6, sensorCount: 7,
     sev: 0.81, urg: 3, vuln: 0.75, foundBefore: false, vehicle: "bus 128", eta: 4, firstMin: 6 * 24 * 60, lastMin: 26 * 60, verifyAfterMin: 6,
+    work: { status: "done", min: 20 * 60 },
     summary: "A wide pothole on the westbound lanes at Emilii Plater, measured on six bus rides and reported by drivers.",
   },
   {
     id: 114, type: "flooding", department: "MPWiK", at: [21.0112, 52.2247],
     address: "Wilcza / Poznańska", reports: 2, sensorRides: 0, sensorCount: 0, closed: true,
     sev: null, urg: 3, vuln: 0.5, foundBefore: false, vehicle: null, eta: null, firstMin: 5 * 24 * 60, lastMin: 4 * 24 * 60,
+    work: { status: "done", min: 4 * 24 * 60 },
     summary: "Blocked storm drain causing standing water; cleaned by MPWiK.",
   },
   {
@@ -341,14 +348,17 @@ function summaryFromSeed(s: IncidentSeed): IncidentSummary {
     no_count: votes.filter((v) => !v.yes).length,
     sensor_misses: s.misses ?? 0,
     awaiting_verification: !!s.vehicle && s.sensorRides === 0 && !s.misses && (status === "candidate" || status === "likely"),
+    work_status: s.work?.status ?? "todo",
+    work_status_changed_at: s.work ? minutesAgo(s.work.min) : null,
   };
   return { ...base, ...overrides.get(s.id) };
 }
 
-export function mockIncidents(params: { department?: string; status?: string; limit?: number } = {}): IncidentSummary[] {
+export function mockIncidents(params: { department?: string; status?: string; workStatus?: string; limit?: number } = {}): IncidentSummary[] {
   return SEEDS.map(summaryFromSeed)
     .filter((i) => !params.department || i.department === params.department)
     .filter((i) => !params.status || params.status.split(",").includes(i.status))
+    .filter((i) => !params.workStatus || params.workStatus.split(",").includes(i.work_status))
     .sort((a, b) => b.score - a.score)
     .slice(0, params.limit ?? 200);
 }

@@ -7,7 +7,7 @@ import { deptLabel, formatDateTime, timeAgo, typeLabel, vehicleLabel } from "@/l
 import { useApi, useNow } from "@/lib/hooks";
 import type { IncidentDetail, VerifyResult } from "@/lib/types";
 import { IconAlert, IconArrowLeft, IconCamera } from "../icons";
-import { Card, IncidentBadges, ScoreBar, SourceTag, StatusChip, verificationText } from "../ui";
+import { Card, IncidentBadges, ScoreBar, SourceTag, StatusChip, verificationText, WorkChip } from "../ui";
 import ConfidenceBreakdown from "./ConfidenceBreakdown";
 import SignalChart from "./SignalChart";
 import Timeline from "./Timeline";
@@ -106,6 +106,7 @@ export default function IncidentDetailView({ id }: { id: number }) {
           <p className="mt-1 text-xl text-ink-2">{inc.address ?? `${inc.lat.toFixed(5)}, ${inc.lon.toFixed(5)}`}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <StatusChip status={inc.status} confidence={inc.confidence} />
+            <WorkChip work={inc.work_status} />
             <IncidentBadges incident={inc} />
           </div>
         </div>

@@ -15,7 +15,7 @@ SUMMARY_KEYS = (
     "has_sensor", "has_report", "max_severity", "max_urgency",
     "first_seen", "last_seen", "verify_vehicle", "verify_eta_min",
     "confidence", "sensor_confidence", "citizen_confidence", "yes_count", "no_count",
-    "sensor_misses", "awaiting_verification",
+    "sensor_misses", "awaiting_verification", "work_status", "work_status_changed_at",
 )
 
 OPEN_STATUSES = ("candidate", "likely")
@@ -124,6 +124,9 @@ def incident_summary(row: dict) -> dict:
         "no_count": _int(row.get("no_count")),
         "sensor_misses": _int(row.get("sensor_misses")),
         "awaiting_verification": awaiting_verification(row),
+        # City work (migration 200), independent of the confidence `status`.
+        "work_status": row.get("work_status") or "todo",
+        "work_status_changed_at": iso(row.get("work_status_changed_at")),
     }
 
 

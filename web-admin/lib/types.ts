@@ -7,6 +7,8 @@ export type Department = "ZDM" | "Tramwaje Warszawskie" | "MPWiK" | "Straż Miej
 /** Confidence-driven lifecycle: candidate -> likely -> verified (or dismissed); closed = handled by the city. */
 export type IncidentStatus = "candidate" | "likely" | "verified" | "dismissed" | "closed";
 export type VehicleKind = "tram" | "bus";
+/** City work on an incident (migration 200), set by the web admin; independent of the confidence status. */
+export type WorkStatus = "todo" | "in_progress" | "done";
 
 /** GET /segments -> {"segments": Segment[]} */
 export interface Segment {
@@ -47,6 +49,8 @@ export interface IncidentSummary {
   no_count: number; // citizen NO answers
   sensor_misses: number; // capable vehicles that passed without detecting anything
   awaiting_verification: boolean; // a vehicle was asked to check and has not passed yet
+  work_status: WorkStatus;
+  work_status_changed_at: string | null;
 }
 
 export interface IncidentReport {
