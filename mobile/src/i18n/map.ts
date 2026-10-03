@@ -23,12 +23,12 @@ const en = {
       plural(n, { one: 'Reported by {n} person', other: 'Reported by {n} people' }),
     openDetails: 'Open problem details',
   },
-  /** Yes / No poll on the tapped problem's card (answers only within 25 m). */
+  /** Yes / No poll on the tapped problem's card (answers within 100 m, GPS accuracy <= 25 m). */
   poll: {
     title: 'Is this problem still there?',
-    hint: 'You can answer when you are within 25 m of it.',
+    hint: 'You can answer when you are within 100 m of it.',
     locating: 'Checking your location…',
-    tooFar: (m: number) => `You are about ${m} m away. Get within 25 m to answer.`,
+    tooFar: (m: number) => `You are about ${m} m away. Get within 100 m to answer.`,
     lowAccuracy: (m: number) => `Your location is accurate to ±${m} m; it must be 25 m or better. Try again outdoors.`,
     /** `answer` is already translated ("Yes" / "No"). */
     answered: (answer: string) => `You answered: ${answer}`,
@@ -66,9 +66,9 @@ const pl: typeof en = {
   },
   poll: {
     title: 'Czy ten problem nadal występuje?',
-    hint: 'Możesz odpowiedzieć, gdy jesteś w promieniu 25 m.',
+    hint: 'Możesz odpowiedzieć, gdy jesteś w promieniu 100 m.',
     locating: 'Sprawdzam lokalizację…',
-    tooFar: (m: number) => `Jesteś ok. ${m} m od problemu. Podejdź bliżej niż 25 m, aby odpowiedzieć.`,
+    tooFar: (m: number) => `Jesteś ok. ${m} m od problemu. Podejdź bliżej niż 100 m, aby odpowiedzieć.`,
     lowAccuracy: (m: number) => `Dokładność lokalizacji to ±${m} m; potrzeba 25 m lub lepiej. Spróbuj na zewnątrz.`,
     answered: (answer: string) => `Twoja odpowiedź: ${answer}`,
   },
@@ -105,9 +105,9 @@ const uk: typeof en = {
   },
   poll: {
     title: 'Ця проблема досі є?',
-    hint: 'Відповісти можна, коли ви в межах 25 м від неї.',
+    hint: 'Відповісти можна, коли ви в межах 100 м від неї.',
     locating: 'Перевіряємо ваше місцезнаходження…',
-    tooFar: (m: number) => `Ви приблизно за ${m} м. Підійдіть ближче ніж на 25 м, щоб відповісти.`,
+    tooFar: (m: number) => `Ви приблизно за ${m} м. Підійдіть ближче ніж на 100 м, щоб відповісти.`,
     lowAccuracy: (m: number) => `Точність місцезнаходження ±${m} м; потрібно 25 м або краще. Спробуйте надворі.`,
     answered: (answer: string) => `Ваша відповідь: ${answer}`,
   },

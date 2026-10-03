@@ -1,4 +1,4 @@
-"""Citizen mobile app endpoints (owner A): map, reports, the 25 m question, favourite routes.
+"""Citizen mobile app endpoints (owner A): map, reports, the 25 m pop-up, Yes/No answers (100 m), favourite routes.
 
 The citizen never sees sensor data, evidence, timelines, other people's report texts or any
 sensor_* / verify_* field (docs/ARCHITECTURE.md §8.4): every incident leaves this router as a
@@ -34,7 +34,9 @@ from backend.models import Mode
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/mobile", tags=["mobile"])
 
-QUESTION_RADIUS_M = 25.0      # "do you see a pothole around you?" radius and max GPS accuracy
+QUESTION_RADIUS_M = 25.0      # the automatic "is there a pothole here?" pop-up asks within this radius
+ANSWER_RADIUS_M = 100.0       # a Yes/No answer (pop-up or tapped problem) counts within this radius
+MAX_ACCURACY_M = 25.0         # both need phone GPS accuracy at or below this
 ROUTE_CORRIDOR_M = 30.0       # segments / incidents this close to a favourite route count
 GOOD_AT, FAIR_AT = 0.7, 0.4   # health >= 0.7 good, >= 0.4 fair, below poor, null unknown
 HEALTH_CLASSES = ("good", "fair", "poor", "unknown")
@@ -595,7 +597,7 @@ class AnswerIn(BaseModel):
     answer: Literal["yes", "no"]
     lon: float = Field(ge=-180, le=180)
     lat: float = Field(ge=-90, le=90)
-    accuracy_m: float = Field(ge=0, description="phone GPS accuracy in metres; must be <= 25")
+    accuracy_m: float = Field(ge=0, description="phone GPS accuracy in metres; must be <= 25 (MAX_ACCURACY_M)")
 
 
 class RouteIn(BaseModel):
@@ -706,7 +708,7 @@ def question(
     """The incident to ask "is it still there?" about, or null (bad GPS / nothing within 25 m)."""
     from backend import db
 
-    if accuracy_m > QUESTION_RADIUS_M:
+    if accuracy_m > MAX_ACCURACY_M:
         return {"incident": None, "distance_m": None}
     row = db.fetch_one(conn, QUESTION_SQL, {"lon": lon, "lat": lat, "radius": QUESTION_RADIUS_M,
                                             "open": list(OPEN_STATUSES), "user_id": int(user["id"]),
@@ -716,34 +718,44 @@ def question(
     return {"incident": public_incident(row), "distance_m": round(float(row["distance_m"]), 1)}
 
 
-@router.post("/incidents/{incident_id}/answer")
-def answer(incident_id: int, body: AnswerIn, conn: DB, user: CurrentUser) -> dict:
-    """YES/NO from within 25 m (GPS accuracy <= 25 m), once per incident, weighted by trust."""
+def record_answer(conn, user: dict, incident_id: int, answer: str, lon: float, lat: float,
+                  accuracy_m: float) -> dict:
+    """The one place a citizen Yes/No is accepted (this router and backend/api/responses.py).
+
+    Signed-in user, GPS accuracy <= MAX_ACCURACY_M, within ANSWER_RADIUS_M of the incident, incident
+    still open and not fixed, once per user. Weighted by trust; the incident is re-assessed.
+    """
     from backend import db
     from backend.fusion import incidents as fusion_incidents, trust
 
-    if body.accuracy_m > QUESTION_RADIUS_M:
-        raise HTTPException(422, f"GPS accuracy must be <= {QUESTION_RADIUS_M:g} m")
-    row = db.fetch_one(conn, ANSWER_TARGET_SQL, {"id": incident_id, "lon": body.lon, "lat": body.lat})
+    if accuracy_m > MAX_ACCURACY_M:
+        raise HTTPException(422, f"GPS accuracy must be <= {MAX_ACCURACY_M:g} m")
+    row = db.fetch_one(conn, ANSWER_TARGET_SQL, {"id": incident_id, "lon": lon, "lat": lat})
     if row is None:
         raise HTTPException(404, f"incident {incident_id} not found")
     if (row.get("work_status") or "todo") == "done":
         raise HTTPException(409, "the city already fixed this")
     if row.get("status") not in OPEN_STATUSES:
         raise HTTPException(409, f"incident {incident_id} is {row.get('status')}")
-    if float(row["distance_m"]) > QUESTION_RADIUS_M:
-        raise HTTPException(403, f"you must be within {QUESTION_RADIUS_M:g} m of the incident")
+    if float(row["distance_m"]) > ANSWER_RADIUS_M:
+        raise HTTPException(403, f"you must be within {ANSWER_RADIUS_M:g} m of the incident")
     contributor = _contributor(conn, user)
     cid = int(contributor["id"])
     if db.fetch_one(conn, ALREADY_ANSWERED_SQL, {"id": incident_id, "contributor_id": cid}):
         raise HTTPException(409, "already answered")
 
-    trust.record_vote(conn, incident_id, cid, body.answer == "yes")
+    trust.record_vote(conn, incident_id, cid, answer == "yes")
     fusion_incidents.refresh_incident(conn, incident_id)
     out = public_incident(_load_public(conn, incident_id) or row)
     trust_row = db.fetch_one(conn, CONTRIBUTOR_TRUST_SQL, {"id": cid}) or contributor  # settle may move it
     return {"incident_id": incident_id, "status": out["status"], "confidence": out["confidence"],
             "work_status": out["work_status"], "contributor_trust": ser.num(trust_row.get("trust"))}
+
+
+@router.post("/incidents/{incident_id}/answer")
+def answer(incident_id: int, body: AnswerIn, conn: DB, user: CurrentUser) -> dict:
+    """YES/NO from within 100 m (GPS accuracy <= 25 m), once per incident, weighted by trust."""
+    return record_answer(conn, user, incident_id, body.answer, body.lon, body.lat, body.accuracy_m)
 
 
 @router.post("/reports")

@@ -266,7 +266,7 @@ def test_lines_sorted_naturally(env):
     assert env.db.sql_with("from rides r")[-1][1] == {"mode": "road"}
 
 
-# --------------------------------------------------------------------------- 25 m question
+# --------------------------------------------------------------------------- 25 m pop-up, 100 m answers
 
 def test_question_rules(env):
     q = "/mobile/question?lon=21.0122&lat=52.2297"
@@ -301,12 +301,23 @@ def test_answer_rejections(env):
     assert answer(env).status_code == 409
     env.db.on("as distance_m", {**incident_row(status="verified"), "distance_m": 3})
     assert answer(env).status_code == 409
-    env.db.on("as distance_m", {**incident_row(), "distance_m": 25.5})
+    env.db.on("as distance_m", {**incident_row(), "distance_m": 100.5})  # answers count within 100 m
     assert answer(env).status_code == 403
     env.db.on("as distance_m", {**incident_row(), "distance_m": 3})
     env.db.on("as answered", {"answered": 1})
     assert answer(env).status_code == 409
     assert not [c for c in env.calls if c[0] in ("vote", "refresh")]
+
+
+def test_answer_accepted_up_to_100m_but_popup_stays_25m(env):
+    """Tapped problem: 60 m away still counts. The automatic pop-up still only offers problems within 25 m."""
+    from backend.api import mobile
+    assert (mobile.QUESTION_RADIUS_M, mobile.ANSWER_RADIUS_M, mobile.MAX_ACCURACY_M) == (25, 100, 25)
+    env.db.on("as distance_m", {**incident_row(), "distance_m": 60})
+    assert answer(env).status_code == 200
+    env.db.on("as distance_m", {**incident_row(), "distance_m": 99.9})
+    env.calls.clear()
+    assert answer(env, answer="no").status_code == 200 and ("refresh", 7) in env.calls
 
 
 def test_answer_records_weighted_vote(env):
@@ -596,3 +607,36 @@ def test_mobile_sql_runs_on_postgis():
             assert db.fetch_one(conn, mobile.ROUTE_DELETE_SQL, {"id": r["id"], "user_id": uid})
         finally:
             conn.rollback()
+
+
+# --------------------------------------------------------------------------- old /responses endpoint (A1)
+
+def respond(env, incident_id=7, headers=None, **kw):
+    body = {"answer": "no", "lon": 21.0122, "lat": 52.2297, "accuracy_m": 8, **kw}
+    return env.client.post(f"/incidents/{incident_id}/responses", json=body,
+                           headers=env.auth if headers is None else headers)
+
+
+def test_old_responses_endpoint_no_longer_takes_anonymous_votes(env):
+    """docs/SECURITY.md A1: no sign-in -> 401, the old random 'contributor' token alone is not enough."""
+    anonymous = {"answer": "no", "contributor": "browser-token-1"}
+    assert env.client.post("/incidents/7/responses", json=anonymous).status_code == 401
+    assert env.client.post("/incidents/7/responses", json=anonymous, headers=env.auth).status_code == 422  # no position
+    assert respond(env, headers={}).status_code == 401
+    assert not [c for c in env.calls if c[0] in ("vote", "refresh")]
+
+
+def test_old_responses_endpoint_uses_the_same_distance_rules(env):
+    env.db.on("as distance_m", {**incident_row(), "distance_m": 150})
+    assert respond(env).status_code == 403            # too far: same 100 m rule as the app
+    assert respond(env, accuracy_m=40).status_code == 422
+    assert not [c for c in env.calls if c[0] in ("vote", "refresh")]
+
+    env.db.on("as distance_m", {**incident_row(), "distance_m": 40})
+    env.db.on("select trust from contributors", {"trust": 0.7})
+    r = respond(env)
+    assert r.status_code == 200
+    assert set(r.json()) == {"incident_id", "status", "confidence", "sensor_confidence", "citizen_confidence",
+                             "yes_count", "no_count", "contributor_trust"}
+    assert r.json()["contributor_trust"] == 0.7
+    assert ("vote", 7, 42, False, False) in env.calls

@@ -1,9 +1,10 @@
 /**
  * "Is this problem still there? Yes / No" on the tapped problem's card.
  *
- * Same rule as the 25 m question (ROADMAP decision): an answer counts only when the person is
- * within 25 m of the problem with GPS accuracy of 25 m or better, once per problem, weighted by
- * trust. The distance is checked here first, so a far-away tap never reaches the server.
+ * An answer counts only when the person is within 100 m of the problem with GPS accuracy of 25 m
+ * or better, once per problem, weighted by trust (same rule on the server: mobile.record_answer).
+ * The automatic pop-up still only appears within 25 m. The distance is checked here first, so a
+ * far-away tap never reaches the server.
  * Hidden for problems that are fixed or closed.
  */
 import * as Location from 'expo-location';
@@ -22,8 +23,9 @@ import { distanceM } from '@/lib/geo';
 import { useText } from '@/lib/i18n';
 import { useSession } from '@/lib/session';
 
-/** Answer radius and the GPS accuracy it needs (metres), as on the server. */
-const RADIUS_M = 25;
+/** Answer radius and the GPS accuracy it needs (metres), as on the server (backend/api/mobile.py). */
+const ANSWER_RADIUS_M = 100;
+const MAX_ACCURACY_M = 25;
 const FIX_TIMEOUT_MS = 15_000;
 const OPEN_STATUSES = new Set(['candidate', 'likely']);
 
@@ -73,9 +75,9 @@ export function IncidentPoll({ incident }: { incident: PublicIncident }) {
     try {
       const fix = await currentFix();
       if (!fix) return setNote({ text: q.noFix, tone: 'error' });
-      if (fix.accuracy > RADIUS_M) return setNote({ text: p.lowAccuracy(Math.round(fix.accuracy)), tone: 'error' });
+      if (fix.accuracy > MAX_ACCURACY_M) return setNote({ text: p.lowAccuracy(Math.round(fix.accuracy)), tone: 'error' });
       const away = distanceM({ latitude: fix.lat, longitude: fix.lon }, { latitude: incident.lat, longitude: incident.lon });
-      if (away > RADIUS_M) return setNote({ text: p.tooFar(Math.round(away)), tone: 'error' });
+      if (away > ANSWER_RADIUS_M) return setNote({ text: p.tooFar(Math.round(away)), tone: 'error' });
 
       const result = await answerIncident(incident.id, answer, { lon: fix.lon, lat: fix.lat, accuracy_m: fix.accuracy });
       setMine(answer);
