@@ -114,20 +114,45 @@ def test_geocode_rate_limit_spacing(geo, monkeypatch):
 
 
 def test_rate_limiter_is_thread_safe():
-    limiter, stamps, lock = geocode.RateLimiter(0.05), [], threading.Lock()
+    """Concurrent callers each get their own slot. Fake clock: deterministic, no real waiting
+    (real-time stamps were flaky on Windows, whose clock and thread scheduling are coarse)."""
+    clock, sleeps = SimpleNamespace(now=0.0), []
+
+    def tick():
+        time.sleep(0)  # yield to the other threads, so an unlocked limiter would race here
+        return clock.now
+
+    def sleep(dt):
+        time.sleep(0.001)  # let others run mid-sleep: the real race window of an unlocked limiter
+        sleeps.append(dt)
+        clock.now += dt
+
+    limiter, n = geocode.RateLimiter(1.0, clock=tick, sleep=sleep), 16
+    start = threading.Barrier(n)
 
     def worker():
+        start.wait(timeout=5)
         limiter.wait()
-        with lock:
-            stamps.append(time.monotonic())
 
-    threads = [threading.Thread(target=worker) for _ in range(5)]
+    threads = [threading.Thread(target=worker) for _ in range(n)]
     for t in threads:
         t.start()
     for t in threads:
-        t.join()
-    stamps.sort()
-    assert all(b - a >= 0.045 for a, b in zip(stamps, stamps[1:]))
+        t.join(timeout=5)
+    assert sleeps == [1.0] * (n - 1)  # every caller after the first waited one full interval
+    assert clock.now == n - 1 and limiter._next == n
+
+
+def test_rate_limiter_rechecks_the_clock_after_an_early_wakeup():
+    clock = SimpleNamespace(now=0.0)
+
+    def early_sleep(dt):  # wakes 10 ms early, like a coarse Windows clock
+        clock.now += max(dt - 0.01, 0.005)
+
+    limiter = geocode.RateLimiter(1.0, clock=lambda: clock.now, sleep=early_sleep)
+    limiter.wait()
+    limiter.wait()
+    assert clock.now >= 1.0  # never earlier than one interval after the first call
 
 
 def test_confidence_mapping():

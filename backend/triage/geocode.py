@@ -67,9 +67,11 @@ class RateLimiter:
     def wait(self) -> None:
         with self._lock:  # held while sleeping, so concurrent callers queue up
             now = self.clock()
-            if now < self._next:
+            # Re-check after sleeping: on Windows time.sleep can wake a little before the coarse
+            # (~15.6 ms) monotonic clock reaches the target, which would space calls too closely.
+            while now < self._next:
                 self.sleep(self._next - now)
-                now = self._next
+                now = self.clock()
             self._next = now + self.min_interval
 
 
