@@ -1,0 +1,32 @@
+# Build context for docker/api.Dockerfile (repo root). Keep it small and secret-free.
+.git
+.githooks
+.github
+.venv
+venv
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.DS_Store
+**/.DS_Store
+
+# Secrets: passed at runtime via env_file, never baked into an image
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.local
+
+# Not needed by the Python image
+web-admin
+frontend
+mobile
+firmware
+pitch
+docs
+**/node_modules
+**/.next
+
+# Runtime data: caches live in a named volume, recorded rides are personal
+data/cache
+data/rides

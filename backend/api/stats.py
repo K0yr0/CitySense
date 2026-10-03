@@ -12,23 +12,28 @@ select
   (select count(*) from reports)                                              as reports_total,
   (select count(*) from incidents)                                            as incidents_total,
   (select count(*) from incidents where found_before_report)                  as found_before_report,
-  (select count(*) from incidents where status = 'confirmed' or sensor_confirmed) as confirmed_total,
-  (select count(*) from incidents where status = 'awaiting_verification')     as awaiting_verification,
-  (select avg(extract(epoch from confirmed_at - verify_requested_at)) / 60.0
+  (select count(*) from incidents where status = 'candidate')                 as candidate_total,
+  (select count(*) from incidents where status = 'likely')                    as likely_total,
+  (select count(*) from incidents where status = 'verified')                  as verified_total,
+  (select count(*) from incidents
+    where status in ('candidate', 'likely') and sensor_count = 0 and verify_requested_at is not null
+      and (last_miss_at is null or last_miss_at < verify_requested_at))       as awaiting_verification,
+  (select avg(extract(epoch from verified_at - verify_requested_at)) / 60.0
      from incidents
-    where confirmed_at is not null and verify_requested_at is not null
-      and confirmed_at >= verify_requested_at)                                as avg_verification_min,
+    where verified_at is not null and verify_requested_at is not null
+      and verified_at >= verify_requested_at)                                 as avg_verification_min,
+  (select count(*) from contributors)                                         as contributors_total,
   (select count(*) from rides)                                                as rides_total,
   (select count(*) from segments where health is not null)                    as segments_measured
 """
 
-COUNT_KEYS = ("reports_total", "incidents_total", "found_before_report", "confirmed_total",
-              "awaiting_verification", "rides_total", "segments_measured")
+COUNT_KEYS = ("reports_total", "incidents_total", "found_before_report", "candidate_total", "likely_total",
+              "verified_total", "awaiting_verification", "contributors_total", "rides_total", "segments_measured")
 
 
 @router.get("")
 def get_stats(conn: DB) -> dict:
-    """Counts plus avg(confirmed_at - verify_requested_at) in minutes (null when nothing was verified yet)."""
+    """Counts per status plus avg(verified_at - verify_requested_at) in minutes (null until something is verified)."""
     from backend import db
 
     row = db.fetch_one(conn, STATS_SQL) or {}

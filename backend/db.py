@@ -221,6 +221,7 @@ def insert_report(
     photo_url: str | None = None,
     source: str = "web",
     created_at: datetime | None = None,
+    contributor_id: int | None = None,
 ) -> int:
     """Insert a citizen report; category/urgency/department are copied out of `structured`."""
     if hasattr(structured, "model_dump"):
@@ -243,17 +244,19 @@ def insert_report(
         "duplicate_of": _int(duplicate_of),
         "source": _str(source) or "web",
         "created_at": _ts(created_at),
+        "contributor_id": _int(contributor_id),
     }
     with _cursor(conn) as cur:
         cur.execute(
             """
             insert into reports (raw_text, photo_url, structured, category, urgency, department,
-                                 embedding, geom, location_confidence, duplicate_of, source, created_at)
+                                 embedding, geom, location_confidence, duplicate_of, source, created_at,
+                                 contributor_id)
             values (%(raw_text)s, %(photo_url)s, %(structured)s, %(category)s, %(urgency)s, %(department)s,
                     %(embedding)s::real[],
                     ST_SetSRID(ST_MakePoint(%(lon)s::float8, %(lat)s::float8), 4326),
                     %(location_confidence)s, %(duplicate_of)s, %(source)s,
-                    coalesce(%(created_at)s::timestamptz, now()))
+                    coalesce(%(created_at)s::timestamptz, now()), %(contributor_id)s)
             returning id
             """,
             params,

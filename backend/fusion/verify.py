@@ -1,10 +1,12 @@
 """Verification loop (spec §C3): the next tram/bus through a reported spot checks it.
 
 1. A report-only incident asks `next_vehicle_for` which live ZTM vehicle reaches it
-   first (nearest approaching vehicle, on a line passing the point when GTFS is present).
-2. The incident is marked `awaiting_verification` ("tram 17, ~6 min").
-3. When that vehicle's ride is uploaded, `check_ride_verifications` confirms the incident
-   (its sensors saw the anomaly) or marks it `no_anomaly` and counts the clean pass.
+   first (nearest approaching vehicle, on a line passing the point when GTFS is present)
+   and records the request ("tram 17, ~6 min").
+2. Every uploaded ride is checked against the open incidents it passed
+   (`check_ride_verifications`): a detection is a sensor hit, a clean pass by a vehicle
+   that could have felt the problem is a sensor miss. Both feed the confidence engine,
+   which moves the incident between candidate / likely / verified / dismissed.
 
 Live positions come from the Warsaw open-data API (busestrams_get). In DEMO_MODE, without
 an API key, or on any error, the clearly labelled sample `data/demo/ztm_snapshot.json` is used.
@@ -96,15 +98,17 @@ def _parse_ztm_time(raw: str) -> datetime:
 
 
 def parse_ztm(payload: Any, kind: str, now: datetime | None = None) -> list[dict]:
-    """Raw busestrams_get JSON -> [{"id", "line", "lon", "lat", "ts", "kind"}].
+    """Raw ZTM vehicle positions -> [{"id", "line", "lon", "lat", "ts", "kind"}].
 
-    Raises ValueError when `result` is not a list (the API reports errors as a string).
+    Accepts the bare list returned by dane.um.warszawa.pl/get_ztm_lokalizacja_pojazdow and the
+    older {"result": [...]} wrapper (also used by the sample snapshot). Raises ValueError when
+    no list is found (the API reports errors as a string or {"result": "false", "error": ...}).
     Drops malformed rows and positions outside Warsaw; when `now` is given, also positions
     older than STALE_AFTER_S.
     """
-    result = payload.get("result") if isinstance(payload, dict) else None
+    result = payload if isinstance(payload, list) else payload.get("result") if isinstance(payload, dict) else None
     if not isinstance(result, list):
-        raise ValueError(f"ZTM API error: {result!r}")
+        raise ValueError(f"ZTM API error: {payload!r}"[:300])
     min_lon, min_lat, max_lon, max_lat = WARSAW_BBOX
     vehicles = []
     for item in result:
@@ -123,10 +127,9 @@ def parse_ztm(payload: Any, kind: str, now: datetime | None = None) -> list[dict
 
 
 def _fetch_ztm(kind: str) -> Any:
-    """One GET to the live API; raises on any network / HTTP / JSON problem."""
-    params = {"resource_id": settings.ztm_resource_id, "apikey": settings.warsaw_api_key,
-              "type": KIND_CODES[kind]}
-    resp = httpx.get(settings.ztm_url, params=params, timeout=HTTP_TIMEOUT_S)
+    """One POST to the live API (token in the Authorization header); raises on any network / HTTP / JSON problem."""
+    resp = httpx.post(settings.ztm_url, json={"type": KIND_CODES[kind]},
+                      headers={"Authorization": settings.warsaw_api_key}, timeout=HTTP_TIMEOUT_S)
     resp.raise_for_status()
     return resp.json()
 
@@ -294,23 +297,20 @@ left join segments s on s.id = i.segment_id
 where i.id = %(id)s
 """
 
-SQL_SET_AWAITING = """
+SQL_SET_VERIFY_REQUEST = """
 update incidents
-set status = 'awaiting_verification', verify_vehicle = %(vehicle)s,
-    verify_eta_min = %(eta_min)s, verify_requested_at = now()
+set verify_vehicle = %(vehicle)s, verify_eta_min = %(eta_min)s, verify_requested_at = now()
 where id = %(id)s
 """
 
-# Incidents in (or just through) verification whose spot this ride passed.
+# Unresolved (or verified) incidents whose spot this ride passed, with the ride's mode.
 SQL_RIDE_CANDIDATES = """
-select i.id, i.status,
+select i.id, i.type, i.status, rd.mode as ride_mode,
        exists (select 1 from incident_evidence ie join evidence e on e.id = ie.evidence_id
-               where ie.incident_id = i.id and e.source = 'sensor' and e.ride_id = %(ride_id)s) as detected,
-       exists (select 1 from incident_evidence ie join evidence e on e.id = ie.evidence_id
-               where ie.incident_id = i.id and e.source = 'sensor' and e.ride_id <> %(ride_id)s) as other_rides
+               where ie.incident_id = i.id and e.source = 'sensor' and e.ride_id = %(ride_id)s) as detected
 from incidents i
-where (i.status in ('awaiting_verification', 'no_anomaly')
-       or (i.status = 'confirmed' and i.verify_requested_at is not null))
+join rides rd on rd.id = %(ride_id)s
+where i.status in ('candidate', 'likely', 'verified')
   and exists (select 1 from ride_segments rs join segments s on s.id = rs.segment_id
               where rs.ride_id = %(ride_id)s
                 and (rs.segment_id = i.segment_id
@@ -318,10 +318,12 @@ where (i.status in ('awaiting_verification', 'no_anomaly')
 order by i.id
 """
 
-SQL_NO_ANOMALY = """
-update incidents set verify_checks = verify_checks + 1, status = 'no_anomaly'
+SQL_SENSOR_MISS = """
+update incidents set sensor_misses = sensor_misses + 1, last_miss_at = now()
 where id = %(id)s
 """
+
+OPEN_STATUSES = (IncidentStatus.CANDIDATE, IncidentStatus.LIKELY)
 
 
 def verification_mode(issue_type: str, segment_mode: str | None) -> str:
@@ -333,19 +335,24 @@ def verification_mode(issue_type: str, segment_mode: str | None) -> str:
 
 def can_request_verification(status: str, has_sensor: bool) -> bool:
     """Only report-only incidents that are still unresolved need a vehicle to check them."""
-    return not has_sensor and status not in (IncidentStatus.CLOSED, IncidentStatus.CONFIRMED)
+    return not has_sensor and status in OPEN_STATUSES
 
 
-def ride_outcome(status: str, detected: bool, other_rides: bool) -> str | None:
-    """What a ride passing an incident means: 'confirmed', 'no_anomaly' or None (nothing to do).
+def can_detect(issue_type: str, ride_mode: str | None) -> bool:
+    """Could this ride have felt the problem? Buses feel road damage, trams feel track damage.
 
-    `ingest_evidence` runs before this and may already have confirmed the incident with this
-    ride's evidence; that still counts as a verification by this ride.
+    Streetlights (night-only), flooding and waste are never counted as misses.
     """
-    if status in (IncidentStatus.AWAITING_VERIFICATION, IncidentStatus.NO_ANOMALY):
-        return IncidentStatus.CONFIRMED.value if detected else IncidentStatus.NO_ANOMALY.value
-    if status == IncidentStatus.CONFIRMED and detected and not other_rides:
-        return IncidentStatus.CONFIRMED.value
+    return ((issue_type == IssueType.ROAD_DAMAGE and ride_mode == Mode.ROAD)
+            or (issue_type == IssueType.TRAM_TRACK and ride_mode == Mode.TRAM))
+
+
+def ride_outcome(status: str, issue_type: str, ride_mode: str | None, detected: bool) -> str | None:
+    """What a ride passing an incident means for its sensor confidence: 'hit', 'miss' or None."""
+    if detected and status in (*OPEN_STATUSES, IncidentStatus.VERIFIED):
+        return "hit"
+    if status in OPEN_STATUSES and can_detect(issue_type, ride_mode):
+        return "miss"
     return None
 
 
@@ -361,27 +368,28 @@ def request_verification(conn, incident_id: int) -> dict | None:
                                verification_mode(inc["type"], inc.get("segment_mode")))
     if vehicle is None:
         return None
-    conn.execute(SQL_SET_AWAITING, {"id": incident_id, "vehicle": vehicle["vehicle"],
-                                    "eta_min": vehicle["eta_min"]})
-    return {"incident_id": incident_id, "status": IncidentStatus.AWAITING_VERIFICATION.value,
+    conn.execute(SQL_SET_VERIFY_REQUEST, {"id": incident_id, "vehicle": vehicle["vehicle"],
+                                          "eta_min": vehicle["eta_min"]})
+    return {"incident_id": incident_id, "status": inc["status"],
             "vehicle": vehicle["vehicle"], "eta_min": vehicle["eta_min"]}
 
 
 def check_ride_verifications(conn, ride_id: int) -> list[int]:
-    """Resolve verifications for incidents this ride passed (segment match or within 40 m).
+    """Feed every incident this ride passed (segment match or within 40 m) back to the confidence engine.
 
-    Detected by this ride -> refresh_incident (-> confirmed). Passed without detection ->
-    verify_checks += 1 and status no_anomaly (re-checked on the next pass). Returns the ids.
+    Hit (this ride's evidence is linked; `ingest_evidence` ran first) -> re-assess.
+    Miss (a capable vehicle passed without detecting) -> sensor_misses += 1, re-assess.
+    Returns the ids of incidents this ride detected that are now verified.
     """
     rows = fetch_all(conn, SQL_RIDE_CANDIDATES, {"ride_id": ride_id, "radius_m": MATCH_RADIUS_M})
-    updated: list[int] = []
+    verified: list[int] = []
     for row in rows:
-        outcome = ride_outcome(row["status"], bool(row["detected"]), bool(row["other_rides"]))
-        if outcome == IncidentStatus.CONFIRMED:
-            refresh_incident(conn, row["id"])
-        elif outcome == IncidentStatus.NO_ANOMALY:
-            conn.execute(SQL_NO_ANOMALY, {"id": row["id"]})
-        else:
+        outcome = ride_outcome(row["status"], row["type"], row.get("ride_mode"), bool(row["detected"]))
+        if outcome is None:
             continue
-        updated.append(int(row["id"]))
-    return updated
+        if outcome == "miss":
+            conn.execute(SQL_SENSOR_MISS, {"id": row["id"]})
+        refreshed = refresh_incident(conn, row["id"])
+        if outcome == "hit" and refreshed.get("status") == IncidentStatus.VERIFIED:
+            verified.append(int(row["id"]))
+    return verified

@@ -41,11 +41,35 @@ class Department(StrEnum):
 
 
 class IncidentStatus(StrEnum):
-    OPEN = "open"
-    AWAITING_VERIFICATION = "awaiting_verification"
-    CONFIRMED = "confirmed"
-    NO_ANOMALY = "no_anomaly"
+    """Confidence-driven lifecycle (backend.fusion.confidence): candidate -> likely -> verified.
+
+    `dismissed` is the negative counterpart of `verified` (enough evidence that nothing is
+    there); both are terminal and settle contributor trust. `closed` = handled by the city.
+    """
+
+    CANDIDATE = "candidate"
+    LIKELY = "likely"
+    VERIFIED = "verified"
+    DISMISSED = "dismissed"
     CLOSED = "closed"
+
+
+class WorkStatus(StrEnum):
+    """City work on an incident (`incidents.work_status`, written only by the web admin, owner B).
+
+    Independent of `IncidentStatus`: confidence says *is it real*, work status says *is it fixed*.
+    """
+
+    TODO = "todo"
+    IN_PROGRESS = "in_progress"
+    DONE = "done"
+
+
+class Role(StrEnum):
+    """`users.role`: admin when the Google email is in ADMIN_EMAILS (set at every login)."""
+
+    CITIZEN = "citizen"
+    ADMIN = "admin"
 
 
 @dataclass

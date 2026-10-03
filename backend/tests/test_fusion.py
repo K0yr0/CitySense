@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from backend.fusion import incidents, verify
+from backend.fusion import confidence, incidents, trust, verify
 from backend.fusion.routing import department_for
 from backend.fusion.score import priority_score, score_breakdown
 from backend.models import Department, IssueType
@@ -48,9 +48,10 @@ class FakeDB:
 def fake_db(monkeypatch):
     def install(answers):
         db = FakeDB(answers)
-        for module in (incidents, verify):
+        for module in (incidents, verify, trust):
             monkeypatch.setattr(module, "fetch_one", db.fetch_one)
-        monkeypatch.setattr(verify, "fetch_all", db.fetch_all)
+        for module in (verify, trust):
+            monkeypatch.setattr(module, "fetch_all", db.fetch_all)
         return db
     return install
 
@@ -121,20 +122,6 @@ def test_score_breakdown_shape():
 # ---------------------------------------------------------------------------- incident rules
 
 
-@pytest.mark.parametrize("current, reports, sensors, expected", [
-    ("open", 3, 1, "confirmed"),
-    ("awaiting_verification", 1, 2, "confirmed"),
-    ("no_anomaly", 4, 1, "confirmed"),
-    ("closed", 5, 5, "closed"),
-    ("open", 0, 3, "open"),                      # sensor-only proactive ticket stays open
-    ("open", 4, 0, "open"),
-    ("awaiting_verification", 4, 0, "awaiting_verification"),
-    ("confirmed", 4, 1, "confirmed"),
-])
-def test_decide_status(current, reports, sensors, expected):
-    assert incidents.decide_status(current, reports, sensors) == expected
-
-
 def test_found_before_report():
     second_ride = T0 + timedelta(hours=1)
     assert incidents.found_before_report(2, second_ride, None) is True            # sensors only
@@ -155,7 +142,8 @@ def test_pick_address():
 
 def test_ingest_evidence_matching_paths(fake_db, monkeypatch):
     evidence = {
-        1: {"id": 1, "source": "report", "type": "road_damage", "ts": T0, "duplicate_of": 10, "linked_incident_id": None},
+        1: {"id": 1, "source": "report", "type": "road_damage", "ts": T0, "duplicate_of": 10, "linked_incident_id": None,
+            "report_id": 31},
         2: {"id": 2, "source": "sensor", "type": "road_damage", "ts": T0, "duplicate_of": None, "linked_incident_id": None},
         3: {"id": 3, "source": "sensor", "type": "tram_track", "ts": T0, "duplicate_of": None, "linked_incident_id": None},
         4: {"id": 4, "source": "sensor", "type": "road_damage", "ts": T0, "duplicate_of": None, "linked_incident_id": 7},
@@ -179,6 +167,8 @@ def test_ingest_evidence_matching_paths(fake_db, monkeypatch):
     assert create == [{"evidence_id": 3, "department": "Tramwaje Warszawskie"}]
     nearest = db.executed(incidents.SQL_NEAREST_INCIDENT)[0]
     assert nearest["radius_m"] == 40 and nearest["window_days"] == 7
+    # the anonymous report became a YES answer on its incident (no contributor -> anon insert)
+    assert db.executed(trust.SQL_REPORT_YES_ANON) == [{"incident_id": 5, "report_id": 31, "contributor_id": None}]
 
 
 def test_ingest_duplicate_falls_back_to_spatial_match(fake_db, monkeypatch):
@@ -195,51 +185,82 @@ def test_ingest_duplicate_falls_back_to_spatial_match(fake_db, monkeypatch):
 # ---------------------------------------------------------------------------- refresh_incident
 
 
-def _refresh(fake_db, context, aggregate):
+def _refresh(fake_db, context, aggregate, votes=()):
     db = fake_db({
         incidents.SQL_INCIDENT_CONTEXT: context,
         incidents.SQL_AGGREGATE: aggregate,
         incidents.SQL_UPDATE: lambda p: dict(p),
+        trust.SQL_VOTES: [{"answer": yes, "trust": t} for yes, t in votes],
     })
     return db, incidents.refresh_incident(db, context["id"])
 
 
-def test_refresh_confirms_awaiting_incident_when_sensor_arrives(fake_db):
-    context = {"id": 3, "type": "road_damage", "status": "awaiting_verification", "address": None,
+def test_refresh_verifies_when_sensor_agrees_with_reports(fake_db):
+    """The verification loop: 23 citizen YES (likely) + one tram detection -> verified, trust settled."""
+    context = {"id": 3, "type": "road_damage", "status": "likely", "address": None, "sensor_misses": 0,
                "segment_name": "Marszałkowska", "vulnerability": 0.5}
     aggregate = {"report_count": 23, "sensor_count": 2, "sensor_rides": 1, "max_severity": 0.82, "max_urgency": 3,
                  "first_seen": T0, "last_seen": T0 + timedelta(hours=5), "first_report_ts": T0,
-                 "nth_ride_ts": None, "location_text": "Marszałkowska 100"}
-    db, row = _refresh(fake_db, context, aggregate)
-    assert row["status"] == "confirmed"
+                 "nth_ride_ts": None, "location_text": "Marszałkowska 100", "ride_severities": [0.82]}
+    db, row = _refresh(fake_db, context, aggregate, votes=[(True, 0.6)] * 23)
+    assert row["status"] == "verified"
+    assert row["confidence"] == pytest.approx(confidence.assess([0.82], 0, [(True, 0.6)] * 23).confidence, abs=1e-4)
+    assert row["confidence"] > confidence.VERIFIED_AT
+    assert row["yes_count"] == 23 and row["no_count"] == 0
     assert row["sensor_confirmed"] is True and row["found_before_report"] is False
     assert row["department"] == "ZDM" and row["address"] == "Marszałkowska"
     assert row["score"] == priority_score(sensor_severity=0.82, report_count=23, max_urgency=3,
                                           vulnerability=0.5, both_sources=True)
     assert db.executed(incidents.SQL_AGGREGATE)[0]["nth_offset"] == 1
+    assert db.executed(trust.SQL_SETTLE)[0]["real"] is True        # contributor trust updated
 
 
-def test_refresh_sensor_only_two_rides_is_proactive_and_stays_open(fake_db):
-    context = {"id": 4, "type": "tram_track", "status": "open", "address": None,
+def test_refresh_sensor_only_two_rides_is_proactive_and_likely(fake_db):
+    context = {"id": 4, "type": "tram_track", "status": "candidate", "address": None, "sensor_misses": 0,
                "segment_name": None, "vulnerability": 0.0}
     aggregate = {"report_count": 0, "sensor_count": 3, "sensor_rides": 2, "max_severity": 0.7, "max_urgency": 0,
                  "first_seen": T0, "last_seen": T0 + timedelta(days=1), "first_report_ts": None,
-                 "nth_ride_ts": T0 + timedelta(days=1), "location_text": None}
-    _, row = _refresh(fake_db, context, aggregate)
-    assert row["status"] == "open" and row["found_before_report"] is True
+                 "nth_ride_ts": T0 + timedelta(days=1), "location_text": None, "ride_severities": [0.7, 0.6]}
+    db, row = _refresh(fake_db, context, aggregate)
+    assert row["status"] == "likely" and row["found_before_report"] is True
+    assert row["citizen_confidence"] is None and row["sensor_confidence"] == pytest.approx(row["confidence"])
     assert row["department"] == "Tramwaje Warszawskie" and row["address"] is None
     assert row["score"] == pytest.approx(0.35 * 0.7)
+    assert db.executed(trust.SQL_SETTLE) == []
 
 
 def test_refresh_report_only_uses_location_text(fake_db):
-    context = {"id": 5, "type": "flooding", "status": "open", "address": None,
+    context = {"id": 5, "type": "flooding", "status": "candidate", "address": None, "sensor_misses": 0,
                "segment_name": None, "vulnerability": 0.2}
     aggregate = {"report_count": 2, "sensor_count": 0, "sensor_rides": 0, "max_severity": 0, "max_urgency": 4,
                  "first_seen": T0, "last_seen": T0, "first_report_ts": T0, "nth_ride_ts": None,
-                 "location_text": "Plac Zbawiciela"}
-    _, row = _refresh(fake_db, context, aggregate)
-    assert row["status"] == "open" and row["sensor_confirmed"] is False
+                 "location_text": "Plac Zbawiciela", "ride_severities": None}
+    _, row = _refresh(fake_db, context, aggregate, votes=[(True, 0.6), (True, 0.6)])
+    assert row["status"] == "candidate" and row["sensor_confirmed"] is False
+    assert row["sensor_confidence"] is None and row["citizen_confidence"] == pytest.approx(row["confidence"])
     assert row["address"] == "Plac Zbawiciela" and row["department"] == "MPWiK"
+
+
+def test_refresh_dismisses_after_clean_passes_and_settles_trust(fake_db):
+    context = {"id": 6, "type": "road_damage", "status": "candidate", "address": None, "sensor_misses": 5,
+               "segment_name": None, "vulnerability": 0.0}
+    aggregate = {"report_count": 1, "sensor_count": 0, "sensor_rides": 0, "max_severity": 0, "max_urgency": 2,
+                 "first_seen": T0, "last_seen": T0, "first_report_ts": T0, "nth_ride_ts": None,
+                 "location_text": None, "ride_severities": None}
+    db, row = _refresh(fake_db, context, aggregate, votes=[(True, 0.6)])
+    assert row["status"] == "dismissed" and row["confidence"] < confidence.DISMISSED_BELOW
+    assert db.executed(trust.SQL_SETTLE)[0]["real"] is False
+
+
+def test_refresh_terminal_status_is_sticky(fake_db):
+    context = {"id": 7, "type": "road_damage", "status": "verified", "address": None, "sensor_misses": 9,
+               "segment_name": None, "vulnerability": 0.0}
+    aggregate = {"report_count": 1, "sensor_count": 0, "sensor_rides": 0, "max_severity": 0, "max_urgency": 2,
+                 "first_seen": T0, "last_seen": T0, "first_report_ts": T0, "nth_ride_ts": None,
+                 "location_text": None, "ride_severities": None}
+    db, row = _refresh(fake_db, context, aggregate, votes=[(True, 0.6)])
+    assert row["status"] == "verified"
+    assert db.executed(trust.SQL_SETTLE) == []          # settled once, when it first became verified
 
 
 def test_refresh_missing_incident_raises(fake_db):
@@ -427,15 +448,15 @@ def test_verification_mode_and_eligibility():
     assert verify.verification_mode("road_damage", "tram") == "tram"
     assert verify.verification_mode("road_damage", "road") == "road"
     assert verify.verification_mode("streetlight", None) == "road"
-    assert verify.can_request_verification("open", False) is True
-    assert verify.can_request_verification("no_anomaly", False) is True
-    assert verify.can_request_verification("open", True) is False
-    assert verify.can_request_verification("confirmed", False) is False
-    assert verify.can_request_verification("closed", False) is False
+    assert verify.can_request_verification("candidate", False) is True
+    assert verify.can_request_verification("likely", False) is True
+    assert verify.can_request_verification("candidate", True) is False
+    for resolved in ("verified", "dismissed", "closed"):
+        assert verify.can_request_verification(resolved, False) is False
 
 
 def test_request_verification_report_only(fake_db, monkeypatch):
-    db = fake_db({verify.SQL_VERIFY_CONTEXT: {"id": 3, "type": "tram_track", "status": "open", "lon": 21.01,
+    db = fake_db({verify.SQL_VERIFY_CONTEXT: {"id": 3, "type": "tram_track", "status": "likely", "lon": 21.01,
                                               "lat": 52.23, "segment_mode": "road", "has_sensor": False}})
     asked = []
 
@@ -445,13 +466,13 @@ def test_request_verification_report_only(fake_db, monkeypatch):
     monkeypatch.setattr(verify, "next_vehicle_for", fake_next)
 
     out = verify.request_verification(db, 3)
-    assert out == {"incident_id": 3, "status": "awaiting_verification", "vehicle": "tram 17", "eta_min": 6}
+    assert out == {"incident_id": 3, "status": "likely", "vehicle": "tram 17", "eta_min": 6}
     assert asked == ["tram"]
-    assert db.executed(verify.SQL_SET_AWAITING) == [{"id": 3, "vehicle": "tram 17", "eta_min": 6}]
+    assert db.executed(verify.SQL_SET_VERIFY_REQUEST) == [{"id": 3, "vehicle": "tram 17", "eta_min": 6}]
 
 
 def test_request_verification_skips_sensor_backed_and_no_vehicle(fake_db, monkeypatch):
-    ctx = {"id": 4, "type": "road_damage", "status": "open", "lon": 21.01, "lat": 52.23,
+    ctx = {"id": 4, "type": "road_damage", "status": "candidate", "lon": 21.01, "lat": 52.23,
            "segment_mode": "road", "has_sensor": True}
     db = fake_db({verify.SQL_VERIFY_CONTEXT: ctx})
     monkeypatch.setattr(verify, "next_vehicle_for", lambda *a: pytest.fail("should not look for a vehicle"))
@@ -460,33 +481,42 @@ def test_request_verification_skips_sensor_backed_and_no_vehicle(fake_db, monkey
     ctx.update(has_sensor=False)
     monkeypatch.setattr(verify, "next_vehicle_for", lambda *a: None)
     assert verify.request_verification(db, 4) is None
-    assert db.executed(verify.SQL_SET_AWAITING) == []
+    assert db.executed(verify.SQL_SET_VERIFY_REQUEST) == []
 
     db = fake_db({verify.SQL_VERIFY_CONTEXT: None})
     assert verify.request_verification(db, 404) is None
 
 
-def test_ride_outcome_rules():
-    assert verify.ride_outcome("awaiting_verification", True, False) == "confirmed"
-    assert verify.ride_outcome("awaiting_verification", False, False) == "no_anomaly"
-    assert verify.ride_outcome("no_anomaly", False, True) == "no_anomaly"
-    assert verify.ride_outcome("confirmed", True, False) == "confirmed"   # ingest already confirmed it
-    assert verify.ride_outcome("confirmed", True, True) is None           # confirmed earlier by another ride
-    assert verify.ride_outcome("confirmed", False, False) is None
+@pytest.mark.parametrize("status, issue_type, ride_mode, detected, expected", [
+    ("likely", "road_damage", "road", True, "hit"),
+    ("verified", "road_damage", "road", True, "hit"),       # extra sensor evidence still counts
+    ("candidate", "road_damage", "road", False, "miss"),    # a bus drove over it and felt nothing
+    ("candidate", "tram_track", "tram", False, "miss"),
+    ("candidate", "road_damage", "tram", False, None),      # a tram cannot feel a road pothole
+    ("likely", "streetlight", "road", False, None),         # lamps only show up on night rides
+    ("likely", "flooding", "road", False, None),
+    ("verified", "road_damage", "road", False, None),       # terminal: misses no longer matter
+    ("dismissed", "road_damage", "road", True, None),
+    ("closed", "tram_track", "tram", True, None),
+])
+def test_ride_outcome_rules(status, issue_type, ride_mode, detected, expected):
+    assert verify.ride_outcome(status, issue_type, ride_mode, detected) == expected
 
 
 def test_check_ride_verifications(fake_db, monkeypatch):
     rows = [
-        {"id": 1, "status": "awaiting_verification", "detected": True, "other_rides": False},
-        {"id": 2, "status": "awaiting_verification", "detected": False, "other_rides": False},
-        {"id": 3, "status": "confirmed", "detected": True, "other_rides": False},
-        {"id": 4, "status": "confirmed", "detected": False, "other_rides": True},
+        {"id": 1, "type": "road_damage", "status": "likely", "ride_mode": "road", "detected": True},
+        {"id": 2, "type": "road_damage", "status": "candidate", "ride_mode": "road", "detected": False},
+        {"id": 3, "type": "road_damage", "status": "candidate", "ride_mode": "road", "detected": True},
+        {"id": 4, "type": "streetlight", "status": "candidate", "ride_mode": "road", "detected": False},
     ]
     db = fake_db({verify.SQL_RIDE_CANDIDATES: rows})
     refreshed = []
-    monkeypatch.setattr(verify, "refresh_incident", lambda conn, iid: refreshed.append(iid) or {})
+    after = {1: "verified", 2: "candidate", 3: "likely"}
+    monkeypatch.setattr(verify, "refresh_incident",
+                        lambda conn, iid: refreshed.append(iid) or {"id": iid, "status": after[iid]})
 
-    assert verify.check_ride_verifications(db, 42) == [1, 2, 3]
-    assert refreshed == [1, 3]
-    assert db.executed(verify.SQL_NO_ANOMALY) == [{"id": 2}]
+    assert verify.check_ride_verifications(db, 42) == [1]      # only hits that are now verified
+    assert refreshed == [1, 2, 3]                              # hits and misses are re-assessed
+    assert db.executed(verify.SQL_SENSOR_MISS) == [{"id": 2}]
     assert db.executed(verify.SQL_RIDE_CANDIDATES) == [{"ride_id": 42, "radius_m": 40}]

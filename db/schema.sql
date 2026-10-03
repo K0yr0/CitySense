@@ -46,9 +46,21 @@ create table if not exists ride_segments (
 );
 create index if not exists ride_segments_segment_idx on ride_segments (segment_id);
 
+-- Anonymous citizens who report or answer YES/NO, with their earned trust.
+-- Identity is a salted hash of a random browser token: never a name, email or phone.
+create table if not exists contributors (
+  id                bigserial primary key,
+  contributor_hash  text not null unique,
+  correct           int  not null default 0,          -- answers that matched the final outcome
+  incorrect         int  not null default 0,
+  trust             real not null default 0.6,        -- (correct + 3) / (correct + incorrect + 5)
+  created_at        timestamptz not null default now()
+);
+
 -- Citizen complaints (web form, 19115 import, synthetic data).
 create table if not exists reports (
   id                  bigserial primary key,
+  contributor_id      bigint references contributors(id),  -- null for 19115 / synthetic imports
   raw_text            text not null,
   photo_url           text,                   -- anonymized photo only (EXIF stripped, faces/plates blurred)
   structured          jsonb,                  -- full LLM triage output (TriageResult)
@@ -93,9 +105,14 @@ create table if not exists incidents (
   geom                 geometry(Point, 4326) not null,   -- location of the first evidence
   address              text,
   summary              text,                             -- LLM summary of merged reports (cached)
-  score                real not null default 0,
-  status               text not null default 'open'
-                       check (status in ('open', 'awaiting_verification', 'confirmed', 'no_anomaly', 'closed')),
+  score                real not null default 0,             -- priority (urgency, vulnerability, ...)
+  status               text not null default 'candidate'    -- driven by `confidence`, see fusion/confidence.py
+                       check (status in ('candidate', 'likely', 'verified', 'dismissed', 'closed')),
+  confidence           real not null default 0,             -- 0–1, sensor + trust-weighted citizen evidence
+  sensor_confidence    real,                                -- null = no sensor data yet
+  citizen_confidence   real,                                -- null = no citizen responses yet
+  yes_count            int  not null default 0,             -- citizen YES (reports + explicit answers)
+  no_count             int  not null default 0,             -- citizen NO answers
   department           text,
   first_seen           timestamptz not null,
   last_seen            timestamptz not null,
@@ -109,8 +126,9 @@ create table if not exists incidents (
   verify_vehicle       text,                             -- e.g. 'tram 17'
   verify_eta_min       int,
   verify_requested_at  timestamptz,
-  confirmed_at         timestamptz,
-  verify_checks        int  not null default 0           -- rides that passed without detecting anything
+  verified_at          timestamptz,                      -- when status became 'verified'
+  sensor_misses        int  not null default 0,          -- capable rides that passed without detecting anything
+  last_miss_at         timestamptz
 );
 create index if not exists incidents_geom_gix on incidents using gist (geom);
 create index if not exists incidents_status_score_idx on incidents (status, score desc);
@@ -122,3 +140,21 @@ create table if not exists incident_evidence (
   primary key (incident_id, evidence_id)
 );
 create index if not exists incident_evidence_evidence_idx on incident_evidence (evidence_id);
+
+-- Citizen YES/NO on an incident. Every located report is an implicit YES (report_id set);
+-- explicit answers come from the "Is this problem still there?" prompt.
+create table if not exists citizen_responses (
+  id              bigserial primary key,
+  incident_id     bigint  not null references incidents(id) on delete cascade,
+  contributor_id  bigint  references contributors(id),      -- null = anonymous (19115 import)
+  report_id       bigint  references reports(id) on delete cascade,
+  answer          boolean not null,                         -- true = YES, the problem is there
+  settled         boolean not null default false,           -- already counted in contributor trust
+  created_at      timestamptz not null default now()
+);
+create index if not exists citizen_responses_incident_idx on citizen_responses (incident_id);
+-- one answer per contributor per incident (latest wins) and one YES per report
+create unique index if not exists citizen_responses_once_idx
+  on citizen_responses (incident_id, contributor_id) where contributor_id is not null;
+create unique index if not exists citizen_responses_report_idx
+  on citizen_responses (report_id) where report_id is not null;

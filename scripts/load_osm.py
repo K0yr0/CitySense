@@ -4,13 +4,20 @@ Every OSM line is cut into ~25 m pieces in a metric CRS (EPSG:2180, Poland CS92)
 tagged with mode / osm_way_id / name / length_m / vulnerability, converted back to
 WGS84, cached as data/osm/segments_<area>.geojson and bulk-loaded with COPY.
 
-    # small demo area: city centre (Marszałkowska, Rondo Dmowskiego, Rondo Daszyńskiego)
-    .venv/bin/python scripts/load_osm.py --bbox demo --dry-run
+    # FAST, OFFLINE (what everyone and Docker use): load the committed city-centre file.
+    # Needs only shapely + psycopg (no osmnx / geopandas, no network). Idempotent with --skip-if-loaded.
+    python scripts/load_osm.py --from-geojson data/osm/segments_demo.geojson --skip-if-loaded
+
+    # Rebuild from OpenStreetMap (slow Overpass servers; needs backend/requirements-ml.txt):
+    .venv/bin/python scripts/load_osm.py --bbox demo --dry-run        # -> data/osm/segments_demo.geojson
     .venv/bin/python scripts/load_osm.py --bbox 20.975,52.208,21.030,52.248 --truncate
     # whole city (several minutes, a few hundred thousand segments)
     .venv/bin/python scripts/load_osm.py --place "Warszawa, Poland" --truncate
 
-Needs the heavy extras: .venv/bin/pip install -r backend/requirements-ml.txt
+Overpass mirrors are tried in order (OVERPASS_MIRRORS) under a hard wall-clock budget per
+download, because osmnx's own timeout does not stop a server that trickles bytes. If the
+school / hospital / platform / cycleway query fails, segments are written with
+vulnerability 0 and the GeoJSON metadata says "pois": "unavailable".
 
 Vulnerability (0–1) = min(1, sum of the weights of the feature kinds present
 within 100 m of the segment) — presence, not counts:
@@ -27,6 +34,8 @@ import json
 import math
 import re
 import sys
+import threading
+import time
 import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
@@ -57,6 +66,18 @@ NAME_FILL_DIST_M = 30.0
 SKIP_TRAM_SERVICE = {"yard", "siding"}   # depot tracks: no passenger service, only noise for map matching
 SEGMENT_PROPS = ("mode", "osm_way_id", "name", "length_m", "vulnerability")
 COPY_SQL = "copy segments (geom, mode, osm_way_id, name, length_m, vulnerability) from stdin"
+COORD_DECIMALS = 6               # ~0.1 m: plenty for 25 m segments, keeps the committed file small
+
+# Public Overpass mirrors, tried in order. The osmnx cache key (data/cache/osmnx) is a hash of
+# mirror URL + query, so a cached answer is only found under the mirror that fetched it.
+OVERPASS_MIRRORS = (
+    "https://overpass-api.de/api",
+    "https://overpass.kumi.systems/api",
+    "https://overpass.private.coffee/api",
+)
+OVERPASS_QUERY_TIMEOUT_S = 300   # sent to Overpass as [timeout:..]; part of the osmnx cache key, keep it fixed
+NETWORK_BUDGET_S = 600.0         # hard wall-clock limit for the tram / road downloads (all mirrors)
+POI_BUDGET_S = 240.0             # hard wall-clock limit for the POI download (all mirrors)
 
 
 # =========================================================================== pure geometry
@@ -187,7 +208,9 @@ def expand_bbox(bbox: tuple[float, float, float, float], meters: float) -> tuple
 
 
 def area_slug(place: str | None, bbox: tuple[float, float, float, float] | None) -> str:
-    """File-name-safe area id: 'bbox_20.9750_52.2200_21.0200_52.2400' or 'warszawa_poland'."""
+    """File-name-safe area id: 'demo', 'bbox_20.9750_52.2200_21.0200_52.2400' or 'warszawa_poland'."""
+    if bbox and tuple(bbox) == DEMO_BBOX:
+        return "demo"
     if bbox:
         return "bbox_" + "_".join(f"{v:.4f}" for v in bbox)
     text = unicodedata.normalize("NFKD", (place or "area").replace("ł", "l").replace("Ł", "L"))
@@ -221,11 +244,13 @@ def osm_id(value: Any) -> int | None:
         return None
 
 
-def to_feature_collection(segments: Sequence[Mapping[str, Any]], meta: Mapping[str, Any] | None = None) -> dict:
+def to_feature_collection(
+    segments: Sequence[Mapping[str, Any]], meta: Mapping[str, Any] | None = None, decimals: int = COORD_DECIMALS
+) -> dict:
     """WGS84 segment dicts -> GeoJSON FeatureCollection (meta stored under 'cityecho')."""
     features = []
     for s in segments:
-        coords = [[round(x, 7), round(y, 7)] for x, y, *_ in s["geometry"].coords]
+        coords = [[round(x, decimals), round(y, decimals)] for x, y, *_ in s["geometry"].coords]
         features.append({
             "type": "Feature",
             "geometry": {"type": "LineString", "coordinates": coords},
@@ -261,9 +286,61 @@ def _require_geo():
         ) from None
     ox.settings.use_cache = True
     ox.settings.cache_folder = str(REPO_ROOT / "data" / "cache" / "osmnx")
-    ox.settings.requests_timeout = 300
+    ox.settings.requests_timeout = OVERPASS_QUERY_TIMEOUT_S
+    ox.settings.overpass_rate_limit = False  # mirrors' /status pauses were one source of the hangs
     ox.settings.log_console = False
     return ox, gpd
+
+
+def call_with_deadline(fn, timeout_s: float):
+    """Run fn() in a daemon thread; return its result or raise TimeoutError after timeout_s.
+
+    A stuck HTTP read cannot be interrupted from outside, so on timeout the worker thread is
+    abandoned (daemon: it dies with the process) and the caller moves on.
+    """
+    box: dict[str, Any] = {}
+
+    def run():
+        try:
+            box["value"] = fn()
+        except BaseException as exc:  # noqa: BLE001 - re-raised in the caller's thread
+            box["error"] = exc
+
+    worker = threading.Thread(target=run, daemon=True)
+    worker.start()
+    worker.join(max(0.0, timeout_s))
+    if worker.is_alive():
+        raise TimeoutError(f"no answer within {timeout_s:.0f} s")
+    if "error" in box:
+        raise box["error"]
+    return box.get("value")
+
+
+def with_mirrors(ox, label: str, fn, budget_s: float, mirrors: Sequence[str] = OVERPASS_MIRRORS):
+    """fn() against each Overpass mirror in turn, all within budget_s seconds of wall clock.
+
+    Each attempt gets an equal share of the remaining budget (a mirror that fails fast leaves
+    more time for the next). Raises RuntimeError listing every failure when all mirrors fail.
+    """
+    deadline = time.monotonic() + budget_s
+    errors = []
+    for i, url in enumerate(mirrors):
+        remaining = deadline - time.monotonic()
+        if remaining <= 1:
+            errors.append(f"{url}: budget exhausted")
+            break
+        share = remaining / (len(mirrors) - i)
+        ox.settings.overpass_url = url
+        started = time.monotonic()
+        try:
+            result = call_with_deadline(fn, share)
+            print(f"  {label}: {url} answered in {time.monotonic() - started:.1f} s")
+            return result
+        except Exception as exc:  # noqa: BLE001 - try the next mirror
+            msg = f"{type(exc).__name__}: {exc}"[:200]
+            print(f"  {label}: {url} failed after {time.monotonic() - started:.0f} s ({msg})")
+            errors.append(f"{url}: {msg}")
+    raise RuntimeError(f"{label}: every Overpass mirror failed within {budget_s:.0f} s: " + "; ".join(errors))
 
 
 def _is_empty_response(exc: Exception) -> bool:
@@ -348,30 +425,47 @@ def fetch_pois(ox, place: str | None, bbox) -> dict[str, list]:
     return {kind: [g for g, m in zip(geoms, mask) if m] for kind, mask in columns.items()}
 
 
-def build_network(place: str | None, bbox, modes: Sequence[str], step_m: float) -> list[dict]:
-    """Download OSM data and return WGS84 segment dicts ready for GeoJSON / COPY."""
+def build_network(
+    place: str | None, bbox, modes: Sequence[str], step_m: float,
+    poi_budget_s: float = POI_BUDGET_S, info: dict | None = None,
+) -> list[dict]:
+    """Download OSM data and return WGS84 segment dicts ready for GeoJSON / COPY.
+
+    `info` (if given) receives "pois": "ok" | "none" | "unavailable" for the GeoJSON metadata.
+    """
     ox, gpd = _require_geo()
+    info = info if info is not None else {}
     area = f"bbox {bbox}" if bbox else repr(place)
     lines: list[dict] = []
-    if "tram" in modes:
-        print(f"Downloading railway=tram for {area} ...")
-        tram = fetch_tram_lines(ox, place, bbox)
-        print(f"  {len(tram)} tram ways")
-        lines += tram
-    if "road" in modes:
-        print(f"Downloading drive network for {area} ...")
-        road = fetch_road_lines(ox, place, bbox)
-        print(f"  {len(road)} road edges")
-        lines += road
+    try:
+        if "tram" in modes:
+            print(f"Downloading railway=tram for {area} ...")
+            tram = with_mirrors(ox, "tram", lambda: fetch_tram_lines(ox, place, bbox), NETWORK_BUDGET_S)
+            print(f"  {len(tram)} tram ways")
+            lines += tram
+        if "road" in modes:
+            print(f"Downloading drive network for {area} ...")
+            road = with_mirrors(ox, "road", lambda: fetch_road_lines(ox, place, bbox), NETWORK_BUDGET_S)
+            print(f"  {len(road)} road edges")
+            lines += road
+    except RuntimeError as exc:
+        raise SystemExit(f"{exc}\nTry again later, or load the committed data/osm/segments_demo.geojson "
+                         "with --from-geojson.") from None
 
     segments = build_segments(lines, step_m)
     if not segments:
         return []
     print(f"Split into {len(segments)} segments of ~{step_m:g} m")
 
-    print("Downloading schools / hospitals / platforms / cycleways ...")
-    pois = fetch_pois(ox, place, bbox)
-    print("  " + ", ".join(f"{k}: {len(v)}" for k, v in pois.items()) if pois else "  none found")
+    print(f"Downloading schools / hospitals / platforms / cycleways (hard limit {poi_budget_s:.0f} s) ...")
+    try:
+        pois = with_mirrors(ox, "pois", lambda: fetch_pois(ox, place, bbox), poi_budget_s)
+        info["pois"] = "ok" if pois else "none"
+        print("  " + ", ".join(f"{k}: {len(v)}" for k, v in pois.items()) if pois else "  none found")
+    except RuntimeError as exc:
+        pois = {}
+        info["pois"] = "unavailable"
+        print(f"WARNING: {exc}\nWARNING: POIs unavailable, every segment gets vulnerability 0.", file=sys.stderr)
     metric = [s["geometry"] for s in segments]
     vulnerability = compute_vulnerability(metric, pois)
 
@@ -402,6 +496,20 @@ def segment_rows(segments: Iterable[Mapping[str, Any]]) -> Iterator[tuple]:
         )
 
 
+def _scalar(row) -> int:
+    return int(row["n"] if isinstance(row, dict) else row[0])
+
+
+def count_segments(conn, modes: Sequence[str] | None = None) -> int:
+    """Rows in `segments` (optionally only these modes)."""
+    with conn.cursor() as cur:
+        if modes:
+            cur.execute("select count(*) as n from segments where mode = any(%s)", (list(modes),))
+        else:
+            cur.execute("select count(*) as n from segments")
+        return _scalar(cur.fetchone())
+
+
 def load_segments(conn, segments: Sequence[Mapping[str, Any]], *, modes: Sequence[str], truncate: bool) -> int:
     """Bulk-load segments with COPY. Refuses to duplicate already loaded modes unless truncate."""
     with conn.cursor() as cur:
@@ -410,12 +518,11 @@ def load_segments(conn, segments: Sequence[Mapping[str, Any]], *, modes: Sequenc
             cur.execute("truncate segments restart identity cascade")
         else:
             cur.execute("select count(*) as n from segments where mode = any(%s)", (list(modes),))
-            row = cur.fetchone()
-            existing = row["n"] if isinstance(row, dict) else row[0]
+            existing = _scalar(cur.fetchone())
             if existing:
                 raise SystemExit(
                     f"segments already holds {existing} rows for modes {list(modes)}; "
-                    "re-run with --truncate to replace the network."
+                    "re-run with --truncate to replace the network (or --skip-if-loaded to keep it)."
                 )
         with cur.copy(COPY_SQL) as copy:
             for row in segment_rows(segments):
@@ -424,49 +531,45 @@ def load_segments(conn, segments: Sequence[Mapping[str, Any]], *, modes: Sequenc
     return len(segments)
 
 
+def _connect():
+    """psycopg connection to settings.database_url (commits when the `with` block exits cleanly)."""
+    import psycopg
+
+    from backend.config import settings
+
+    return psycopg.connect(settings.database_url, prepare_threshold=None)
+
+
 # =========================================================================== CLI
 
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--place", default=DEFAULT_PLACE, help=f"OSM place name (default {DEFAULT_PLACE!r})")
-    parser.add_argument("--bbox", help="minLon,minLat,maxLon,maxLat, or 'demo' for the city centre; overrides --place")
-    parser.add_argument("--modes", default="tram,road", help="comma list of tram,road (default both)")
-    parser.add_argument("--step-m", type=float, default=25.0, help="target segment length in metres (default 25)")
-    parser.add_argument("--dry-run", action="store_true", help="only write the GeoJSON cache, no database")
-    parser.add_argument("--truncate", action="store_true",
-                        help="empty `segments` first (all modes; cascades to ride_segments/evidence/incidents)")
-    parser.add_argument("--refresh", action="store_true", help="ignore the GeoJSON cache and re-download")
-    args = parser.parse_args(argv)
+def resolve_path(text: str) -> Path:
+    """A user path: as given (relative to the cwd), else relative to the repo root."""
+    path = Path(text).expanduser()
+    if not path.is_absolute() and not path.exists() and (REPO_ROOT / path).exists():
+        return REPO_ROOT / path
+    return path
 
+
+def _display(path: Path) -> str:
     try:
-        bbox = parse_bbox(args.bbox) if args.bbox else None
-        modes = parse_modes(args.modes)
-    except ValueError as exc:
-        parser.error(str(exc))
-    place = None if bbox else args.place
-    path = cache_path(place, bbox)
+        return str(path.resolve().relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
 
-    segments = None
-    if path.exists() and not args.refresh:
-        fc = json.loads(path.read_text(encoding="utf-8"))
-        meta = fc.get("cityecho", {})
-        if meta.get("modes") == modes and meta.get("step_m") == args.step_m:
-            segments = from_feature_collection(fc)
-            print(f"Using cached {path.relative_to(REPO_ROOT)} ({len(segments)} segments; --refresh to re-download)")
-    if segments is None:
-        segments = build_network(place, bbox, modes, args.step_m)
-        if not segments:
-            print("No segments found for this area.", file=sys.stderr)
-            return 1
-        meta = {
-            "place": place, "bbox": list(bbox) if bbox else None, "modes": modes, "step_m": args.step_m,
-            "vulnerability_radius_m": VULNERABILITY_RADIUS_M, "vulnerability_weights": VULNERABILITY_WEIGHTS,
-            "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        }
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(to_feature_collection(segments, meta), ensure_ascii=False), encoding="utf-8")
-        print(f"Wrote {path.relative_to(REPO_ROOT)}")
 
+def read_geojson(path: Path) -> tuple[list[dict], dict]:
+    """(segments, cityecho metadata) from a segments GeoJSON written by this script."""
+    fc = json.loads(path.read_text(encoding="utf-8"))
+    if fc.get("type") != "FeatureCollection":
+        raise ValueError(f"{path} is not a GeoJSON FeatureCollection")
+    segments = from_feature_collection(fc)
+    bad = sorted({str(s["mode"]) for s in segments if s["mode"] not in MODES})
+    if bad:
+        raise ValueError(f"{path}: unknown mode(s) {bad}; expected {MODES}")
+    return segments, dict(fc.get("cityecho") or {})
+
+
+def print_summary(segments: Sequence[Mapping[str, Any]], modes: Sequence[str]) -> None:
     for mode in modes:
         sel = [s for s in segments if s["mode"] == mode]
         if sel:
@@ -474,15 +577,89 @@ def main(argv: list[str] | None = None) -> int:
             vul = sum(s["vulnerability"] for s in sel) / len(sel)
             print(f"  {mode}: {len(sel)} segments, {km:.1f} km, mean vulnerability {vul:.2f}")
 
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--from-geojson", metavar="PATH",
+                        help="load this segments GeoJSON instead of downloading (no osmnx / network needed)")
+    parser.add_argument("--skip-if-loaded", action="store_true",
+                        help="exit 0 without changes when `segments` already has rows (any mode)")
+    parser.add_argument("--place", default=DEFAULT_PLACE, help=f"OSM place name (default {DEFAULT_PLACE!r})")
+    parser.add_argument("--bbox", help="minLon,minLat,maxLon,maxLat, or 'demo' for the city centre; overrides --place")
+    parser.add_argument("--modes", default="tram,road", help="comma list of tram,road (default both)")
+    parser.add_argument("--step-m", type=float, default=25.0, help="target segment length in metres (default 25)")
+    parser.add_argument("--dry-run", action="store_true", help="only write / read the GeoJSON, no database")
+    parser.add_argument("--truncate", action="store_true",
+                        help="empty `segments` first (all modes; cascades to ride_segments/evidence/incidents)")
+    parser.add_argument("--refresh", action="store_true", help="ignore the GeoJSON cache and re-download")
+    parser.add_argument("--poi-timeout", type=float, default=POI_BUDGET_S,
+                        help=f"hard wall-clock limit (s) for the POI download over all mirrors (default {POI_BUDGET_S:g})")
+    args = parser.parse_args(argv)
+
+    try:
+        bbox = parse_bbox(args.bbox) if args.bbox else None
+        modes = parse_modes(args.modes)
+    except ValueError as exc:
+        parser.error(str(exc))
+
+    source = resolve_path(args.from_geojson) if args.from_geojson else None
+    if source is not None and not source.is_file():
+        print(f"GeoJSON not found: {args.from_geojson}", file=sys.stderr)
+        return 2
+
+    if args.skip_if_loaded and not args.dry_run:
+        with _connect() as conn:
+            existing = count_segments(conn)
+        if existing:
+            print(f"segments already has {existing} rows: nothing to do (--skip-if-loaded).")
+            return 0
+
+    if source is not None:
+        try:
+            segments, meta = read_geojson(source)
+        except (ValueError, KeyError, json.JSONDecodeError) as exc:
+            print(f"Cannot read {args.from_geojson}: {exc}", file=sys.stderr)
+            return 2
+        segments = [s for s in segments if s["mode"] in modes]
+        print(f"Read {_display(source)}: {len(segments)} segments (pois: {meta.get('pois', 'unknown')})")
+        if not segments:
+            print(f"No {modes} segments in {args.from_geojson}.", file=sys.stderr)
+            return 1
+    else:
+        place = None if bbox else args.place
+        path = cache_path(place, bbox)
+        segments = None
+        if path.exists() and not args.refresh:
+            fc = json.loads(path.read_text(encoding="utf-8"))
+            meta = fc.get("cityecho", {})
+            if meta.get("modes") == modes and meta.get("step_m") == args.step_m:
+                segments = from_feature_collection(fc)
+                print(f"Using cached {_display(path)} ({len(segments)} segments; --refresh to re-download)")
+        if segments is None:
+            info: dict = {}
+            segments = build_network(place, bbox, modes, args.step_m, poi_budget_s=args.poi_timeout, info=info)
+            if not segments:
+                print("No segments found for this area.", file=sys.stderr)
+                return 1
+            meta = {
+                "place": place, "bbox": list(bbox) if bbox else None, "modes": modes, "step_m": args.step_m,
+                "vulnerability_radius_m": VULNERABILITY_RADIUS_M, "vulnerability_weights": VULNERABILITY_WEIGHTS,
+                "pois": info.get("pois", "unknown"),
+                "source": "OpenStreetMap contributors (ODbL), via Overpass",
+                "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            }
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(to_feature_collection(segments, meta), ensure_ascii=False,
+                                       separators=(",", ":")), encoding="utf-8")
+            print(f"Wrote {_display(path)} ({path.stat().st_size / 1e6:.1f} MB)")
+
+    print_summary(segments, modes)
+
     if args.dry_run:
         print("Dry run: database untouched.")
         return 0
 
-    import psycopg
-
-    from backend.config import settings
-
-    with psycopg.connect(settings.database_url, prepare_threshold=None) as conn:  # commits on clean exit
+    with _connect() as conn:  # commits on clean exit
         n = load_segments(conn, segments, modes=modes, truncate=args.truncate)
     print(f"Loaded {n} segments into the database.")
     return 0

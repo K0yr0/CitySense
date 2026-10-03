@@ -20,6 +20,7 @@ from fastapi.testclient import TestClient
 
 from backend.api import deps, serializers as ser
 from backend.api import rides as rides_api
+from backend.fusion import trust as trust_mod
 from backend.main import PHOTOS_DIR, app
 
 T0 = datetime(2026, 10, 1, 8, 0, tzinfo=timezone.utc)
@@ -29,15 +30,22 @@ SUMMARY_KEYS = {
     "report_count", "sensor_count", "sensor_rides", "sensor_confirmed", "found_before_report",
     "has_sensor", "has_report", "max_severity", "max_urgency",
     "first_seen", "last_seen", "verify_vehicle", "verify_eta_min",
+    "confidence", "sensor_confidence", "citizen_confidence", "yes_count", "no_count",
+    "sensor_misses", "awaiting_verification",
 }
 DETAIL_KEYS = SUMMARY_KEYS | {"summary", "reports", "evidence", "timeline", "signal"}
 REPORT_STATUS_KEYS = {"report_id", "incident_id", "status", "category", "department", "others_count",
-                      "sensor_confirmed", "verify_vehicle", "verify_eta_min", "message"}
+                      "sensor_confirmed", "verify_vehicle", "verify_eta_min", "confidence",
+                      "contributor_trust", "message"}
 RIDE_KEYS = {"ride_id", "bumps", "dark_gaps", "segments_covered", "evidence_ids", "incident_ids",
              "verified_incident_ids"}
-STATS_KEYS = {"reports_total", "incidents_total", "found_before_report", "confirmed_total",
-              "awaiting_verification", "avg_verification_min", "rides_total", "segments_measured"}
-TIMELINE_KINDS = {"first_report", "report", "sensor", "proactive", "verification_requested", "confirmed", "no_anomaly"}
+STATS_KEYS = {"reports_total", "incidents_total", "found_before_report", "candidate_total", "likely_total",
+              "verified_total", "awaiting_verification", "contributors_total", "avg_verification_min",
+              "rides_total", "segments_measured"}
+TIMELINE_KINDS = {"first_report", "report", "sensor", "proactive", "verification_requested", "sensor_miss",
+                  "response", "verified", "dismissed"}
+RESPONSE_KEYS = {"incident_id", "status", "confidence", "sensor_confidence", "citizen_confidence",
+                 "yes_count", "no_count", "contributor_trust"}
 
 
 # --------------------------------------------------------------------------- fakes
@@ -92,12 +100,13 @@ def install(monkeypatch, name: str, **attrs) -> types.ModuleType:
 
 
 def incident_row(**kw) -> dict:
-    row = dict(id=7, segment_id=101, type="tram_track", status="open", score=0.91,
+    row = dict(id=7, segment_id=101, type="tram_track", status="likely", score=0.91,
                department="Tramwaje Warszawskie", address="Marszałkowska", summary=None,
                lon=21.0122, lat=52.2297, report_count=24, sensor_count=0, sensor_rides=0,
                sensor_confirmed=False, found_before_report=False, max_severity=0.0, max_urgency=4,
                first_seen=T0, last_seen=T0 + timedelta(hours=5), verify_vehicle=None, verify_eta_min=None,
-               verify_requested_at=None, confirmed_at=None, verify_checks=0)
+               verify_requested_at=None, verified_at=None, confidence=0.7, sensor_confidence=None,
+               citizen_confidence=0.7, yes_count=24, no_count=0, sensor_misses=0, last_miss_at=None)
     row.update(kw)
     return row
 
@@ -113,6 +122,8 @@ class FakeDF(list):
 def env(monkeypatch, tmp_path):
     conn, fdb = FakeConn(), FakeDB()
     install(monkeypatch, "backend.db", fetch_one=fdb.fetch_one, fetch_all=fdb.fetch_all)
+    monkeypatch.setattr(trust_mod, "fetch_one", fdb.fetch_one)   # real trust module, fake DB
+    monkeypatch.setattr(trust_mod, "fetch_all", fdb.fetch_all)
     db_opened = []
 
     def fake_get_db():
@@ -143,7 +154,11 @@ def fake_fusion(env, *, ingest=lambda conn, ids: [], verify_request=None, check=
         calls.append(("check_ride_verifications", ride_id))
         return check(conn, ride_id)
 
-    install(env.mp, "backend.fusion.incidents", ingest_evidence=ingest_evidence)
+    def refresh_incident(conn, incident_id):
+        calls.append(("refresh_incident", incident_id))
+        return {}
+
+    install(env.mp, "backend.fusion.incidents", ingest_evidence=ingest_evidence, refresh_incident=refresh_incident)
     install(env.mp, "backend.fusion.verify", request_verification=request_verification,
             check_ride_verifications=check_ride_verifications, live_vehicles=lambda kind="tram": [])
     return calls
@@ -221,7 +236,7 @@ def test_segments_without_filters_and_bad_input(env):
 def test_incident_list(env):
     env.db.on("from incidents i", [incident_row(), incident_row(id=8, report_count=0, sensor_count=3,
                                                                 sensor_rides=2, found_before_report=True)])
-    r = env.client.get("/incidents", params={"department": "ZDM", "status": "open,awaiting_verification", "limit": 50})
+    r = env.client.get("/incidents", params={"department": "ZDM", "status": "candidate,likely", "limit": 50})
     assert r.status_code == 200
     body = r.json()
     assert set(body) == {"incidents"}
@@ -233,7 +248,9 @@ def test_incident_list(env):
     assert first["verify_vehicle"] is None and first["verify_eta_min"] is None
     sql, params = env.db.sql_with("from incidents i")[-1]
     assert "order by i.score desc" in sql
-    assert params == {"limit": 50, "department": "ZDM", "statuses": ["open", "awaiting_verification"]}
+    assert params == {"limit": 50, "department": "ZDM", "statuses": ["candidate", "likely"]}
+    assert first["confidence"] == 0.7 and first["citizen_confidence"] == 0.7 and first["sensor_confidence"] is None
+    assert first["yes_count"] == 24 and first["awaiting_verification"] is False
 
 
 def _detail_fixture(env, incident: dict, summarize=None):
@@ -268,9 +285,9 @@ def _detail_fixture(env, incident: dict, summarize=None):
 
 
 def test_incident_detail_shape_timeline_signal_and_cached_summary(env):
-    inc = incident_row(status="confirmed", report_count=2, sensor_count=2, sensor_rides=2, sensor_confirmed=True,
+    inc = incident_row(status="verified", report_count=2, sensor_count=2, sensor_rides=2, sensor_confirmed=True,
                        verify_vehicle="tram 17", verify_eta_min=6, verify_requested_at=T0 + timedelta(minutes=90),
-                       confirmed_at=T0 + timedelta(hours=3))
+                       verified_at=T0 + timedelta(hours=3), confidence=0.93)
     calls = _detail_fixture(env, inc, summarize="Cracked tram rail on Marszałkowska.")
     r = env.client.get("/incidents/7")
     assert r.status_code == 200
@@ -288,9 +305,10 @@ def test_incident_detail_shape_timeline_signal_and_cached_summary(env):
     assert body["signal"] == {"fs": 100, "values": [0.1, 2.5, 0.3], "peak_index": 1}  # strongest bump (0.9)
 
     kinds = [t["kind"] for t in body["timeline"]]
-    assert kinds == ["first_report", "report", "verification_requested", "sensor", "sensor", "confirmed"]
+    assert kinds == ["first_report", "report", "verification_requested", "sensor", "sensor", "verified"]
     assert all(set(t) == {"ts", "kind", "label"} for t in body["timeline"])
-    assert body["timeline"][-1]["label"] == "Verified by tram 17 sensors"
+    assert body["timeline"][-1]["label"] == "Verified (confidence 93%); contributor trust updated"
+    assert body["awaiting_verification"] is False  # sensors answered the request
     assert body["timeline"][3]["label"].startswith("Tram 17 sensors detected a bump")
 
 
@@ -308,16 +326,21 @@ def test_incident_detail_uses_cached_summary_and_404(env):
     assert env.client.get("/incidents/999").status_code == 404
 
 
-def test_incident_detail_no_anomaly_and_proactive(env):
-    inc = incident_row(status="no_anomaly", report_count=1, verify_vehicle="tram 17",
-                       verify_requested_at=T0 + timedelta(minutes=30), found_before_report=True)
+def test_incident_detail_misses_answers_and_proactive(env):
+    inc = incident_row(status="candidate", report_count=1, verify_vehicle="tram 17",
+                       verify_requested_at=T0 + timedelta(minutes=30), found_before_report=True,
+                       sensor_misses=2, last_miss_at=T0 + timedelta(hours=6))
     _detail_fixture(env, inc, summarize="x")
-    env.db.on("from ride_segments rs", {"ts": T0 + timedelta(hours=4)})
+    env.db.on("from citizen_responses cr", [
+        {"answer": False, "created_at": T0 + timedelta(hours=7), "trust": 0.8}])
     body = env.client.get("/incidents/7").json()
     kinds = [t["kind"] for t in body["timeline"]]
     assert set(kinds) <= TIMELINE_KINDS
-    assert kinds[-1] == "no_anomaly" and body["timeline"][-1]["ts"] == "2026-10-01T12:00:00+00:00"
+    assert kinds[-2:] == ["sensor_miss", "response"]
+    assert body["timeline"][-2]["label"] == "A passing vehicle found no anomaly (2 clean passes so far)"
+    assert body["timeline"][-1]["label"] == "Citizen answered NO, not there (trust 0.80)"
     assert "proactive" in kinds and body["summary"] is None  # report_count < 2: no LLM summary
+    assert body["awaiting_verification"] is False  # the vehicle already passed after the request
 
 
 def test_verify_incident(env):
@@ -325,13 +348,13 @@ def test_verify_incident(env):
     env.db.on("from incidents i", lambda p: state if p["id"] == 7 else None)
 
     def request_verification(conn, incident_id):
-        state.update(status="awaiting_verification", verify_vehicle="tram 17", verify_eta_min=6)
+        state.update(verify_vehicle="tram 17", verify_eta_min=6, verify_requested_at=T0)
         return {"vehicle": "tram 17", "line": "17", "eta_min": 6, "distance_m": 1800.0}
 
     calls = fake_fusion(env, verify_request=request_verification)
     r = env.client.post("/incidents/7/verify")
     assert r.status_code == 200
-    assert r.json() == {"incident_id": 7, "status": "awaiting_verification", "vehicle": "tram 17", "eta_min": 6}
+    assert r.json() == {"incident_id": 7, "status": "likely", "vehicle": "tram 17", "eta_min": 6}
     assert calls == [("request_verification", 7)]
     assert env.client.post("/incidents/404/verify").status_code == 404
 
@@ -342,10 +365,13 @@ def _report_pipeline(env, *, evidence_id=900, category="tram_track", department=
                      fail_on: str | None = None):
     calls = []
 
-    def process_report(conn, text, *, pin=None, photo_bytes=None, created_at=None, source="web", structured=None):
+    def process_report(conn, text, *, pin=None, photo_bytes=None, created_at=None, source="web", structured=None,
+                       contributor_id=None):
         if fail_on and fail_on in text:
             raise RuntimeError("triage exploded")
         calls.append({"text": text, "pin": pin, "photo_bytes": photo_bytes, "created_at": created_at, "source": source})
+        if contributor_id is not None:
+            calls[-1]["contributor_id"] = contributor_id
         rid = 54 + len(calls)
         return {"report_id": rid, "evidence_id": evidence_id and evidence_id + len(calls) - 1,
                 "structured": {"category": category, "department": department, "urgency": 4},
@@ -361,7 +387,7 @@ def test_create_report_requests_verification(env):
     env.db.on("from incidents i", lambda p: state)
 
     def request_verification(conn, incident_id):
-        state.update(status="awaiting_verification", verify_vehicle="tram 17", verify_eta_min=6)
+        state.update(verify_vehicle="tram 17", verify_eta_min=6, verify_requested_at=T0 + timedelta(hours=6))
         return {"vehicle": "tram 17", "eta_min": 6}
 
     calls = fake_fusion(env, ingest=lambda conn, ids: [7], verify_request=request_verification)
@@ -371,10 +397,11 @@ def test_create_report_requests_verification(env):
     body = r.json()
     assert set(body) == REPORT_STATUS_KEYS
     assert body == {
-        "report_id": 55, "incident_id": 7, "status": "awaiting_verification", "category": "tram_track",
+        "report_id": 55, "incident_id": 7, "status": "likely", "category": "tram_track",
         "department": "Tramwaje Warszawskie", "others_count": 23, "sensor_confirmed": False,
-        "verify_vehicle": "tram 17", "verify_eta_min": 6,
-        "message": "23 others reported this. Tram 17 will verify in ~6 min. Sent to Tramwaje Warszawskie.",
+        "verify_vehicle": "tram 17", "verify_eta_min": 6, "confidence": 0.7, "contributor_trust": None,
+        "message": "23 others reported this. Tram 17 will verify in ~6 min. Status: likely (70% confidence). "
+                   "Sent to Tramwaje Warszawskie.",
     }
     assert pipeline_calls == [{"text": "Pęknięta szyna", "pin": (21.0, 52.2), "photo_bytes": b"\xff\xd8photo",
                                "created_at": None, "source": "web"}]
@@ -383,12 +410,13 @@ def test_create_report_requests_verification(env):
 
 def test_create_report_with_sensor_evidence_skips_verification(env):
     _report_pipeline(env)
-    env.db.on("from incidents i", incident_row(report_count=2, sensor_count=3, sensor_rides=2, sensor_confirmed=True))
+    env.db.on("from incidents i", incident_row(report_count=2, sensor_count=3, sensor_rides=2, sensor_confirmed=True,
+                                               status="verified", verify_vehicle="tram 17", confidence=0.91))
     calls = fake_fusion(env, ingest=lambda conn, ids: [7])
     body = env.client.post("/reports", data={"text": "Dziura"}).json()
     assert ("request_verification", 7) not in calls
     assert body["sensor_confirmed"] is True and body["others_count"] == 1
-    assert body["message"] == "1 other person reported this. Confirmed by vehicle sensors. Sent to Tramwaje Warszawskie."
+    assert body["message"] == "1 other person reported this. Verified by tram 17 sensors. Sent to Tramwaje Warszawskie."
 
 
 def test_create_report_without_location(env):
@@ -415,7 +443,7 @@ def test_report_status(env):
     env.db.on("left join incident_evidence", lambda p: {"id": 55, "category": "tram_track",
                                                         "department": "Tramwaje Warszawskie", "incident_id": 7}
               if p["id"] == 55 else None)
-    env.db.on("from incidents i", incident_row(status="confirmed", sensor_confirmed=True, sensor_count=1,
+    env.db.on("from incidents i", incident_row(status="verified", sensor_confirmed=True, sensor_count=1,
                                                verify_vehicle="tram 17", verify_eta_min=6, report_count=24))
     r = env.client.get("/reports/55/status")
     assert r.status_code == 200
@@ -563,7 +591,8 @@ def test_ride_stream_empty_final_size_cap_and_expiry(env):
 
 def test_stats(env):
     env.db.on("as reports_total", {"reports_total": 412, "incidents_total": 57, "found_before_report": 4,
-                                   "confirmed_total": 12, "awaiting_verification": 3,
+                                   "candidate_total": 30, "likely_total": 15, "verified_total": 12,
+                                   "awaiting_verification": 3, "contributors_total": 140,
                                    "avg_verification_min": Decimal("6.4666"), "rides_total": 8,
                                    "segments_measured": 912})
     r = env.client.get("/stats")
@@ -603,10 +632,13 @@ def test_live_vehicles(env):
 def test_status_messages():
     msg = ser.status_message
     assert msg(incident=incident_row(found_before_report=True, sensor_confirmed=True), others=0,
-               department="ZDM") == "You're the first to report this. Found by sensors before any report. Sent to ZDM."
-    assert msg(incident=incident_row(status="awaiting_verification", verify_vehicle="tram 17"), others=2,
-               department=None) == "2 others reported this. Tram 17 will verify soon."
-    assert "no anomaly" in msg(incident=incident_row(status="no_anomaly"), others=0, department="ZDM")
+               department="ZDM") == ("You're the first to report this. Found by sensors before any report. "
+                                     "Status: likely (70% confidence). Sent to ZDM.")
+    assert msg(incident=incident_row(verify_vehicle="tram 17", verify_requested_at=T0), others=2,
+               department=None) == "2 others reported this. Tram 17 will verify soon. Status: likely (70% confidence)."
+    assert "no anomaly" in msg(incident=incident_row(status="candidate", sensor_misses=1, last_miss_at=T0),
+                               others=0, department="ZDM")
+    assert "dismissed" in msg(incident=incident_row(status="dismissed"), others=0, department=None)
 
 
 def test_incident_summary_handles_naive_and_string_timestamps():
@@ -614,3 +646,64 @@ def test_incident_summary_handles_naive_and_string_timestamps():
     out = ser.incident_summary(row)
     assert out["first_seen"] == "2026-10-01T08:00:00+00:00" and out["last_seen"] == "2026-10-01T09:00:00+00:00"
     assert out["score"] == 0.0 and list(out) == list(ser.SUMMARY_KEYS)
+
+
+# --------------------------------------------------------------------------- citizen YES/NO + trust
+
+def _respond_fixture(env, status="likely", trust=0.6):
+    state = incident_row(status=status)
+    env.db.on("from incidents i", lambda p: state if p["id"] == 7 else None)
+    env.db.on("insert into contributors", {"id": 31, "trust": trust, "correct": 0, "incorrect": 0})
+    calls = fake_fusion(env)
+    return state, calls
+
+
+def test_citizen_yes_no_is_recorded_weighted_and_reassessed(env):
+    state, calls = _respond_fixture(env, trust=0.8)
+    votes = []
+    env.conn.execute = lambda sql, params=None: votes.append((sql, params))
+    r = env.client.post("/incidents/7/responses", json={"answer": "no", "contributor": "browser-token-1"})
+    assert r.status_code == 200
+    body = r.json()
+    assert set(body) == RESPONSE_KEYS
+    assert body["incident_id"] == 7 and body["status"] == "likely" and body["contributor_trust"] == 0.8
+    (sql, params), = [v for v in votes if "citizen_responses" in v[0]]
+    assert params == {"incident_id": 7, "contributor_id": 31, "answer": False, "settled": False}
+    assert calls == [("refresh_incident", 7)]
+    (_, contributor_params), = env.db.sql_with("insert into contributors")
+    assert contributor_params["hash"] == trust_mod.contributor_hash("browser-token-1")  # never the raw token
+
+
+def test_answers_on_verified_incident_do_not_earn_trust(env):
+    _respond_fixture(env, status="verified")
+    votes = []
+    env.conn.execute = lambda sql, params=None: votes.append(params)
+    assert env.client.post("/incidents/7/responses", json={"answer": "yes", "contributor": "browser-token-1"}).status_code == 200
+    assert votes[-1]["settled"] is True
+
+
+def test_citizen_response_validation(env):
+    _respond_fixture(env, status="dismissed")
+    ok = {"answer": "yes", "contributor": "browser-token-1"}
+    assert env.client.post("/incidents/7/responses", json=ok).status_code == 409
+    assert env.client.post("/incidents/404/responses", json=ok).status_code == 404
+    assert env.client.post("/incidents/7/responses", json={"answer": "maybe", "contributor": "browser-token-1"}).status_code == 422
+    assert env.client.post("/incidents/7/responses", json={"answer": "yes", "contributor": "short"}).status_code == 422
+
+
+def test_report_with_contributor_returns_trust(env):
+    pipeline_calls = _report_pipeline(env)
+    env.db.on("from incidents i", incident_row(sensor_count=1, status="verified"))
+    env.db.on("insert into contributors", {"id": 31, "trust": 0.72, "correct": 2, "incorrect": 1})
+    fake_fusion(env, ingest=lambda conn, ids: [7])
+    body = env.client.post("/reports", data={"text": "Dziura", "contributor": "browser-token-1"}).json()
+    assert pipeline_calls[0]["contributor_id"] == 31 and body["contributor_trust"] == 0.72
+
+
+def test_awaiting_verification_flag():
+    asked = T0 + timedelta(hours=1)
+    assert ser.awaiting_verification(incident_row(verify_requested_at=asked)) is True
+    assert ser.awaiting_verification(incident_row(verify_requested_at=asked, sensor_count=1)) is False
+    assert ser.awaiting_verification(incident_row(verify_requested_at=asked, last_miss_at=asked + timedelta(minutes=5))) is False
+    assert ser.awaiting_verification(incident_row(verify_requested_at=asked, status="verified")) is False
+    assert ser.awaiting_verification(incident_row()) is False

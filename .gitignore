@@ -9,7 +9,8 @@ data/rides/*
 !data/rides/.gitkeep
 data/osm/*
 !data/osm/.gitkeep
-frontend/node_modules/
-frontend/.next/
-frontend/.env.local
+!data/osm/segments_demo.geojson
+web-admin/node_modules/
+web-admin/.next/
+web-admin/.env.local
 .DS_Store

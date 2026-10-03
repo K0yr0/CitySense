@@ -39,20 +39,33 @@ LAMP_SPACING_M = 33.0
 N_BROKEN_LAMPS = 4
 
 # Tram line 17 along Marszałkowska, Plac Bankowy -> Plac Unii Lubelskiej (southbound).
-# APPROXIMATE polyline: vertices hand-placed at the tram stops from the map (~10-20 m accuracy).
-# Marszałkowska is nearly straight here, so stop-to-stop vertices are good enough for synthetic data.
+# "path" follows the OpenStreetMap railway=tram geometry of data/osm/segments_demo.geojson
+# (shortest path over the tram tracks, simplified to 0.5 m), so the GPS points map-match onto
+# `tram` segments. Stops are snapped onto the path; the first and last stop are its end points.
 ROUTES = {
     "17": {
         "mode": "tram",
-        "stops": [  # (name, lon, lat); also the polyline vertices
-            ("pl. Bankowy", 21.00250, 52.24320),
-            ("Królewska", 21.00600, 52.23880),
-            ("Świętokrzyska", 21.00840, 52.23530),
-            ("Centrum", 21.01170, 52.23000),
-            ("Hoża", 21.01400, 52.22560),
-            ("pl. Konstytucji", 21.01580, 52.22240),
-            ("pl. Zbawiciela", 21.01770, 52.21960),
-            ("pl. Unii Lubelskiej", 21.02260, 52.21230),
+        "path": [  # (lon, lat)
+            (21.002644, 52.243250), (21.003677, 52.242454), (21.003802, 52.242349), (21.003931, 52.242204),
+            (21.004159, 52.241844), (21.004277, 52.241690), (21.004441, 52.241521), (21.004681, 52.241306),
+            (21.004787, 52.241159), (21.004831, 52.241059), (21.004858, 52.240908), (21.004855, 52.240583),
+            (21.004873, 52.240392), (21.004914, 52.240211), (21.004966, 52.240053), (21.005108, 52.239745),
+            (21.005339, 52.239422), (21.005614, 52.239135), (21.005820, 52.238962), (21.005995, 52.238837),
+            (21.006435, 52.238576), (21.006510, 52.238511), (21.006572, 52.238427), (21.014693, 52.224845),
+            (21.015451, 52.223552), (21.015514, 52.223459), (21.015589, 52.223374), (21.015848, 52.223145),
+            (21.015984, 52.222986), (21.017879, 52.219775), (21.017978, 52.219686), (21.018095, 52.219493),
+            (21.020856, 52.214840), (21.021389, 52.213937), (21.021428, 52.213853), (21.021469, 52.213717),
+            (21.021483, 52.213584), (21.021467, 52.213439), (21.021435, 52.213336),
+        ],
+        "stops": [  # (name, lon, lat), in driving order, on the path
+            ("pl. Bankowy", 21.002644, 52.243250),
+            ("Królewska", 21.006028, 52.238818),
+            ("Świętokrzyska", 21.008437, 52.235308),
+            ("Centrum", 21.011621, 52.229982),
+            ("Hoża", 21.014213, 52.225648),
+            ("pl. Konstytucji", 21.016268, 52.222505),
+            ("pl. Zbawiciela", 21.017954, 52.219708),
+            ("pl. Unii Lubelskiej", 21.021435, 52.213336),
         ],
         "crossings": ["Centrum", "pl. Zbawiciela"],  # tram-track crossings just after these stops
     },
@@ -68,13 +81,28 @@ class Route:
             raise ValueError(f"unknown line {line!r}; known: {sorted(ROUTES)}")
         cfg = ROUTES[line]
         self.names = [s[0] for s in cfg["stops"]]
-        self.lon = np.array([s[1] for s in cfg["stops"]])
-        self.lat = np.array([s[2] for s in cfg["stops"]])
+        path = cfg.get("path") or [(lon, lat) for _, lon, lat in cfg["stops"]]
+        self.lon = np.array([p[0] for p in path], dtype=float)
+        self.lat = np.array([p[1] for p in path], dtype=float)
         seg = _haversine_m(self.lat[:-1], self.lon[:-1], self.lat[1:], self.lon[1:])
         self.vertex_s = np.concatenate([[0.0], np.cumsum(seg)])
         self.length = float(self.vertex_s[-1])
-        self.stop_s = self.vertex_s.copy()
+        self.stop_s = np.array([self.project(lon, lat) for _, lon, lat in cfg["stops"]])
+        if self.stop_s[0] > 0.01 or self.stop_s[-1] < self.length - 0.01 or np.any(np.diff(self.stop_s) <= 0):
+            raise ValueError(f"line {line}: stops must run along the path from its first to its last point")
+        self.stop_s[0], self.stop_s[-1] = 0.0, self.length  # the ride starts and ends at a stop
         self.crossing_s = [self.stop_s[self.names.index(n)] + 30.0 for n in cfg["crossings"]]
+
+    def project(self, lon: float, lat: float) -> float:
+        """Along-route distance (metres) of the path point closest to (lon, lat)."""
+        kx = 111_320 * np.cos(np.radians(self.lat.mean()))  # local equirectangular metres
+        x, y = (self.lon - lon) * kx, (self.lat - lat) * 110_540
+        dx, dy = np.diff(x), np.diff(y)
+        seg2 = dx ** 2 + dy ** 2
+        t = np.clip(-(x[:-1] * dx + y[:-1] * dy) / np.where(seg2 > 0, seg2, 1.0), 0.0, 1.0)
+        d2 = (x[:-1] + t * dx) ** 2 + (y[:-1] + t * dy) ** 2
+        i = int(np.argmin(d2))
+        return float(self.vertex_s[i] + t[i] * (self.vertex_s[i + 1] - self.vertex_s[i]))
 
     def at(self, s) -> tuple[np.ndarray, np.ndarray]:
         """(lon, lat) at along-route distance s (metres)."""

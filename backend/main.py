@@ -1,6 +1,8 @@
 """CityEcho HTTP API: `uvicorn backend.main:app --reload`.
 
-Routers live in backend/api/; JSON shapes are fixed by docs/ARCHITECTURE.md §6.
+Routers live in backend/api/ (+ backend/auth/routes.py); JSON shapes are fixed by
+docs/ARCHITECTURE.md §6 and §8. Every router is registered here once (Day 0), so
+nobody needs to edit this shared file to add endpoints to their own router.
 Pipelines and fusion are imported lazily by the routers, so importing this
 module stays fast and works before the database is reachable.
 """
@@ -14,7 +16,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from backend.api import incidents, reports, rides, segments, stats, vehicles
+from backend.api import (admin, devices, incidents, mobile, reports, responses, rides, segments, stats, users,
+                         vehicles)
+from backend.auth import routes as auth
 from backend.config import settings
 
 log = logging.getLogger("cityecho")
@@ -61,7 +65,11 @@ def health() -> dict:
     return {"ok": True}
 
 
-for module in (rides, reports, segments, incidents, stats, vehicles):
+ROUTERS = (
+    rides, reports, segments, incidents, responses, stats, vehicles,  # existing (§6)
+    auth, users, mobile, admin, devices,                             # Day 0 (§8)
+)
+for module in ROUTERS:
     app.include_router(module.router)
 
 app.mount("/photos", StaticFiles(directory=PHOTOS_DIR), name="photos")

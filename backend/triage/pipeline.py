@@ -68,7 +68,8 @@ def _locate(location_text: str | None, pin: tuple[float, float] | None
 
 def process_report(conn, text: str, *, pin: tuple[float, float] | None = None,
                    photo_bytes: bytes | None = None, created_at: datetime | None = None,
-                   source: str = "web", structured: TriageResult | None = None) -> dict:
+                   source: str = "web", structured: TriageResult | None = None,
+                   contributor_id: int | None = None) -> dict:
     """Run one complaint through triage and persist it. See ARCHITECTURE.md §5.5."""
     created_at = created_at or datetime.now(timezone.utc)
     if created_at.tzinfo is None:
@@ -95,7 +96,7 @@ def process_report(conn, text: str, *, pin: tuple[float, float] | None = None,
     report_id = db.insert_report(
         conn, raw_text=text, structured=sdict, lon=lon, lat=lat, location_confidence=confidence,
         embedding=[float(x) for x in emb], duplicate_of=duplicate_of, photo_url=photo_url,
-        source=source, created_at=created_at)
+        source=source, created_at=created_at, contributor_id=contributor_id)
 
     evidence_id = None
     if located:

@@ -1,6 +1,6 @@
 # CityEcho: Build Report
 
-*Ground architecture built from the `CityEcho_vs.md` roadmap · 2026-10-03*
+*Ground architecture built from the `CityEcho_vs.md` roadmap · 2026-10-03 · updated to match the algorithm chart*
 
 ## What exists now
 
@@ -10,8 +10,8 @@ The verification loop, photo anonymization, streetlight detection and the live r
 
 | | |
 |---|---|
-| Backend tests | **172 passed, 1 skipped** (the skip needs a real PostGIS database) |
-| SQL statements | **35 / 35 parse** with the real Postgres parser (pglast) |
+| Backend tests | **198 passed, 1 skipped** (the skip needs a real PostGIS database) |
+| SQL statements | **42 / 42 parse** with the real Postgres parser (pglast) |
 | Frontend | `npm run build` passes, lint clean, 6 routes |
 | API | Starts, serves all 12 routes from §6 of the contract |
 
@@ -51,6 +51,27 @@ First, a shared foundation: `db/schema.sql`, `backend/config.py`, `backend/model
 3. **Stale incident summaries.** The cached LLM summary is now cleared whenever new reports merge into an incident.
 4. **Demo map area.** The `--bbox demo` area of `load_osm.py` cut off both ends of the synthetic tram 17 ride. It is widened to `20.975,52.208,21.030,52.248`.
 
+## Update: aligned with the algorithm chart
+
+The algorithm chart (vehicle sensors and citizen YES/NO → clustering → sensor confidence + trust-weighted
+citizen confidence → confidence engine → candidate / likely / verified → dashboard + contributor trust
+update → future answer weight) was compared with the code. Six boxes were missing or partial:
+
+| Chart box | Before | Now |
+|---|---|---|
+| Citizen Response YES / NO | Only new complaints, no NO | `POST /incidents/{id}/responses`; each report is also an implicit YES |
+| Sensor Confidence | Raw counts; clean passes only changed a label | Hits per ride (by severity) minus clean passes by a vehicle that could have felt it |
+| Citizen Confidence × User Trust | No identity; every report weighed 1 | Anonymous contributors (salted hash of a browser token); answers weighted 2 × trust |
+| Confidence Engine | Only a priority score; fixed status rules | `backend/fusion/confidence.py`: log-odds sum → one confidence |
+| Status Candidate · Likely · Verified | open / awaiting / confirmed / no_anomaly | candidate < 60 % ≤ likely < 85 % ≤ verified; plus dismissed < 10 % |
+| Contributor Trust Update → future weight | Missing | `backend/fusion/trust.py`: answers scored when an incident resolves; trust = (correct+3)/(correct+incorrect+5) |
+
+Two design choices go beyond the chart:
+- **`dismissed` status.** Without a negative outcome, people who correctly answer NO could never gain trust.
+- **Cap on the crowd.** Citizen answers alone cannot reach *verified* (the citizen points are capped), because 30 people repeating one complaint are not 30 independent witnesses. A vehicle sensor pass, or several sensor rides, verifies.
+
+The frontend shows the chart directly. The incident page has a confidence breakdown (sensor → citizen → engine → status) and the "Is this problem still there? YES / NO" prompt. The map panel has the same prompt in compact form. Queue chips show status with confidence. The public demo data derives every status from the same engine (`frontend/lib/confidence.ts` mirrors the Python one).
+
 ## Not verified yet
 
 - **No SQL has run against a real PostGIS database.** It was syntax-checked and tested with fake connections only (local Postgres has no PostGIS, and there is no Docker). This is the biggest remaining risk.
@@ -58,6 +79,8 @@ First, a shared foundation: `db/schema.sql`, `backend/config.py`, `backend/model
 - **Claude API path not exercised.** There is no key here, so only the keyword fallback and a mocked client were tested.
 - **ZTM live API not called.** `data/demo/ztm_snapshot.json` is a hand-made **sample**, labelled as such.
 - **Frontend not tested against the live backend.** It was checked in headless Chrome against its own fixtures.
+- **The new confidence and trust SQL is untested against PostGIS too:** `citizen_responses` upserts, `contributors`, and the trust-settlement query (42 statements parse; none has run).
+- **A tram cannot verify a road pothole.** Tram detections are typed `tram_track` and only cluster with `tram_track` incidents, and tram clean passes don't count against road damage. The roadmap's "tram 17 verifies a pothole" story (demo incident #102) needs a bus, or a track-related incident.
 - **Synthetic geography is approximate.** The tram 17 route and the complaint coordinates are estimates. If they are more than 20 m from the real OSM tracks, map matching will drop points.
 
 ## Next steps (in order)
@@ -84,3 +107,8 @@ First, a shared foundation: `db/schema.sql`, `backend/config.py`, `backend/model
 | Vulnerability weights (within 100 m) | school 0.35, hospital 0.35, platform 0.20, cycleway 0.15 | `load_osm.py` |
 | Score | (0.35·severity + 0.25·log(1+n)/log 51 + 0.20·urgency/5 + 0.20·vulnerability) × 1.5 when both sources agree | `score.py` |
 | Default Claude model | `claude-opus-5-5` | override with `ANTHROPIC_MODEL` |
+| Confidence prior | 0.25 | `confidence.PRIOR` |
+| Points per detecting ride / per clean pass | +1.2 × (0.5 + 0.5·severity) / −0.8 | `confidence.py` |
+| Points per citizen answer, cap | ±0.6 × 2·trust, capped at ±2.5 | `confidence.py` |
+| Likely / verified / dismissed | ≥ 60 % / ≥ 85 % / < 10 % | `confidence.py` (mirrored in `frontend/lib/confidence.ts`) |
+| Trust | Beta(3, 2): newcomers 0.6 | `trust.py` |

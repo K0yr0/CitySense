@@ -24,9 +24,30 @@ triage + fusion + map**. Everything else is optional polish.
 
 * **Evidence** is the common currency: a sensor peak and a citizen complaint are
   the same kind of row, anchored to a point (+ nearest segment).
-* **Fusion** clusters evidence into **incidents**, scores them, routes them to a
-  department, flags *found-before-report* (sensor-only, ≥ 2 rides) and asks the
-  **verification loop** to confirm report-only incidents with the next vehicle.
+* **Fusion** clusters evidence into **incidents** (location + time), scores their
+  priority, routes them to a department, flags *found-before-report* (sensor-only,
+  ≥ 2 rides) and asks the **verification loop** to check report-only incidents with
+  the next vehicle.
+* The **confidence engine** combines *sensor confidence* (detecting rides minus
+  clean passes) with *citizen confidence* (YES/NO answers weighted by each
+  contributor's trust) into one confidence that sets the status:
+  **candidate → likely → verified** (or **dismissed**).
+* **Contributor trust** is the feedback loop: when an incident resolves, everyone
+  who answered is scored right/wrong and their trust, and so the weight of their
+  future answers, is updated.
+
+```
+ Vehicle sensors ─► Sensor event ─┐
+                                  ├─► Incident clustering (location + time) ─► Incident
+ Citizen YES/NO (reports + answers)┘                                            │
+        ▲                                     ┌──────────────┬────────────────────┘
+        │                             Sensor confidence   Citizen confidence (× trust)
+        │                                     └──────► Confidence engine ◄──────┘
+        │                                                     │
+        │                         Status: candidate · likely · verified (· dismissed)
+        │                                     ┌───────────────┴───────────────┐
+        └── affects future answer weight ── Contributor trust update   Municipal dashboard
+```
 * Pipelines never call fusion. The **API layer orchestrates**:
   `pipeline → fusion.ingest_evidence → (verify)`.
 
@@ -76,7 +97,7 @@ Rules for every module:
 | `Source` | `sensor`, `report` |
 | `Mode` | `road`, `tram` |
 | `Department` | `ZDM`, `Tramwaje Warszawskie`, `MPWiK`, `Straż Miejska`, `inne` |
-| `IncidentStatus` | `open`, `awaiting_verification`, `confirmed`, `no_anomaly`, `closed` |
+| `IncidentStatus` | `candidate`, `likely`, `verified`, `dismissed`, `closed` (confidence-driven; verified/dismissed/closed are terminal) |
 
 `EvidenceIn` dataclass: `source, type, lon, lat, severity(0–1), ts, segment_id?, ride_id?, report_id?, details{}`.
 `TriageResult` pydantic model: `category, location_text, urgency(1–5), hazard_to_people, department, summary_en, summary_tr, needs_clarification`.
@@ -90,7 +111,9 @@ Rules for every module:
 
 ## 4. Database (`db/schema.sql`, `db/functions.sql`)
 
-Tables: `segments, rides, ride_segments, reports, evidence, incidents, incident_evidence`
+Tables: `segments, rides, ride_segments, contributors, reports, evidence, incidents, incident_evidence, citizen_responses`
+(`contributors` = anonymous hashed browser tokens with `correct/incorrect/trust`; `citizen_responses` = one
+YES/NO per contributor per incident, plus one implicit YES per located report)
 (see schema.sql for every column). `db/functions.sql` (DB agent) adds:
 
 * `nearest_segment(lon float8, lat float8, p_mode text default null, max_dist_m float8 default 20) returns bigint`
@@ -214,7 +237,7 @@ def process_report(conn, text: str, *, pin: tuple[float, float] | None = None,
 Photos: anonymized JPEG saved to `data/cache/photos/<uuid>.jpg`; `photo_url` = `/photos/<uuid>.jpg`.
 Plus `scripts/eval_triage.py`: category accuracy, routing accuracy, dedup purity/ARI vs `true_issue_id`.
 
-### 5.6 Fusion — `backend/fusion/incidents.py`, `score.py`, `routing.py`, `verify.py`
+### 5.6 Fusion — `backend/fusion/incidents.py`, `confidence.py`, `trust.py`, `score.py`, `routing.py`, `verify.py`
 ```python
 # routing.py
 def department_for(issue_type: str) -> str
@@ -232,11 +255,28 @@ def ingest_evidence(conn, evidence_ids: list[int]) -> list[int]
     # for each evidence: report evidence whose report has duplicate_of -> join that report's incident;
     # else nearest open incident of same type within 40 m seen in last 7 days; else new incident.
     # Link incident_evidence, then refresh_incident. Returns touched incident ids (unique, ordered).
+    # A located report also becomes its author's YES (trust.record_report_yes).
 def refresh_incident(conn, incident_id: int) -> dict
     # recompute counts, max severity/urgency, sensor_confirmed, found_before_report
     # (sensor evidence from >= 2 distinct rides and no report evidence older than the 2nd ride),
-    # status transition awaiting_verification -> confirmed when sensor evidence arrives (sets confirmed_at),
+    # confidence.assess(per-ride severities, sensor_misses, trust-weighted votes) -> confidence,
+    # sensor/citizen confidence, status (sets verified_at); reaching verified/dismissed -> trust.settle.
     # department, address (segment name or report location_text), score. Returns the incident row.
+
+# confidence.py (pure)
+PRIOR = 0.25; SENSOR_HIT = 1.2; SENSOR_MISS = 0.8; CITIZEN_VOTE = 0.6; CITIZEN_CAP = 2.5
+LIKELY_AT = 0.60; VERIFIED_AT = 0.85; DISMISSED_BELOW = 0.10
+def assess(ride_severities, misses, votes: [(answer, trust)]) -> Assessment
+    # confidence = σ(logit(PRIOR) + Σ hits·(0.5+0.5·sev) − misses·0.8 + clamp(Σ ±0.6·2·trust, ±2.5))
+def status_for(confidence, current) -> str      # terminal statuses are sticky
+
+# trust.py
+DEFAULT_TRUST = 0.6                              # Beta(3, 2) prior; trust = (correct+3)/(correct+incorrect+5)
+def contributor_for(conn, token) -> dict | None  # salted SHA-256 of the browser token, created on first use
+def record_vote(conn, incident_id, contributor_id, answer, *, resolved=False)
+def record_report_yes(conn, incident_id, report_id)
+def votes_for(conn, incident_id) -> [(answer, trust)]
+def settle(conn, incident_id, real: bool) -> [contributor_id]   # score unsettled answers, update trust
 
 # verify.py
 def live_vehicles(kind: str = "tram") -> list[dict]
@@ -245,20 +285,22 @@ def live_vehicles(kind: str = "tram") -> list[dict]
 def next_vehicle_for(lon: float, lat: float, mode: str) -> dict | None
     # {"vehicle": "tram 17", "line": "17", "eta_min": int, "distance_m": float}
 def request_verification(conn, incident_id: int) -> dict | None
-    # only for incidents without sensor evidence; sets status awaiting_verification,
-    # verify_vehicle, verify_eta_min, verify_requested_at
+    # only for candidate/likely incidents without sensor evidence; sets
+    # verify_vehicle, verify_eta_min, verify_requested_at (status stays confidence-driven)
 def check_ride_verifications(conn, ride_id: int) -> list[int]
-    # for awaiting incidents whose segment (or any segment within 40 m) is in ride_segments for this ride:
-    # sensor evidence from this ride attached -> confirmed (refresh_incident handles it);
-    # otherwise verify_checks += 1 and status -> no_anomaly. Returns updated incident ids.
+    # for candidate/likely/verified incidents this ride passed (segment or within 40 m):
+    # detected -> hit (re-assess); a capable vehicle (bus for road_damage, tram for tram_track)
+    # that felt nothing -> sensor_misses += 1 (re-assess, confidence drops).
+    # Returns the ids this ride detected that are now verified.
 ```
 
 ### 5.7 API — `backend/main.py`, `backend/api/*.py`
 FastAPI app `backend.main:app`, CORS from `settings.cors_origins`, static
-`/photos` from `data/cache/photos`. Routers: `rides, reports, segments, incidents, stats, vehicles`.
+`/photos` from `data/cache/photos`. Routers: `rides, reports, segments, incidents, responses, stats, vehicles` + Day 0 `auth, users, mobile, admin, devices` (§8).
 Orchestration:
 * `/rides/upload`, `/rides/stream` (final chunk): `process_ride → ingest_evidence → check_ride_verifications`
-* `/reports`: `process_report → ingest_evidence →` if incident has no sensor evidence and status `open` → `request_verification`
+* `/reports`: `process_report → ingest_evidence →` if incident has no sensor evidence, is candidate/likely and has no pending request → `request_verification`
+* `/incidents/{id}/responses`: `trust.contributor_for → record_vote → refresh_incident`
 * `/reports/bulk`: same without verification requests (fast import)
 
 ## 6. HTTP API (JSON shapes — the frontend codes against these)
@@ -270,13 +312,17 @@ GET  /segments?bbox=minLon,minLat,maxLon,maxLat&mode=tram|road&measured_only=tru
   -> {"segments": [{"id": 1, "mode": "tram", "health": 0.82 | null, "rides": 3,
                     "path": [[21.01, 52.23], [21.0103, 52.2302]]}]}
 
-GET  /incidents?department=ZDM&status=open&limit=200
+GET  /incidents?department=ZDM&status=candidate,likely&limit=200
   -> {"incidents": [IncidentSummary]}            # sorted by score desc
 IncidentSummary = {
   "id", "type", "status", "score", "department", "lon", "lat", "address",
   "report_count", "sensor_count", "sensor_rides", "sensor_confirmed", "found_before_report",
   "has_sensor", "has_report", "max_severity", "max_urgency",
-  "first_seen", "last_seen", "verify_vehicle", "verify_eta_min"
+  "first_seen", "last_seen", "verify_vehicle", "verify_eta_min",
+  "confidence",            # 0–1, confidence engine
+  "sensor_confidence" | null, "citizen_confidence" | null,   # null = no data from that source yet
+  "yes_count", "no_count", "sensor_misses",
+  "awaiting_verification"  # a vehicle was asked and has not passed yet
 }
 
 GET  /incidents/{id}
@@ -285,20 +331,27 @@ GET  /incidents/{id}
        "reports":  [{"id", "raw_text", "summary_en", "urgency", "created_at", "photo_url"}],
        "evidence": [{"id", "source", "type", "severity", "ts", "ride_id", "report_id", "details"}],
        "timeline": [{"ts", "kind", "label"}],
-         # kind ∈ first_report | report | sensor | proactive | verification_requested | confirmed | no_anomaly
+         # kind ∈ first_report | report | sensor | proactive | verification_requested
+         #        | sensor_miss | response | verified | dismissed
        "signal": {"fs": int, "values": [float], "peak_index": int} | null   # strongest sensor bump
      }
 
 POST /incidents/{id}/verify -> {"incident_id", "status", "vehicle", "eta_min"}
 
-POST /reports   (multipart/form-data: text (req), lon?, lat?, photo? file)
+POST /incidents/{id}/responses  {"answer": "yes" | "no", "contributor": "<browser token, 8–200 chars>"}
+  -> {"incident_id", "status", "confidence", "sensor_confidence", "citizen_confidence",
+      "yes_count", "no_count", "contributor_trust"}        # 404 unknown, 409 dismissed/closed
+
+POST /reports   (multipart/form-data: text (req), lon?, lat?, photo? file, contributor? token)
   -> ReportStatus
 GET  /reports/{id}/status -> ReportStatus
 ReportStatus = {
   "report_id", "incident_id" | null, "status" | null, "category", "department",
   "others_count",          # other reports merged into the same incident
   "sensor_confirmed", "verify_vehicle", "verify_eta_min",
-  "message"                # e.g. "23 others reported this. Tram 17 will verify in ~6 min. Sent to ZDM."
+  "confidence" | null, "contributor_trust" | null,
+  "message"                # e.g. "23 others reported this. Tram 17 will verify in ~6 min.
+                           #       Status: likely (80% confidence). Sent to ZDM."
 }
 POST /reports/bulk  {"reports": [{"text", "created_at"?, "lon"?, "lat"?, "source"?}]}
   -> {"processed": int, "report_ids": [int], "incident_ids": [int]}
@@ -309,8 +362,9 @@ POST /rides/stream  {"session_id", "vehicle_line", "mode", "samples": [{"t","ax"
   -> {"session_id", "buffered": int} | (final) same as /rides/upload
 
 GET  /stats
-  -> {"reports_total", "incidents_total", "found_before_report", "confirmed_total",
-      "awaiting_verification", "avg_verification_min" | null, "rides_total", "segments_measured"}
+  -> {"reports_total", "incidents_total", "found_before_report", "candidate_total", "likely_total",
+      "verified_total", "awaiting_verification", "contributors_total",
+      "avg_verification_min" | null, "rides_total", "segments_measured"}
 
 GET  /vehicles/live?kind=tram|bus -> {"vehicles": [{"id", "line", "lon", "lat", "ts", "kind"}]}
 ```
@@ -325,7 +379,105 @@ serves fixtures from `lib/mock.ts` (shapes identical to §6) so the UI works wit
 * `/` — city health map: `PathLayer` segments green→red by health, `ScatterplotLayer`
   incidents (size = score, colour: blue = report only, green = sensor only, orange = both),
   live ZTM vehicles, layer toggles, stats bar on top.
-* `/incidents` — queue sorted by score, department filter, badges (found before report, verified).
-* `/incidents/[id]` — merged reports + summary, photo, sensor signal chart (recharts, peak marked), evidence timeline.
+* `/incidents` — queue sorted by score, department + status (candidate/likely/verified/dismissed/closed) filters,
+  status chip with confidence %, badges (found before report, verified by, vehicle verifying, clean passes).
+* `/incidents/[id]` — confidence breakdown (sensor → citizen → engine → status), "Is this problem still there?"
+  YES/NO (`/incidents/{id}/responses`, anonymous token from `lib/contributor.ts`), merged reports + summary,
+  photo, sensor signal chart (recharts, peak marked), evidence timeline. `lib/confidence.ts` mirrors the engine.
 * `/report` — mobile citizen form (text, photo, location pin / geolocation) → status message.
 * `/ride` — PWA-style recorder: DeviceMotion + Geolocation → `/rides/stream` chunks.
+
+## 8. Day 0 contracts
+
+Frozen on Day 0 so A (mobile), B (web admin) and C (sensor simulation) never need to touch
+shared files. Changing anything here = announce in the group + separate SHARED commit.
+
+### 8.1 Auth and roles (`backend/auth/`, owner A)
+
+```
+client (Expo / web admin) ── Google Sign-In ──► Google ID token
+        POST /auth/google {id_token, contributor?} ──► verify (google-auth, aud ∈ GOOGLE_CLIENT_IDS)
+        ──► upsert users row (role from ADMIN_EMAILS) ──► link contributor (trust carry-over)
+        ◄── {token, user}        then every call:  Authorization: Bearer <token>
+```
+
+* **Token:** HS256 JWT signed with `AUTH_SECRET`, valid `AUTH_TOKEN_DAYS` (30). Claims `sub` (user id),
+  `email`, `name`, `role`, `iat`, `exp`, `iss="cityecho"`. Stateless: no DB lookup per request.
+* **Roles** (`backend.models.Role`): `citizen` | `admin`. `admin` iff the email is in `ADMIN_EMAILS`
+  (re-derived at every login; `require_admin` also re-checks the list, so removal is instant).
+* **Trust carry-over:** `contributor` is the anonymous device token the app already sends to
+  `/reports` and `/incidents/{id}/responses`. At login, if the user has no contributor yet, that
+  token's contributor (`trust.contributor_for`) is linked (`users.contributor_id`, unique) so earned trust stays.
+* **Dependencies** (`from backend.auth import ...`):
+  `current_user` / `CurrentUser` → `{id, email, name, role}` or **401**;
+  `optional_user` / `OptionalUser` → user or `None` (missing *or* invalid token);
+  `require_admin` / `AdminUser` → admin or **403** (401 without token).
+  `/admin/*` has `require_admin` on the whole router: every B endpoint there is admin-only.
+* Settings (`.env`): `GOOGLE_CLIENT_IDS` (comma list: web, iOS, Android), `AUTH_SECRET`,
+  `AUTH_TOKEN_DAYS`, `ADMIN_EMAILS` (comma list), `AUTH_DEV_LOGIN` (0/1), `DEVICE_KEYS` (comma list of `device_id:secret`).
+
+### 8.2 New endpoints
+
+```
+User = {"id": int, "email": str, "name": str | null, "role": "citizen" | "admin"}
+
+POST /auth/google  {"id_token": str, "contributor"?: str (8–200 chars)}
+  -> {"token": str, "user": User}      # 401 bad/unverified token, 503 GOOGLE_CLIENT_IDS empty
+POST /auth/dev     {"email": str, "contributor"?: str}
+  -> {"token": str, "user": User}      # only with AUTH_DEV_LOGIN=1, else 404. Local testing only.
+GET  /users/me     (Bearer) -> User    # fresh from the DB; 401 without token or deleted account
+GET  /mobile/ping  -> {"ok": true}                      # A's router; more mobile routes go here
+GET  /admin/ping   (Bearer, admin) -> {"ok": true, "user": User}   # B's router
+POST /devices/stream  (X-Device-Key) -> 501 until C implements it (8.5)
+POST /incidents/{id}/responses       # unchanged (§6), moved to backend/api/responses.py (owner A)
+```
+
+### 8.3 Database (`db/migrations/`)
+
+`scripts/init_db.py` applies `schema.sql`, `functions.sql`, then each `db/migrations/NNN_name.sql`
+**once**, in numeric order, recording it in `schema_migrations(filename, applied_at)`. `--reset` also
+drops migration tables. Numbering: **A = 100–199, B = 200–299, C = 300–399**; never edit a pushed
+migration, add a new one (see `db/migrations/README.md`). Day 0 migrations:
+
+| File | Adds |
+|---|---|
+| `100_users.sql` | `users(id, google_sub unique, email unique, name, role default 'citizen', contributor_id unique → contributors, created_at)` |
+| `200_work_status.sql` | `incidents.work_status text not null default 'todo'` check `todo`/`in_progress`/`done`, `work_status_changed_at`, `work_status_by → users` |
+| `300_devices.sql` | `devices(id text pk, key_hash, vehicle_line, mode road/tram, last_seen_at, created_at)`, `segments.health_updated_at` |
+
+* **`work_status`** (`backend.models.WorkStatus`): `todo` → `in_progress` → `done`. Written **only by B**
+  (web admin workflow, sets `work_status_changed_at` / `work_status_by`; on `done` B calls
+  `trust.settle(conn, id, real=True)`). Independent of the confidence `status`. A reads it: no
+  "is it still there?" question when `done`.
+* **`segments.health`, `health_rides`, `health_updated_at`**: written **only by C** (sensor pipeline /
+  `recompute_segment_health`). A and B only read them.
+
+### 8.4 Public (citizen) incident view, for A
+
+The mobile app never shows sensor data, evidence, timeline or facts (those are admin-only, §6 detail).
+A's `backend/api/mobile.py` returns at most:
+
+```
+PublicIncident = {
+  "id", "type", "lon", "lat", "address", "department",
+  "status",          # candidate | likely | verified | dismissed | closed (confidence label)
+  "confidence",      # 0–1
+  "work_status",     # todo | in_progress | done (city's work)
+  "report_count", "first_seen", "last_seen"
+}
+```
+No `signal`, `evidence`, `timeline`, `reports` (raw texts), `sensor_*`, `verify_*` or per-contributor data.
+Road health is shown only as a colour class derived from `segments.health`.
+
+### 8.5 `/devices/stream` (owner C; the simulator talks to it like a real device)
+
+```
+POST /devices/stream
+  X-Device-Key: <device_id>:<secret>      # pair from DEVICE_KEYS (settings.device_keys); 401 otherwise
+  {"vehicle_line": "17", "mode": "road" | "tram",
+   "samples": [{"t", "ax", "ay", "az", "lat", "lon", "speed_kmh", "lux"?}],   # same fields as /rides/stream
+   "final"?: bool}                        # default false; true = ride ends, process it
+  -> {"device_id", "buffered": int} | (final) same as /rides/upload
+```
+One open ride per device (buffered like `/rides/stream`); the final chunk runs
+`process_ride → ingest_evidence → check_ride_verifications`. `devices.key_hash` stores a hash, never the secret.

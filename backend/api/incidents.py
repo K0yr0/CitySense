@@ -1,4 +1,7 @@
-"""Incident queue, incident detail (merged reports, evidence, timeline, signal) and manual verification."""
+"""Incident queue, incident detail and manual verification requests.
+
+Citizen YES/NO answers (`POST /incidents/{id}/responses`) live in backend/api/responses.py.
+"""
 from __future__ import annotations
 
 import logging
@@ -18,7 +21,9 @@ select i.id, i.segment_id, i.type, i.status, i.score, i.department, i.address, i
        ST_X(i.geom) as lon, ST_Y(i.geom) as lat,
        i.report_count, i.sensor_count, i.sensor_rides, i.sensor_confirmed, i.found_before_report,
        i.max_severity, i.max_urgency, i.first_seen, i.last_seen,
-       i.verify_vehicle, i.verify_eta_min, i.verify_requested_at, i.confirmed_at, i.verify_checks
+       i.verify_vehicle, i.verify_eta_min, i.verify_requested_at, i.verified_at,
+       i.confidence, i.sensor_confidence, i.citizen_confidence, i.yes_count, i.no_count,
+       i.sensor_misses, i.last_miss_at
 from incidents i
 """
 
@@ -41,9 +46,13 @@ where ie.incident_id = %(id)s
 order by e.ts, e.id
 """
 
-NO_ANOMALY_PASS_SQL = """
-select max(rs.passed_at) as ts from ride_segments rs
-where rs.segment_id = %(segment_id)s and rs.passed_at >= %(since)s
+# Explicit YES/NO answers only: reports already appear as their own timeline events.
+INCIDENT_RESPONSES_SQL = """
+select cr.answer, cr.created_at, coalesce(c.trust, %(default_trust)s) as trust
+from citizen_responses cr
+left join contributors c on c.id = cr.contributor_id
+where cr.incident_id = %(id)s and cr.report_id is null
+order by cr.created_at
 """
 
 
@@ -112,21 +121,18 @@ def get_incident(incident_id: int, conn: DB) -> dict:
     incident = load_incident(conn, incident_id)
     if incident is None:
         raise HTTPException(404, f"incident {incident_id} not found")
+    from backend.fusion import trust
+
     reports = db.fetch_all(conn, INCIDENT_REPORTS_SQL, {"id": incident_id})
     evidence = db.fetch_all(conn, INCIDENT_EVIDENCE_SQL, {"id": incident_id})
-
-    no_anomaly_ts = None
-    if incident.get("status") == "no_anomaly" and incident.get("segment_id") and incident.get("verify_requested_at"):
-        row = db.fetch_one(conn, NO_ANOMALY_PASS_SQL,
-                           {"segment_id": incident["segment_id"], "since": incident["verify_requested_at"]})
-        no_anomaly_ts = (row or {}).get("ts")
+    responses = db.fetch_all(conn, INCIDENT_RESPONSES_SQL, {"id": incident_id, "default_trust": trust.DEFAULT_TRUST})
 
     out = ser.incident_summary(incident)
     out.update(
         summary=incident.get("summary") or _lazy_summary(conn, incident, reports),
         reports=[ser.report_json(r) for r in reports],
         evidence=[ser.evidence_json(e) for e in evidence],
-        timeline=ser.build_timeline(incident, reports, evidence, no_anomaly_ts=no_anomaly_ts),
+        timeline=ser.build_timeline(incident, reports, evidence, responses),
         signal=ser.strongest_signal(evidence),
     )
     return out

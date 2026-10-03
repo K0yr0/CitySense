@@ -14,7 +14,17 @@ SUMMARY_KEYS = (
     "report_count", "sensor_count", "sensor_rides", "sensor_confirmed", "found_before_report",
     "has_sensor", "has_report", "max_severity", "max_urgency",
     "first_seen", "last_seen", "verify_vehicle", "verify_eta_min",
+    "confidence", "sensor_confidence", "citizen_confidence", "yes_count", "no_count",
+    "sensor_misses", "awaiting_verification",
 )
+
+OPEN_STATUSES = ("candidate", "likely")
+
+
+def pct(confidence: Any) -> int:
+    """0–1 -> whole percent; confidence is never certain, so below 1 shows at most 99."""
+    x = min(1.0, max(0.0, float(confidence or 0)))
+    return round(100 * x) if x >= 1 else min(99, round(100 * x))
 
 
 # --- scalars -----------------------------------------------------------------
@@ -74,8 +84,15 @@ def vehicle_label(row: dict) -> str:
 
 # --- incidents ---------------------------------------------------------------
 
+def awaiting_verification(row: dict) -> bool:
+    """A vehicle was asked to check this report-only incident and has not passed it yet."""
+    requested, missed = to_dt(row.get("verify_requested_at")), to_dt(row.get("last_miss_at"))
+    return (requested is not None and row.get("status") in OPEN_STATUSES
+            and not _int(row.get("sensor_count")) and (missed is None or missed < requested))
+
+
 def incident_summary(row: dict) -> dict:
-    """IncidentSummary (§6). `has_sensor` / `has_report` are derived from the counts."""
+    """IncidentSummary (§6). `has_sensor` / `has_report` / `awaiting_verification` are derived."""
     report_count = _int(row.get("report_count"))
     sensor_count = _int(row.get("sensor_count"))
     return {
@@ -100,6 +117,13 @@ def incident_summary(row: dict) -> dict:
         "last_seen": iso(row.get("last_seen")),
         "verify_vehicle": row.get("verify_vehicle"),
         "verify_eta_min": _int(row.get("verify_eta_min"), None),
+        "confidence": num(row.get("confidence")) or 0.0,
+        "sensor_confidence": num(row.get("sensor_confidence")),
+        "citizen_confidence": num(row.get("citizen_confidence")),
+        "yes_count": _int(row.get("yes_count")),
+        "no_count": _int(row.get("no_count")),
+        "sensor_misses": _int(row.get("sensor_misses")),
+        "awaiting_verification": awaiting_verification(row),
     }
 
 
@@ -145,10 +169,12 @@ def strongest_signal(evidence: list[dict]) -> dict | None:
 
 
 def build_timeline(incident: dict, reports: list[dict], evidence: list[dict],
-                   *, no_anomaly_ts: Any = None) -> list[dict]:
-    """Chronological [{"ts", "kind", "label"}] from reports, sensor evidence and verification fields.
+                   responses: list[dict] | None = None) -> list[dict]:
+    """Chronological [{"ts", "kind", "label"}] from reports, sensor evidence, citizen answers
+    and the confidence lifecycle.
 
-    `evidence` rows may carry `vehicle_line` / `ride_mode` (joined from rides) for nicer labels.
+    `evidence` rows may carry `vehicle_line` / `ride_mode` (joined from rides) for nicer labels;
+    `responses` are explicit YES/NO answers ({"answer", "trust", "created_at"}), not reports.
     """
     events: list[tuple[datetime, str, str]] = []
 
@@ -177,11 +203,19 @@ def build_timeline(incident: dict, reports: list[dict], evidence: list[dict],
         who = capitalize(vehicle) if vehicle else "Next vehicle"
         add(incident["verify_requested_at"], "verification_requested",
             f"Verification requested: {who} will pass" + (f" in ~{eta} min" if eta is not None else ""))
-    if incident.get("confirmed_at"):
-        add(incident["confirmed_at"], "confirmed", f"Verified by {vehicle} sensors" if vehicle else "Confirmed by vehicle sensors")
-    if incident.get("status") == "no_anomaly":
-        add(no_anomaly_ts or incident.get("verify_requested_at") or incident.get("last_seen"), "no_anomaly",
-            f"{capitalize(vehicle) if vehicle else 'A vehicle'} passed without detecting an anomaly")
+    for r in responses or []:
+        answer = "YES, still there" if r.get("answer") else "NO, not there"
+        add(r.get("created_at"), "response", f"Citizen answered {answer} (trust {float(r.get('trust') or 0):.2f})")
+    misses = _int(incident.get("sensor_misses"))
+    if misses and incident.get("last_miss_at"):
+        add(incident["last_miss_at"], "sensor_miss",
+            "A passing vehicle found no anomaly" + (f" ({misses} clean passes so far)" if misses > 1 else ""))
+    pct_label = f"confidence {pct(incident.get('confidence'))}%"
+    if incident.get("verified_at"):
+        add(incident["verified_at"], "verified", f"Verified ({pct_label}); contributor trust updated")
+    if incident.get("status") == "dismissed":
+        add(incident.get("last_miss_at") or incident.get("last_seen"), "dismissed",
+            f"Dismissed: no problem found ({pct_label}); contributor trust updated")
 
     events.sort(key=lambda ev: ev[0])  # stable: same-ts events keep insertion order
     return [{"ts": iso(ts), "kind": kind, "label": label} for ts, kind, label in events]
@@ -201,22 +235,25 @@ def status_message(*, incident: dict | None, others: int, department: str | None
         status, vehicle, eta = incident.get("status"), incident.get("verify_vehicle"), incident.get("verify_eta_min")
         if incident.get("found_before_report"):
             parts.append("Found by sensors before any report.")
-        elif status == "confirmed" and vehicle:
-            parts.append(f"Verified by {vehicle} sensors.")
-        elif status == "confirmed" or incident.get("sensor_confirmed"):
-            parts.append("Confirmed by vehicle sensors.")
-        elif status == "awaiting_verification" and vehicle:
-            parts.append(f"{capitalize(vehicle)} will verify " + (f"in ~{eta} min." if eta is not None else "soon."))
-        elif status == "no_anomaly":
-            parts.append("A passing vehicle found no anomaly; an inspector will take a look.")
+        if status == "verified":
+            parts.append(f"Verified by {vehicle} sensors." if vehicle and incident.get("sensor_confirmed")
+                         else "Verified.")
         elif status == "closed":
             parts.append("This issue has been resolved.")
+        elif status == "dismissed":
+            parts.append("Checks found no problem here, so it was dismissed.")
+        elif awaiting_verification(incident) and vehicle:
+            parts.append(f"{capitalize(vehicle)} will verify " + (f"in ~{eta} min." if eta is not None else "soon."))
+        elif _int(incident.get("sensor_misses")):
+            parts.append("A passing vehicle found no anomaly yet; more checks will follow.")
+        if status in OPEN_STATUSES:
+            parts.append(f"Status: {status} ({pct(incident.get('confidence'))}% confidence).")
     if department:
         parts.append(f"Sent to {department}.")
     return " ".join(parts)
 
 
-def report_status(report: dict, incident: dict | None) -> dict:
+def report_status(report: dict, incident: dict | None, contributor_trust: float | None = None) -> dict:
     """ReportStatus (§6). `report` needs id, category, department; `incident` is a raw incident row or None."""
     others = max(_int(incident.get("report_count")) - 1, 0) if incident else 0
     department = (incident or {}).get("department") or report.get("department")
@@ -230,6 +267,8 @@ def report_status(report: dict, incident: dict | None) -> dict:
         "sensor_confirmed": bool(incident and incident.get("sensor_confirmed")),
         "verify_vehicle": incident.get("verify_vehicle") if incident else None,
         "verify_eta_min": _int(incident.get("verify_eta_min"), None) if incident else None,
+        "confidence": num(incident.get("confidence")) if incident else None,
+        "contributor_trust": num(contributor_trust),
         "message": status_message(incident=incident, others=others, department=department),
     }
 

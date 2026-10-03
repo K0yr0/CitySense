@@ -4,8 +4,8 @@
     python scripts/replay_ride.py --incident 12 --line 17 --wait 5   # "waiting for tram 17..." -> verified
 
 With --incident the script first shows the incident (requesting a verification
-vehicle if none is assigned yet), then uploads the ride and prints whether the
-incident was confirmed by the ride's sensors.
+vehicle if none is assigned yet), then uploads the ride and prints how the ride
+moved the incident's confidence (candidate -> likely -> verified, or down on a clean pass).
 """
 from __future__ import annotations
 
@@ -33,7 +33,8 @@ def _get(client: httpx.Client, path: str) -> dict:
 
 def describe(inc: dict) -> str:
     where = inc.get("address") or f"{inc.get('lat'):.5f}, {inc.get('lon'):.5f}"
-    return (f"incident #{inc['id']} [{inc['type']}] at {where}: status={inc['status']}, "
+    return (f"incident #{inc['id']} [{inc['type']}] at {where}: status={inc['status']} "
+            f"(confidence {100 * float(inc.get('confidence') or 0):.0f}%), "
             f"reports={inc['report_count']}, sensor rides={inc['sensor_rides']}, score={inc['score']:.2f}")
 
 
@@ -89,16 +90,19 @@ def main() -> None:
               f"{res['dark_gaps']} dark gaps, {res['segments_covered']} segments, "
               f"{len(res['evidence_ids'])} evidence -> incidents {res['incident_ids']}")
         if res["verified_incident_ids"]:
-            print(f"verification checks updated incidents {res['verified_incident_ids']}")
+            print(f"this ride verified incidents {res['verified_incident_ids']}")
 
         if args.incident is not None:
             inc = _get(client, f"/incidents/{args.incident}")
             print(describe(inc))
             status = inc["status"]
-            if status == "confirmed" or (inc.get("sensor_confirmed") and args.incident in res["incident_ids"]):
+            if status == "verified":
                 print(f"VERIFIED: {inc.get('verify_vehicle') or f'{args.mode} {args.line}'} sensors confirmed incident #{args.incident}.")
-            elif status == "no_anomaly":
-                print(f"NO ANOMALY: the ride passed incident #{args.incident} without detecting anything.")
+            elif args.incident in res["incident_ids"]:
+                print(f"DETECTED: the ride saw it; status={status}, more evidence needed to verify.")
+            elif inc.get("sensor_misses"):
+                print(f"NO ANOMALY: the ride passed incident #{args.incident} without detecting anything "
+                      f"({inc['sensor_misses']} clean passes); confidence went down.")
             else:
                 print(f"not verified yet (status={status}); did the ride pass the incident's segment?")
 

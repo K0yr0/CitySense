@@ -1,0 +1,3 @@
+#!/bin/sh
+# CityEcho: block commits that touch someone else's files (see OWNERS, scripts/check_owners.py).
+exec python3 "$(git rev-parse --show-toplevel)/scripts/check_owners.py"

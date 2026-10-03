@@ -1,0 +1,99 @@
+# CityEcho dosya sahipliği. scripts/check_owners.py (git pre-commit hook'u) bu dosyayı uygular.
+#
+# Biçim: <desen>  <sahip>     sahip = A | B | C | SHARED
+#   A = 📱 Mobil (kullanıcı)   B = 🖥️ Web admin (belediye)   C = 📡 Sensör ve veri
+#   SHARED = dondurulmuş ortak dosya: yalnızca CITYECHO_SHARED=1 ile, tek başına bir commit'te değişir
+# Desenler: ** = herhangi bir alt klasör, * = tek klasör içinde herhangi bir ad.
+# İLK eşleşen satır kazanır, bu yüzden özel desenler genel olanlardan önce gelir.
+# Hiçbir satıra uymayan yeni dosya engellenir: önce buraya (SHARED commit'iyle) eklenmesi gerekir.
+
+# --- Ortak, dondurulmuş (her değişiklik grupta duyurulur, tek kişi yapar, hemen push edilir) ---
+OWNERS                              SHARED
+CLAUDE.md                           SHARED
+README.md                           SHARED
+BUILD_REPORT.md                     SHARED
+docs/**                             SHARED
+.githooks/**                        SHARED
+.github/**                          SHARED
+scripts/check_owners.py             SHARED
+scripts/init_db.py                  SHARED
+.gitignore                          SHARED
+.env.example                        SHARED
+pytest.ini                          SHARED
+db/schema.sql                       SHARED
+backend/main.py                     SHARED
+backend/config.py                   SHARED
+backend/models.py                   SHARED
+backend/db.py                       SHARED
+backend/api/deps.py                 SHARED
+backend/requirements.txt            SHARED
+backend/requirements-ml.txt         SHARED
+backend/__init__.py                 SHARED
+backend/auth/__init__.py            A
+backend/*/__init__.py               SHARED
+backend/tests/test_config.py        SHARED
+backend/tests/test_db.py            SHARED
+**/.gitkeep                         SHARED
+docker-compose.yml                  SHARED
+docker/**                           SHARED
+.dockerignore                       SHARED
+db/migrations/README.md             SHARED
+backend/tests/test_init_db.py       SHARED
+backend/tests/test_routes_registered.py  SHARED
+pitch/**                            SHARED
+
+# --- A: 📱 Mobil + kullanıcı API'si ---
+mobile/**                           A
+backend/auth/**                     A
+backend/api/users.py                A
+backend/api/responses.py            A
+backend/api/reports.py              A
+backend/api/mobile.py               A
+backend/fusion/trust.py             A
+backend/triage/**                   A
+db/migrations/1*                    A
+scripts/gen_complaints.py           A
+scripts/eval_triage.py              A
+data/complaints_synth.json          A
+backend/tests/test_auth*.py         A
+backend/tests/test_mobile*.py       A
+backend/tests/test_triage*.py       A
+backend/tests/test_confidence_trust.py  A
+
+# --- B: 🖥️ Web admin (olaylar, iş akışı, gösterim) ---
+web-admin/**                        B
+frontend/**                         B
+backend/api/admin.py                B
+backend/api/incidents.py            B
+backend/api/serializers.py          B
+backend/api/stats.py                B
+backend/api/vehicles.py             B
+backend/api/segments.py             B
+backend/fusion/incidents.py         B
+backend/fusion/verify.py            B
+backend/fusion/confidence.py        B
+backend/fusion/score.py             B
+backend/fusion/routing.py           B
+db/migrations/2*                    B
+scripts/seed_demo.py                B
+data/demo/ztm_snapshot.json         B
+backend/tests/test_admin*.py        B
+backend/tests/test_fusion*.py       B
+backend/tests/test_api*.py          B
+
+# --- C: 📡 Sensör ve veri ---
+firmware/**                         C
+backend/sensor/**                   C
+backend/api/devices.py              C
+backend/api/rides.py                C
+db/migrations/3*                    C
+db/functions.sql                    C
+scripts/simulate_buses.py           C
+scripts/synth_ride.py               C
+scripts/replay_ride.py              C
+scripts/load_osm.py                 C
+data/demo/**                        C
+data/osm/**                         C
+backend/tests/test_devices*.py      C
+backend/tests/test_sensor*.py       C
+backend/tests/test_load_osm*.py     C

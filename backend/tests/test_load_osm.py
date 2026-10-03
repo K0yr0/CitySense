@@ -1,8 +1,10 @@
-"""Tests for the pure parts of scripts/load_osm.py (shapely only, no osmnx / network / DB)."""
+"""Tests for scripts/load_osm.py: pure parts and the CLI with a fake connection (no osmnx / network / DB)."""
 from __future__ import annotations
 
 import importlib.util
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -136,7 +138,9 @@ def test_bbox_modes_and_slug_helpers():
         lo.parse_modes("tram,metro")
     assert lo.area_slug("Warszawa, Poland", None) == "warszawa_poland"
     assert lo.area_slug("Łódź", None) == "lodz"
-    assert lo.area_slug(None, lo.DEMO_BBOX) == "bbox_20.9750_52.2080_21.0300_52.2480"
+    assert lo.area_slug(None, lo.DEMO_BBOX) == "demo"
+    assert lo.cache_path(None, lo.DEMO_BBOX).name == "segments_demo.geojson"
+    assert lo.area_slug(None, (20.975, 52.22, 21.02, 52.24)) == "bbox_20.9750_52.2200_21.0200_52.2400"
     grown = lo.expand_bbox(lo.DEMO_BBOX, 150)
     assert grown[1] == pytest.approx(lo.DEMO_BBOX[1] - 150 / 110540)
     assert grown[2] - lo.DEMO_BBOX[2] == pytest.approx(150 / (111320 * 0.6122), rel=1e-2)
@@ -153,7 +157,7 @@ def test_feature_collection_roundtrip():
              "osm_way_id": 99, "name": "Marszałkowska", "length_m": 25.1, "vulnerability": 0.55}]
     fc = json.loads(json.dumps(lo.to_feature_collection(segs, {"modes": ["tram"], "step_m": 25.0})))
     assert fc["type"] == "FeatureCollection" and fc["cityecho"]["step_m"] == 25.0
-    assert fc["features"][0]["geometry"]["coordinates"][0] == [21.0123457, 52.23]
+    assert fc["features"][0]["geometry"]["coordinates"][0] == [21.012346, 52.23]  # 6 decimals (~0.1 m)
     back = lo.from_feature_collection(fc)[0]
     assert {k: back[k] for k in lo.SEGMENT_PROPS} == {k: segs[0][k] for k in lo.SEGMENT_PROPS}
     assert back["geometry"].equals_exact(segs[0]["geometry"], 1e-6)
@@ -197,6 +201,14 @@ class _FakeCursor:
 class _FakeConn:
     def __init__(self, existing=0):
         self.cur = _FakeCursor(existing)
+        self.closed = False
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.closed = True
+        return False
 
     def cursor(self):
         return self.cur
@@ -234,3 +246,137 @@ def test_dry_run_uses_cache_without_osmnx(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(lo, "REPO_ROOT", tmp_path)
     assert lo.main(["--bbox", "demo", "--modes", "tram", "--dry-run"]) == 0
     assert "tram: 1 segments" in capsys.readouterr().out
+
+
+# --------------------------------------------------------------------------- --from-geojson / --skip-if-loaded
+
+SEGS2 = SEGS + [{"geometry": LineString([(21.01, 52.23), (21.0103, 52.2301)]), "mode": "road",
+                 "osm_way_id": 8, "name": "Marszałkowska", "length_m": 22.0, "vulnerability": 0.0}]
+
+
+def _write_geojson(path, segs=SEGS2, meta=None):
+    path.write_text(json.dumps(lo.to_feature_collection(segs, meta or {"modes": ["road", "tram"], "pois": "ok"})))
+    return path
+
+
+def _no_network(monkeypatch):
+    monkeypatch.setattr(lo, "build_network", lambda *a, **k: pytest.fail("must not download"))
+    monkeypatch.setattr(lo, "_require_geo", lambda: pytest.fail("must not import osmnx / geopandas"))
+
+
+def test_from_geojson_loads_all_rows(tmp_path, monkeypatch, capsys):
+    _no_network(monkeypatch)
+    conn = _FakeConn(existing=0)
+    monkeypatch.setattr(lo, "_connect", lambda: conn)
+    path = _write_geojson(tmp_path / "segs.geojson")
+    assert lo.main(["--from-geojson", str(path)]) == 0
+    assert [r[1:] for r in conn.cur.rows] == [("tram", 7, None, 20.5, 0.2), ("road", 8, "Marszałkowska", 22.0, 0.0)]
+    assert conn.cur.rows[0][0].upper().startswith("0102000020E6100000")
+    assert conn.closed
+    assert "Loaded 2 segments" in capsys.readouterr().out
+
+
+def test_from_geojson_mode_filter_and_dry_run(tmp_path, monkeypatch):
+    _no_network(monkeypatch)
+    conn = _FakeConn(existing=0)
+    monkeypatch.setattr(lo, "_connect", lambda: conn)
+    path = _write_geojson(tmp_path / "segs.geojson")
+    assert lo.main(["--from-geojson", str(path), "--modes", "road"]) == 0
+    assert [r[1] for r in conn.cur.rows] == ["road"]
+
+    monkeypatch.setattr(lo, "_connect", lambda: pytest.fail("dry run must not touch the database"))
+    assert lo.main(["--from-geojson", str(path), "--dry-run", "--skip-if-loaded"]) == 0
+
+
+def test_skip_if_loaded_exits_zero_without_changes(tmp_path, monkeypatch, capsys):
+    _no_network(monkeypatch)
+    conn = _FakeConn(existing=12)
+    monkeypatch.setattr(lo, "_connect", lambda: conn)
+    path = _write_geojson(tmp_path / "segs.geojson")
+    assert lo.main(["--from-geojson", str(path), "--skip-if-loaded"]) == 0
+    assert conn.cur.sql == ["select count(*) as n from segments"]  # only the check, no copy / truncate
+    assert conn.cur.rows == []
+    assert "nothing to do" in capsys.readouterr().out
+
+
+def test_skip_if_loaded_loads_into_empty_table(tmp_path, monkeypatch):
+    _no_network(monkeypatch)
+    conn = _FakeConn(existing=0)
+    monkeypatch.setattr(lo, "_connect", lambda: conn)
+    path = _write_geojson(tmp_path / "segs.geojson")
+    assert lo.main(["--from-geojson", str(path), "--skip-if-loaded"]) == 0
+    assert conn.cur.sql[0] == "select count(*) as n from segments"
+    assert lo.COPY_SQL in conn.cur.sql and len(conn.cur.rows) == 2
+
+
+def test_from_geojson_without_skip_refuses_duplicates(tmp_path, monkeypatch):
+    _no_network(monkeypatch)
+    monkeypatch.setattr(lo, "_connect", lambda: _FakeConn(existing=3))
+    path = _write_geojson(tmp_path / "segs.geojson")
+    with pytest.raises(SystemExit, match="--truncate"):
+        lo.main(["--from-geojson", str(path)])
+
+
+def test_from_geojson_bad_input(tmp_path, monkeypatch, capsys):
+    _no_network(monkeypatch)
+    monkeypatch.setattr(lo, "_connect", lambda: pytest.fail("no database for bad input"))
+    assert lo.main(["--from-geojson", str(tmp_path / "missing.geojson")]) == 2
+    bad = tmp_path / "bad.geojson"
+    bad.write_text(json.dumps({"type": "FeatureCollection", "features": [
+        {"type": "Feature", "geometry": {"type": "LineString", "coordinates": [[21, 52], [21.001, 52]]},
+         "properties": {"mode": "metro"}}]}))
+    assert lo.main(["--from-geojson", str(bad)]) == 2
+    assert "unknown mode" in capsys.readouterr().err
+
+
+def test_from_geojson_needs_no_osmnx_or_geopandas(tmp_path):
+    """The Docker image has no osmnx / geopandas: importing them must not be needed."""
+    path = _write_geojson(tmp_path / "segs.geojson")
+    code = (
+        "import sys, runpy\n"
+        "sys.modules['osmnx'] = None; sys.modules['geopandas'] = None  # any import now fails\n"
+        f"sys.argv = ['load_osm.py', '--from-geojson', {str(path)!r}, '--dry-run']\n"
+        f"runpy.run_path({str(REPO_ROOT / 'scripts' / 'load_osm.py')!r}, run_name='__main__')\n"
+    )
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=60)
+    assert out.returncode == 0, out.stderr
+    assert "Read" in out.stdout and "2 segments" in out.stdout
+
+
+def test_committed_demo_geojson_is_valid():
+    path = REPO_ROOT / "data" / "osm" / "segments_demo.geojson"
+    if not path.exists():
+        pytest.skip("data/osm/segments_demo.geojson not generated yet")
+    assert path.stat().st_size < 25e6
+    segs, meta = lo.read_geojson(path)
+    assert {s["mode"] for s in segs} == {"tram", "road"}
+    assert meta["step_m"] == 25.0 and meta["bbox"] == list(lo.DEMO_BBOX)
+    assert all(0.0 <= s["vulnerability"] <= 1.0 for s in segs)
+    assert all(s["geometry"].geom_type == "LineString" for s in segs)
+
+
+def test_call_with_deadline_and_mirror_fallback(monkeypatch):
+    import threading
+    import types
+
+    assert lo.call_with_deadline(lambda: 42, 1.0) == 42
+    release = threading.Event()
+    with pytest.raises(TimeoutError):
+        lo.call_with_deadline(lambda: release.wait(5), 0.1)  # a hung call is abandoned, not awaited
+    release.set()
+    with pytest.raises(KeyError):
+        lo.call_with_deadline(lambda: {}["x"], 1.0)
+
+    ox = types.SimpleNamespace(settings=types.SimpleNamespace(overpass_url=None))
+    tried = []
+
+    def fetch():
+        tried.append(ox.settings.overpass_url)
+        if ox.settings.overpass_url != "m3":
+            raise ConnectionError("down")
+        return "data"
+
+    assert lo.with_mirrors(ox, "pois", fetch, 10, mirrors=("m1", "m2", "m3")) == "data"
+    assert tried == ["m1", "m2", "m3"]
+    with pytest.raises(RuntimeError, match="every Overpass mirror failed"):
+        lo.with_mirrors(ox, "pois", lambda: (_ for _ in ()).throw(ConnectionError("x")), 10, mirrors=("m1",))

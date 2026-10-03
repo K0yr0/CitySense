@@ -1,7 +1,8 @@
 """Citizen reports: submit (with photo), status lookup and bulk import (19115 / synthetic).
 
 Orchestration (ARCHITECTURE.md §5.7):
-process_report -> fusion.ingest_evidence -> request_verification when the incident is report-only and open.
+process_report -> fusion.ingest_evidence (the report becomes its author's YES answer)
+-> request_verification when the incident is report-only and still unresolved.
 """
 from __future__ import annotations
 
@@ -59,8 +60,9 @@ def _ingest(conn, evidence_id: int | None) -> list[int]:
 
 
 def _maybe_request_verification(conn, incident: dict | None) -> dict | None:
-    """Report-only, open incident -> ask the next vehicle to verify. Failures only log."""
-    if not incident or int(incident.get("sensor_count") or 0) > 0 or incident.get("status") != "open":
+    """Report-only, unresolved incident with no pending request -> ask the next vehicle. Failures only log."""
+    if (not incident or int(incident.get("sensor_count") or 0) > 0
+            or incident.get("status") not in ser.OPEN_STATUSES or incident.get("verify_requested_at")):
         return incident
     try:
         from backend.fusion import verify
@@ -80,8 +82,10 @@ def create_report(
     lon: float | None = Form(None),
     lat: float | None = Form(None),
     photo: UploadFile | None = File(None),
+    contributor: str | None = Form(None, max_length=200, description="random token the browser keeps"),
 ) -> dict:
     """Submit one complaint (multipart). Returns ReportStatus."""
+    from backend.fusion import trust
     from backend.triage import pipeline as triage_pipeline
 
     text = text.strip()
@@ -95,7 +99,9 @@ def create_report(
     if photo_bytes and len(photo_bytes) > MAX_PHOTO_BYTES:
         raise HTTPException(413, "photo too large (max 15 MB)")
 
-    result = triage_pipeline.process_report(conn, text, pin=pin, photo_bytes=photo_bytes or None, source="web")
+    person = trust.contributor_for(conn, contributor)
+    result = triage_pipeline.process_report(conn, text, pin=pin, photo_bytes=photo_bytes or None, source="web",
+                                            contributor_id=int(person["id"]) if person else None)
     incident_ids = _ingest(conn, result.get("evidence_id"))
     incident = incidents_api.load_incident(conn, incident_ids[0]) if incident_ids else None
     incident = _maybe_request_verification(conn, incident)
@@ -103,7 +109,7 @@ def create_report(
     structured = result.get("structured") or {}
     report = {"id": result["report_id"], "category": structured.get("category"),
               "department": structured.get("department")}
-    return ser.report_status(report, incident)
+    return ser.report_status(report, incident, contributor_trust=person.get("trust") if person else None)
 
 
 @router.get("/{report_id}/status")

@@ -1,0 +1,127 @@
+# CityEcho local stack:  docker compose up --build
+#   web  http://localhost:3000      api  http://localhost:8000/docs      db  localhost:5433
+# One-shot jobs (profiles):
+#   docker compose --profile seed run --rm seed     # fill the demo database through the API
+#   docker compose --profile sim up simulator       # virtual bus fleet (person C, not written yet)
+# Reset everything (database included):  docker compose down -v
+# More: docker/README.md
+
+name: cityecho
+
+# Optional repo-root .env (API keys etc.). Compose >= 2.24 understands `required: false`,
+# so the stack also starts without a .env. Values are passed at runtime, never baked
+# into an image. `environment:` below wins over .env (e.g. DATABASE_URL always points at db).
+x-env-file: &env-file
+  env_file:
+    - path: .env
+      required: false
+
+x-api-common: &api-common
+  build:
+    context: .
+    dockerfile: docker/api.Dockerfile
+  image: cityecho-api:dev
+  <<: *env-file
+  volumes:
+    # Live source for --reload (and for seed/simulator to see new scripts without a rebuild).
+    - ./backend:/app/backend
+    - ./db:/app/db
+    - ./scripts:/app/scripts
+    - ./data:/app/data
+    # Caches (osmnx downloads, uploaded photos, geocodes) live in a named volume instead.
+    - api-cache:/app/data/cache
+
+services:
+  db:
+    # The official postgis/postgis images are published for linux/amd64 only (checked on
+    # Docker Hub: every 16/17/18 tag lists just amd64), so Apple Silicon Macs would run
+    # them under slow emulation. imresamu/postgis is built from the same docker-postgis
+    # Dockerfiles by one of its maintainers (Imre Samu) and published for amd64 + arm64.
+    image: imresamu/postgis:17-3.6-alpine
+    environment:
+      # Local-only development credentials, not a secret.
+      POSTGRES_USER: cityecho
+      POSTGRES_PASSWORD: cityecho
+      POSTGRES_DB: cityecho
+    ports:
+      - "5433:5432"   # host 5433, because a local Postgres often already uses 5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # -h 127.0.0.1: during first-time init Postgres listens on the unix socket only, so a
+      # TCP check stays red until the real server is up.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U cityecho -d cityecho"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+    restart: unless-stopped
+
+  api:
+    <<: *api-common
+    environment:
+      DATABASE_URL: postgresql://cityecho:cityecho@db:5432/cityecho
+    # Entrypoint (docker/api-entrypoint.sh): wait for db -> init_db.py -> load_osm.py
+    # --from-geojson data/osm/segments_demo.geojson --skip-if-loaded -> this command.
+    command: ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000",
+              "--reload", "--reload-dir", "backend"]
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./web-admin
+      dockerfile: ../docker/web.Dockerfile
+      args:
+        # Read by the user's BROWSER, so it must be a host address, not http://api:8000.
+        # Override in .env (e.g. NEXT_PUBLIC_API_URL=/api), then `docker compose up --build web`.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        NEXT_PUBLIC_USE_MOCK: ${NEXT_PUBLIC_USE_MOCK:-0}
+        # Server-side /api/* rewrite inside the compose network.
+        BACKEND_URL: http://api:8000
+    image: cityecho-web:dev
+    environment:
+      BACKEND_URL: http://api:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  seed:
+    <<: *api-common
+    profiles: ["seed"]
+    entrypoint: ["python"]
+    command: ["scripts/seed_demo.py", "--api", "http://api:8000"]
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: "no"
+
+  simulator:
+    # PLACEHOLDER for person C (task S2): scripts/simulate_buses.py does not exist yet.
+    # It will stream simulated bus/tram sensor data to the API's /devices/stream.
+    # Until the script lands, `docker compose --profile sim up simulator` exits with
+    # "No such file or directory".
+    <<: *api-common
+    profiles: ["sim"]
+    entrypoint: ["python"]
+    command: ["scripts/simulate_buses.py", "--api", "http://api:8000"]
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: "no"
+
+volumes:
+  pgdata:
+  api-cache:

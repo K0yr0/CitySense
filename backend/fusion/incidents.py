@@ -1,15 +1,20 @@
-"""Evidence -> incidents (spec §C1, §C4): match, link, aggregate, score, route.
+"""Evidence -> incidents (spec §C1, §C4): cluster, link, assess confidence, score, route.
 
 Each new evidence row (sensor peak or located citizen report) joins an existing
-incident or opens a new one, and the incident is then recomputed from all of its
-linked evidence. Pure helpers (`decide_status`, `found_before_report`,
-`pick_address`) hold the decision rules so they can be tested without PostGIS.
+incident (same type, 40 m, 7 days) or opens a new one. A report also counts as its
+author's YES answer. The incident is then recomputed from everything linked to it:
+the confidence engine (`confidence.py`) turns sensor rides, clean passes and
+trust-weighted citizen answers into a confidence and a status (candidate / likely /
+verified / dismissed); reaching verified or dismissed settles contributor trust
+(`trust.py`). Pure helpers (`found_before_report`, `pick_address`) hold the
+remaining rules so they can be tested without PostGIS.
 """
 from __future__ import annotations
 
 from datetime import datetime
 
 from backend.db import fetch_one
+from backend.fusion import confidence, trust
 from backend.fusion.routing import department_for
 from backend.fusion.score import priority_score
 from backend.models import IncidentStatus, Source
@@ -35,7 +40,7 @@ select ie.incident_id
 from evidence e
 join incident_evidence ie on ie.evidence_id = e.id
 join incidents i on i.id = ie.incident_id
-where e.report_id = %(report_id)s and i.status <> 'closed'
+where e.report_id = %(report_id)s and i.status not in ('closed', 'dismissed')
 order by i.last_seen desc
 limit 1
 """
@@ -44,7 +49,7 @@ SQL_NEAREST_INCIDENT = """
 select i.id
 from incidents i, evidence ev
 where ev.id = %(evidence_id)s
-  and i.status <> 'closed'
+  and i.status not in ('closed', 'dismissed')
   and i.type = ev.type
   and ST_DWithin(i.geom::geography, ev.geom::geography, %(radius_m)s::float8)
   and i.last_seen > ev.ts - make_interval(days => %(window_days)s::int)
@@ -54,7 +59,7 @@ limit 1
 
 SQL_CREATE_INCIDENT = """
 insert into incidents (segment_id, type, geom, first_seen, last_seen, department, status)
-select segment_id, type, geom, ts, ts, %(department)s, 'open'
+select segment_id, type, geom, ts, ts, %(department)s, 'candidate'
 from evidence
 where id = %(evidence_id)s
 returning id
@@ -74,7 +79,7 @@ where id = %(incident_id)s
 """
 
 SQL_INCIDENT_CONTEXT = """
-select i.id, i.type, i.status, i.address, s.name as segment_name,
+select i.id, i.type, i.status, i.address, i.sensor_misses, s.name as segment_name,
        coalesce(s.vulnerability, 0) as vulnerability
 from incidents i
 left join segments s on s.id = i.segment_id
@@ -108,6 +113,9 @@ select
     min(ts) filter (where source = 'report')                     as first_report_ts,
     (select first_ts from ride_first order by first_ts
       offset %(nth_offset)s::int limit 1)                        as nth_ride_ts,
+    (select array_agg(sev) from (
+        select max(severity) as sev from ev where source = 'sensor' group by ride_id
+     ) per_ride)                                                 as ride_severities,
     (select details->>'location_text' from ev
       where source = 'report' and coalesce(details->>'location_text', '') <> ''
       order by ts limit 1)                                       as location_text
@@ -131,28 +139,18 @@ update incidents set
     address             = %(address)s,
     score               = %(score)s,
     status              = %(status)s,
-    confirmed_at        = case when %(status)s = 'confirmed'
-                               then coalesce(confirmed_at, now()) else confirmed_at end
+    confidence          = %(confidence)s,
+    sensor_confidence   = %(sensor_confidence)s,
+    citizen_confidence  = %(citizen_confidence)s,
+    yes_count           = %(yes_count)s,
+    no_count            = %(no_count)s,
+    verified_at         = case when %(status)s = 'verified'
+                               then coalesce(verified_at, now()) else verified_at end
 where id = %(id)s
 returning *, ST_X(geom) as lon, ST_Y(geom) as lat
 """
 
 # -------------------------------------------------------------------------- pure rules
-
-
-def decide_status(current: str, report_count: int, sensor_count: int) -> str:
-    """Status after a refresh: citizens + sensors agreeing -> confirmed; closed stays closed.
-
-    Sensor-only incidents stay `open` (proactive tickets); report-only ones keep their
-    current status (`open` until the verification loop moves them).
-    """
-    if current == IncidentStatus.CLOSED:
-        return IncidentStatus.CLOSED.value
-    if report_count > 0 and sensor_count > 0 and current in (
-        IncidentStatus.OPEN, IncidentStatus.AWAITING_VERIFICATION, IncidentStatus.NO_ANOMALY
-    ):
-        return IncidentStatus.CONFIRMED.value
-    return str(current)
 
 
 def found_before_report(sensor_rides: int, nth_ride_ts: datetime | None,
@@ -213,6 +211,8 @@ def ingest_evidence(conn, evidence_ids: list[int]) -> list[int]:
             conn.execute(SQL_LINK, params)
             conn.execute(SQL_TOUCH, params)
         incident_id = int(incident_id)
+        if ev["source"] == Source.REPORT and ev.get("report_id"):
+            trust.record_report_yes(conn, incident_id, int(ev["report_id"]))
         if incident_id not in touched:
             touched.append(incident_id)
     for incident_id in touched:
@@ -221,14 +221,16 @@ def ingest_evidence(conn, evidence_ids: list[int]) -> list[int]:
 
 
 def refresh_incident(conn, incident_id: int) -> dict:
-    """Recompute counts, flags, status, department, address and score from linked evidence.
+    """Recompute counts, confidence, status, department, address and score from linked evidence.
 
+    Reaching `verified` / `dismissed` settles the trust of everyone who answered.
     Returns the updated incident row (plus `lon`, `lat`). Raises LookupError if it does not exist.
     """
     inc = fetch_one(conn, SQL_INCIDENT_CONTEXT, {"id": incident_id})
     if inc is None:
         raise LookupError(f"incident {incident_id} not found")
     agg = fetch_one(conn, SQL_AGGREGATE, {"id": incident_id, "nth_offset": PROACTIVE_MIN_RIDES - 1}) or {}
+    votes = trust.votes_for(conn, incident_id)
 
     reports = int(agg.get("report_count") or 0)
     sensors = int(agg.get("sensor_count") or 0)
@@ -236,6 +238,9 @@ def refresh_incident(conn, incident_id: int) -> dict:
     max_severity = float(agg.get("max_severity") or 0.0)
     max_urgency = int(agg.get("max_urgency") or 0)
     both = reports > 0 and sensors > 0
+    ride_severities = [float(s or 0.0) for s in (agg.get("ride_severities") or [])]
+    a = confidence.assess(ride_severities, int(inc.get("sensor_misses") or 0), votes)
+    status = confidence.status_for(a.confidence, inc["status"])
 
     params = {
         "id": incident_id,
@@ -252,7 +257,14 @@ def refresh_incident(conn, incident_id: int) -> dict:
         "address": pick_address(inc.get("segment_name"), agg.get("location_text"), inc.get("address")),
         "score": priority_score(sensor_severity=max_severity, report_count=reports, max_urgency=max_urgency,
                                 vulnerability=float(inc.get("vulnerability") or 0.0), both_sources=both),
-        "status": decide_status(inc["status"], reports, sensors),
+        "status": status,
+        "confidence": round(a.confidence, 4),
+        "sensor_confidence": None if a.sensor_confidence is None else round(a.sensor_confidence, 4),
+        "citizen_confidence": None if a.citizen_confidence is None else round(a.citizen_confidence, 4),
+        "yes_count": sum(1 for yes, _ in votes if yes),
+        "no_count": sum(1 for yes, _ in votes if not yes),
     }
     row = fetch_one(conn, SQL_UPDATE, params)
+    if status != inc["status"] and status in (IncidentStatus.VERIFIED, IncidentStatus.DISMISSED):
+        trust.settle(conn, incident_id, real=status == IncidentStatus.VERIFIED)
     return dict(row) if row else {}
