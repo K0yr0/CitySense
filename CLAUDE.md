@@ -17,7 +17,7 @@ Three people, each working **on their own computer** and pushing to the same rep
 | | Person A: 📱 Mobile (citizens) | Person B: 🖥️ Web admin (city) | Person C: 📡 Sensor simulation and data |
 |---|---|---|---|
 | Main folders | `mobile/` (code in `mobile/src/`) | `web-admin/` | `backend/sensor/`, sensor scripts |
-| Task codes | M0–M7 | W0–W5 | S0–S5 |
+| Task codes | M0–M7 | W0–W5 | S0–S6 |
 | Migration numbers | 100–199 | 200–299 | 300–399 |
 
 **First thing:** run `git config --get cityecho.role`.
@@ -88,7 +88,7 @@ git push                                  # 5. small, frequent pushes
 ```
 A → M0 → M1 → M2 → M3 → M4 → M5 → M6 (→ M7)
 B → W0 → W1 → W2 → W3 → W4 → W5
-C → S1 → S2 → S3 → S4 → S5        (S0 map: done)
+C → S1 → S2 → S3 → S4 → S5 → S6  (S0 map: done)
 ```
 
 Task contents: `docs/ROADMAP.md`. Day 0 contracts (sign-in, roles, `work_status`, `/devices/stream` format, short incident view): `docs/ARCHITECTURE.md` §8.
@@ -100,7 +100,8 @@ Task contents: `docs/ROADMAP.md`. Day 0 contracts (sign-in, roles, `work_status`
 cp .env.example .env                              # optional keys
 docker compose up --build                         # database + backend + web admin
 # http://localhost:3000  (web admin)   http://localhost:8000/docs  (API)
-docker compose --profile seed run --rm seed       # load the demo complaints and rides
+docker compose --profile seed run --rm seed       # load the demo complaints and rides (old, slow)
+docker compose --profile mock run --rm mock       # S6: the whole-project mock world (once C has built it)
 docker compose down -v                            # reset everything
 ```
 ✅ Docker verified (Apple Silicon Mac, Colima): database, migrations, map loading (seconds), API, live vehicles, web admin and demo data (367 complaints → 74 incidents) work end to end.
@@ -142,6 +143,7 @@ cd web-admin && npm install && npm run dev                                      
 - ✅ Map (S0): 11,833 segments (9,057 road, 2,776 rail) with real vulnerability data; `data/osm/segments_demo.geojson` is in the repo, loading takes seconds. Demo tram rides are aligned with the real rails (100%).
 - ✅ Mobile app (A, M0–M6): map with current location and road health as colour only, Google + demo sign-in with trust carry-over, reporting with photo and location, the 25 m question, favourite routes with "bad road ahead" warnings, short incident view. `/mobile/*` endpoints in `backend/api/mobile.py`, migration `101_favorite_routes.sql`. Languages: English, Polish, Ukrainian (`mobile/src/i18n/`). M7 (notifications) not started.
 - ✅ Sensor simulation (C, S1–S5): `/devices/stream` (`X-Device-Key`, one buffer per device); `scripts/simulate_buses.py` virtual fleet (device names `bus-MAR|JER|SWI-NN`, `tram-17-NN`; `docker compose --profile sim up simulator`); fixed ground truth `data/demo/sim_world.json`; road health = median of the last 5 passes + `health_updated_at` (freshness) + `health_weight` (301); accuracy report `data/demo/sim_accuracy.md` (`--eval`, measured in simulation); stage scenarios `--scenario all` (~15 s on a clean database).
+- ⏳ **S6, whole-project mock data (C), not started:** one command (`scripts/seed_world.py`, `docker compose --profile mock run --rm mock`) fills every feature of the mobile app and the web admin with one consistent world, through the API only. C now also owns `seed_demo.py`, `gen_complaints.py` and `data/complaints_synth.json`. Details: `docs/ROADMAP.md`, S6.
 - ✅ Trams can't verify road potholes (by design); simulated buses verify road potholes (the MAR line runs parallel to tram 17).
 - ❌ Known gap (B and C): a tram line consists of two parallel rails; a ride's GPS jumps between them. Fusion's "≥ 2 rides on the same segment" rule must count the two rails as one.
 - ✅ Demo data aligned (S5): defects placed at the complaint clusters (`ANCHORS`); the 40 "track defect" complaints on Świętokrzyska are verified at 97% after `seed_demo`. A verified incident is not closed by clean passes; the repair is closed by B's `work_status = done` flow.

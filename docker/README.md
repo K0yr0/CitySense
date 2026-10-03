@@ -8,6 +8,7 @@
 | `api` | 8000 | FastAPI. On start: wait for db, `scripts/init_db.py`, load the map from `data/osm/segments_demo.geojson` (skipped with a message if the file is missing), then `uvicorn --reload`. |
 | `web` | 3000 | Next.js web admin (`web-admin/`), production build. |
 | `seed` | | Profile `seed`, one-shot: `scripts/seed_demo.py --api http://api:8000`. |
+| `mock` | | Profile `mock`, one-shot (person C, S6): `scripts/seed_world.py --api http://api:8000`, the whole-project mock dataset through the API. Needs `AUTH_DEV_LOGIN` (on in the local stack). |
 | `simulator` | | Profile `sim`, placeholder: `scripts/simulate_buses.py` (person C, not written yet). |
 
 ## Files

@@ -64,9 +64,9 @@ All of the following is done and in the repo. Also: Docker setup (`docker-compos
 | Backend API | `auth/`, `api/users.py`, `api/responses.py`, `api/reports.py`, `api/mobile.py` | `api/admin.py`, `api/incidents.py`, `api/serializers.py`, `api/stats.py`, `api/vehicles.py`, `api/segments.py` (display) | `api/devices.py` (new), `api/rides.py` |
 | Backend logic | `fusion/trust.py`, `triage/**` | `fusion/incidents.py`, `verify.py`, `confidence.py`, `score.py`, `routing.py` | `sensor/**` (ingest, detect, lights, mapmatch, track_score, pipeline) |
 | Database | `migrations/1xx_*` (users, favorite_routes, trust carry-over) | `migrations/2xx_*` (`work_status`) | `migrations/3xx_*` (devices, time weighting of road health), `db/functions.sql` (`nearest_segment`, `recompute_segment_health`) |
-| Scripts | `gen_complaints.py`, `eval_triage.py` | `seed_demo.py` | `simulate_buses.py` (new), `synth_ride.py`, `replay_ride.py`, `load_osm.py` |
-| Tests | `test_auth.py`, `test_mobile_*.py`, `test_triage_*.py`, `test_confidence_trust.py` | `test_admin_*.py`, `test_fusion.py`, `test_api.py` | `test_devices.py`, `test_sensor_*.py`, `test_db.py`, `test_load_osm.py` |
-| Data | `data/complaints_synth.json` | `data/demo/ztm_snapshot.json` | `data/demo/*.csv`, `data/osm/`, the simulator's ground-truth files |
+| Scripts | `eval_triage.py` | — | `simulate_buses.py`, `synth_ride.py`, `replay_ride.py`, `load_osm.py`, **all mock data:** `seed_world.py` (new, S6), `seed_demo.py`, `gen_complaints.py`, `scripts/mock/**` |
+| Tests | `test_auth.py`, `test_mobile_*.py`, `test_triage_*.py`, `test_confidence_trust.py` | `test_admin_*.py`, `test_fusion.py`, `test_api.py` | `test_devices.py`, `test_sensor_*.py`, `test_load_osm.py`, `test_seed_world*.py`, `test_mock*.py` |
+| Data | — | `data/demo/ztm_snapshot.json` | `data/demo/*.csv`, `data/osm/`, the simulator's ground-truth files, `data/complaints_synth.json`, `data/mock/**` |
 
 **Reading is always free.** For example, A's `api/mobile.py` may read the `incidents` and `segments` tables; only B's code writes `incidents`, and only C's code writes `segments.health`.
 
@@ -85,6 +85,9 @@ The complete, authoritative list is the `OWNERS` file; this table is a summary. 
 | B → C | `fusion.incidents.ingest_evidence(conn, evidence_ids)` and `verify.check_ride_verifications(conn, ride_id)` (already exist) | Link C's sensor evidence to incidents; count passes as verifications |
 | C → B and A | `segments.health`, `segments.health_rides`, `segments.health_updated_at` (freshness), `segments.health_weight` (time-weighted amount of data) columns | B's live map, A's road colours. Only C writes them |
 | C → B | `/devices/stream` data format (written in `docs/ARCHITECTURE.md`) | The simulator sends in this format, like a real device |
+| C → A | `data/complaints_synth.json` record shape stays stable: `text`, `created_at`, `true_issue_id`, `true_category`, `lon`, `lat`, `street` | A's triage evaluation (`eval_triage.py`) and tests read it |
+| A, B → C | The public HTTP API (`docs/ARCHITECTURE.md` §6 and §8): `/auth/dev`, `/reports`, `/reports/bulk`, `/incidents/{id}/responses`, `/mobile/*`, `/admin/incidents/{id}/work`, `/devices/stream` | C's mock seeder writes **only through these endpoints**, never straight into other people's tables. If an endpoint is missing or too slow, C asks its owner |
+| C → A, B | `data/mock/README.md`: the demo accounts (emails, roles), personas and what the seeded world contains | A and B know which accounts and incidents to show in the apps and on stage |
 
 If a contract must change: announce it in the group, the people involved approve, and the change is written to `docs/` in a separate SHARED commit.
 
@@ -126,6 +129,38 @@ There is no real hardware; all sensor data comes from the simulation. The simula
 | S3 | Live road health | `segments.health` is recomputed as data arrives, newer measurements weigh more (time weighting); freshness and data-amount columns |
 | S4 | Accuracy measurement | Precision / recall report against the simulator's ground truth (varying noise, speed and phone position); numbers for the presentation, presented as "measured in simulation" |
 | S5 | Demo scenarios | Scenarios triggered on stage with one command: "a new pothole appeared → buses found it → found before any complaint", "a citizen reported → the next bus passed → verified", "repaired → the bus no longer feels anything". Repeatable (fixed seed) |
+| S6 | **Whole-project mock data** | One command fills the **entire** project with a consistent, realistic world, so every screen of the mobile app and the web admin has something meaningful to show. Details below |
+
+### S6: whole-project mock data (owner C)
+
+**Goal:** after `docker compose up --build` and **one** command, every feature of A's mobile app and B's web admin shows realistic, consistent data. The same seed always produces the same world.
+
+**Commands:**
+- Docker: `docker compose --profile mock run --rm mock` (the service already exists in `docker-compose.yml`)
+- Without Docker: `.venv/bin/python scripts/seed_world.py --api http://localhost:8000`
+- Options: `--seed N` (default fixed), `--fast` (smaller world for quick local tests), `--check` (verify the world is complete and exit non-zero if not)
+
+**Rules:**
+- **API only.** `seed_world.py` writes only through the public endpoints (contract table above), never with direct SQL into other people's tables. Dev sign-in (`POST /auth/dev`) creates the demo users and the admin; it is on in the local Docker stack.
+- **One world.** Complaint clusters, simulator defects (`data/demo/sim_world.json`) and road health must agree: where citizens report a pothole, the simulated buses feel it (or deliberately don't, for the "dismissed" cases).
+- **Idempotent.** Running it twice does not duplicate data (it detects an already seeded world and exits), and `docker compose down -v` gives a clean start.
+- **Target time:** under ~3 minutes for the full world; `--fast` under ~1 minute. `seed_demo.py` takes ~8–9 minutes today because every complaint is geocoded at 1 request/second; send coordinates with each complaint and, if that is not enough, ask A for a faster triage path instead of editing A's code.
+- **English only** in all files; citizen-facing complaint texts stay realistic Polish (with some English and Ukrainian).
+
+**What the world must contain** (every item is shown somewhere in an app):
+
+| Area | Mock data | Seen in |
+|---|---|---|
+| Accounts | 1 admin + ~8 citizen personas via `/auth/dev`: a reliable reporter (high trust), a newcomer, an unreliable one (wrong answers, low trust), a commuter with favourite routes, … Written to `data/mock/README.md` | Mobile sign-in, admin |
+| Complaints | Several hundred complaints over the last ~14 days, from personas and anonymous 19115 imports, all categories and departments, some with photos (generated, no real people) | Mobile map, admin queue |
+| Citizen answers | YES/NO answers to "is it still there?" from the personas, so trust differs between people | Admin incident detail, mobile profile |
+| Sensor rides | Simulated bus and tram fleet runs (existing `simulate_buses.py`), so road health covers the main corridors with fresh and stale segments | Mobile road colours, admin live map |
+| Full lifecycle | Incidents in every state: candidate, likely, verified, dismissed, found-before-report, awaiting a vehicle | Everywhere |
+| City work | `work_status` mix via the admin endpoint: todo, in progress, done (done ones settle trust) | Admin workflow, mobile "fixed by the city" |
+| Favourite routes | Several saved routes per commuter persona, some passing bad segments | Mobile routes, "bad road ahead" |
+| Stats | Enough volume that the admin statistics and funnel look real | Admin stats |
+
+**Done when:** `--check` passes on a clean Docker stack; A and B confirm every screen shows data; `data/mock/README.md` lists the demo accounts and what to click on stage; tests in `backend/tests/test_seed_world*.py` pass.
 
 ---
 
@@ -137,13 +172,14 @@ Day 0:  A → backend foundation + sign-in + mobile/ skeleton   [SHARED commits]
         C → S0 (map segments)
 Then:   A → M0 → M1 → M2 → M3 → M4 → M5 → M6 (→ M7)
         B → W0 → W1 → W2 → W3 → W4 → W5
-        C → S1 → S2 → S3 → S4 → S5
+        C → S1 → S2 → S3 → S4 → S5 → S6
 ```
 
 - **M4 ↔ W3:** the "don't ask if done" part stays passive until the `work_status` column exists and starts working by itself once it does. A doesn't have to wait.
 - **M1/M5 and W4 ↔ S2/S3:** road colours and the live map start filling once C's simulator runs. Until then A and B work with the existing demo data; nobody waits.
 - **Day 0:** until A's SHARED commits are pushed, B and C work only in their own folders; conflicts are impossible meanwhile.
 - **S1 ↔ B:** C calls B's existing `ingest_evidence` function. It already exists; no need to wait for B.
+- **S6 ↔ A, B:** C uses A's and B's existing endpoints. If an endpoint the mock data needs is missing, C writes down exactly what is needed and the owner adds it; C never edits A's or B's files.
 
 ## Git workflow (everyone on their own computer, pushing directly to main)
 

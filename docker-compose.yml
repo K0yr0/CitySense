@@ -3,6 +3,7 @@
 # One-shot jobs (profiles):
 #   docker compose --profile seed run --rm seed     # fill the demo database through the API
 #   docker compose --profile sim up simulator       # virtual bus/tram fleet -> /devices/stream (person C)
+#   docker compose --profile mock run --rm mock     # whole-project mock data through the API (person C, S6)
 # Reset everything (database included):  docker compose down -v
 # More: docker/README.md
 
@@ -61,6 +62,9 @@ services:
     <<: *api-common
     environment:
       DATABASE_URL: postgresql://cityecho:cityecho@db:5432/cityecho
+      # Local stack only: POST /auth/dev lets the mock seeder (and teammates) sign in as demo
+      # citizens/admins without Google. Never enable this on a deployed API.
+      AUTH_DEV_LOGIN: "1"
     # Entrypoint (docker/api-entrypoint.sh): wait for db -> init_db.py -> load_osm.py
     # --from-geojson data/osm/segments_demo.geojson --skip-if-loaded -> this command.
     command: ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000",
@@ -116,6 +120,19 @@ services:
     profiles: ["sim"]
     entrypoint: ["python"]
     command: ["scripts/simulate_buses.py", "--api", "http://api:8000"]
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: "no"
+
+  mock:
+    # Person C (S6): scripts/seed_world.py fills the WHOLE project with consistent mock data through the
+    # public API only (demo users + admin via /auth/dev, complaints, citizen answers, favourite routes,
+    # simulated rides, work_status). Definitions live in data/mock/. See docs/ROADMAP.md, task S6.
+    <<: *api-common
+    profiles: ["mock"]
+    entrypoint: ["python"]
+    command: ["scripts/seed_world.py", "--api", "http://api:8000"]
     depends_on:
       api:
         condition: service_healthy

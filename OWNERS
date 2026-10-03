@@ -52,9 +52,7 @@ backend/api/mobile.py               A
 backend/fusion/trust.py             A
 backend/triage/**                   A
 db/migrations/1*                    A
-scripts/gen_complaints.py           A
 scripts/eval_triage.py              A
-data/complaints_synth.json          A
 backend/tests/test_auth*.py         A
 backend/tests/test_mobile*.py       A
 backend/tests/test_triage*.py       A
@@ -75,7 +73,6 @@ backend/fusion/confidence.py        B
 backend/fusion/score.py             B
 backend/fusion/routing.py           B
 db/migrations/2*                    B
-scripts/seed_demo.py                B
 data/demo/ztm_snapshot.json         B
 backend/tests/test_admin*.py        B
 backend/tests/test_fusion*.py       B
@@ -89,6 +86,14 @@ backend/api/rides.py                C
 db/migrations/3*                    C
 db/functions.sql                    C
 scripts/simulate_buses.py           C
+scripts/seed_world.py               C
+scripts/seed_demo.py                C
+scripts/gen_complaints.py           C
+scripts/mock/**                     C
+data/complaints_synth.json          C
+data/mock/**                        C
+backend/tests/test_seed_world*.py   C
+backend/tests/test_mock*.py         C
 scripts/synth_ride.py               C
 scripts/replay_ride.py              C
 scripts/load_osm.py                 C
