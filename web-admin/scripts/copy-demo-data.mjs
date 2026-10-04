@@ -1,6 +1,7 @@
 // Demo mode (NEXT_PUBLIC_USE_MOCK=1) draws the real Warsaw network: C's map export
-// (data/osm/segments_demo.geojson, 11,833 road and tram segments) and the simulator's defects
-// (data/demo/sim_world.json), packed into one small file at public/demo/city.json.
+// (data/osm/segments_demo.geojson, 11,833 road and tram segments), the simulator's defects
+// (data/demo/sim_world.json) and the bus routes it drives (data/demo/bus_lines.json),
+// packed into one small file at public/demo/city.json.
 // Read only; both sources belong to C. Missing sources (e.g. a deploy without the repo root)
 // just skip: lib/mock.ts then falls back to its two hand-drawn streets.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -8,6 +9,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 const root = new URL("../../", import.meta.url);
 const segmentsSrc = new URL("data/osm/segments_demo.geojson", root);
 const worldSrc = new URL("data/demo/sim_world.json", root);
+const linesSrc = new URL("data/demo/bus_lines.json", root);
 const dst = new URL("../public/demo/", import.meta.url);
 
 if (!existsSync(segmentsSrc)) {
@@ -35,10 +37,26 @@ for (const f of geo.features ?? []) {
 let defects = [];
 if (existsSync(worldSrc)) {
   const world = JSON.parse(readFileSync(worldSrc, "utf8"));
-  defects = (world.defects ?? []).map((d) => ({ id: d.id, kind: d.kind, mode: d.mode, street: d.street ?? null, lon: d.lon, lat: d.lat }));
+  defects = (world.defects ?? []).map((d) => ({ id: d.id, kind: d.kind, mode: d.mode, line: d.line ?? null, street: d.street ?? null, lon: d.lon, lat: d.lat }));
+}
+
+// The real routes C's simulated buses drive (ZTM GTFS): which streets are measured, and where demo buses move.
+const lines = {};
+if (existsSync(linesSrc)) {
+  for (const [id, l] of Object.entries(JSON.parse(readFileSync(linesSrc, "utf8")).lines ?? {})) {
+    if (Array.isArray(l.path) && l.path.length > 1) lines[id] = { name: l.name ?? id, path: l.path.map(([x, y]) => [round(x), round(y)]) };
+  }
 }
 
 mkdirSync(dst, { recursive: true });
-const out = JSON.stringify({ source: "data/osm/segments_demo.geojson + data/demo/sim_world.json (owner C)", names, segments, defects });
+const out = JSON.stringify({
+  source: "data/osm/segments_demo.geojson + data/demo/sim_world.json + data/demo/bus_lines.json (owner C)",
+  names,
+  segments,
+  defects,
+  lines,
+});
 writeFileSync(new URL("city.json", dst), out);
-console.log(`[copy-demo-data] ${segments.length} segments, ${defects.length} defects -> public/demo/city.json (${Math.round(out.length / 1024)} KB)`);
+console.log(
+  `[copy-demo-data] ${segments.length} segments, ${defects.length} defects, ${Object.keys(lines).length} bus lines -> public/demo/city.json (${Math.round(out.length / 1024)} KB)`,
+);

@@ -635,15 +635,27 @@ interface CityFile {
   names: string[];
   segments: number[][]; // [mode (1 tram, 0 road), name index, lon, lat, lon, lat, ...]
   defects: { id: string; kind: string; mode: string; street: string | null; lon: number; lat: number }[];
+  lines?: Record<string, { name: string; path: LonLat[] }>; // bus routes C's fleet drives (ZTM GTFS)
 }
 
-// The corridors C's simulated fleet drives (data/mock/README.md): buses on three streets, tram 17's rails.
-const BUS_STREETS = new Set(["Marszałkowska", "Aleje Jerozolimskie", "Świętokrzyska"]);
+// What C's simulated fleet measures (data/mock/README.md): the real routes of bus lines 171, 159, 107, 160
+// (lines in city.json) and tram 17's rails. Line 107 is stale (last rides 11–12 days ago).
 const TRAM17_STREETS = new Set(["Marszałkowska", "Plac Zbawiciela", "Puławska"]);
-const STALE_STREETS = new Set(["Świętokrzyska"]); // C's world: last rides there 11–12 days ago
+const STALE_LINES = new Set(["107"]);
+const ON_ROUTE_M = 18; // a road segment within this distance of a bus route is measured by that line
 const DEFECT_RADIUS_M = 70;
 
 let cityPromise: Promise<Segment[] | null> | null = null;
+// Real bus routes once city.json has loaded; demo buses then drive them (see mockVehicles).
+let busLines: { line: string; path: LonLat[] }[] = [];
+
+/** Distance from a point to a polyline (m), with a cheap bounding-box reject. */
+function distToPath(p: LonLat, path: LonLat[], box: [number, number, number, number]): number {
+  const padLon = 50 / M_PER_DEG_LON;
+  const padLat = 50 / M_PER_DEG_LAT;
+  if (p[0] < box[0] - padLon || p[0] > box[2] + padLon || p[1] < box[1] - padLat || p[1] > box[3] + padLat) return Infinity;
+  return dist(p, snap(path, p));
+}
 
 /** Spatially smooth wobble (no per-segment noise): neighbouring segments get similar health. */
 function wobble([lon, lat]: LonLat): number {
@@ -653,6 +665,12 @@ function wobble([lon, lat]: LonLat): number {
 function buildCity(city: CityFile): Segment[] {
   const bumps = city.defects.filter((d) => d.kind === "bump").map((d) => ({ at: [d.lon, d.lat] as LonLat, tram: d.mode === "tram" }));
   const spots = BAD_SPOTS.map((b) => ({ at: b.at, depth: b.depth }));
+  const routes = Object.entries(city.lines ?? {}).map(([line, l]) => {
+    const xs = l.path.map((p) => p[0]);
+    const ys = l.path.map((p) => p[1]);
+    return { line, path: l.path, box: [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)] as [number, number, number, number] };
+  });
+  busLines = routes.map((r) => ({ line: r.line, path: r.path }));
   return city.segments.map((s, idx) => {
     const tram = s[0] === 1;
     const name = city.names[s[1]] || null;
@@ -660,12 +678,14 @@ function buildCity(city: CityFile): Segment[] {
     for (let k = 2; k + 1 < s.length; k += 2) path.push([s[k], s[k + 1]]);
     const mid = lerp(path[0], path[path.length - 1], 0.5);
     const nearBump = bumps.filter((b) => b.tram === tram).map((b) => dist(mid, b.at)).reduce((a, d) => Math.min(a, d), Infinity);
-    const measured = (tram ? TRAM17_STREETS : BUS_STREETS).has(name ?? "") || (tram && nearBump < 40);
+    // Bus lines that drive over this road segment (none for tram track).
+    const onLines = tram ? [] : routes.filter((r) => distToPath(mid, r.path, r.box) <= ON_ROUTE_M).map((r) => r.line);
+    const measured = tram ? TRAM17_STREETS.has(name ?? "") || nearBump < 40 : onLines.length > 0;
     if (!measured) return { id: idx + 1, mode: tram ? "tram" : "road", name, health: null, rides: 0, updated_at: null, path };
     let h = 0.86 + wobble(mid);
     h -= 0.62 * Math.exp(-((nearBump / DEFECT_RADIUS_M) ** 2));
     for (const b of spots) h -= 0.5 * b.depth * Math.exp(-((dist(mid, b.at) / DEFECT_RADIUS_M) ** 2));
-    const stale = STALE_STREETS.has(name ?? "");
+    const stale = onLines.length > 0 && onLines.every((l) => STALE_LINES.has(l));
     const ageMin = stale ? (11 + (idx % 2)) * 24 * 60 + (idx % 300) : 3 + (idx % 55);
     return {
       id: idx + 1,
@@ -729,7 +749,14 @@ const ROUTES: { line: string; kind: VehicleKind; path: LonLat[]; phase: number; 
 export function mockVehicles(kind?: VehicleKind): Vehicle[] {
   const tMin = Date.now() / 60_000;
   const ts = new Date().toISOString();
-  return ROUTES.map((r, i) => {
+  // Once the real network has loaded, buses drive C's real routes (two per line, opposite phases).
+  const routes = busLines.length
+    ? [
+        ...ROUTES.filter((r) => r.kind === "tram"),
+        ...busLines.flatMap((b, n) => [0.15 + n * 0.3, 1.15 + n * 0.3].map((phase) => ({ line: b.line, kind: "bus" as const, path: b.path, phase, speed: 0.06 }))),
+      ]
+    : ROUTES;
+  return routes.map((r, i) => {
     const x = (((r.phase + tMin * r.speed) % 2) + 2) % 2;
     const [lon, lat] = along(r.path, x < 1 ? x : 2 - x);
     return { id: `${r.kind === "tram" ? 3000 : 7000}${i}`, line: r.line, lon, lat, ts, kind: r.kind };
