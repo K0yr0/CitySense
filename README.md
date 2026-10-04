@@ -5,7 +5,6 @@
 CityEcho brings together two channels that never talk to each other: what vehicles *sense* (cheap accelerometer/GPS/light sensors on trams and buses) and what people *report* (19115-style complaints). Both become one kind of **evidence** row anchored to a 25 m road/tram segment. A **fusion engine** clusters evidence into incidents, scores them, routes them to the right department, and flags problems the sensors found **before any citizen reported them**. A **confidence engine** combines sensor confidence with citizen YES/NO answers weighted by **contributor trust**, moving each incident from *candidate* to *likely* to *verified*; trust is updated when an incident resolves, so reliable citizens count for more next time. For complaints that no sensor has seen yet, it asks the **next tram passing that spot** to verify (the verification loop).
 
 - Architecture and module contracts: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- What has been built and verified so far: [BUILD_REPORT.md](BUILD_REPORT.md)
 
 ## Repository map
 
