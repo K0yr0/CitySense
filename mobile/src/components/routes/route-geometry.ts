@@ -165,3 +165,21 @@ export function regionFor(points: LonLat[]): {
     longitudeDelta: Math.max(0.005, (maxLon - minLon) * 1.4),
   };
 }
+
+/**
+ * Why a route's rating looks the way it does:
+ * - "outside": no mapped road at all along the route (outside the loaded area),
+ * - "unmeasured": roads exist but no vehicle has measured any of them yet,
+ * - "partial": the overall rating is based on only `share` (0..1) of the route,
+ * - null: fully measured, nothing to explain.
+ */
+export function coverageNote(
+  quality: Pick<RouteQuality, 'segments' | 'summary'>,
+): { kind: 'outside' | 'unmeasured' } | { kind: 'partial'; share: number } | null {
+  const { good_m, fair_m, poor_m, unknown_m } = quality.summary;
+  const measured = good_m + fair_m + poor_m;
+  if (quality.segments.length === 0) return { kind: 'outside' };
+  if (measured <= 0) return { kind: 'unmeasured' };
+  const share = measured / (measured + Math.max(0, unknown_m));
+  return share < 0.995 ? { kind: 'partial', share } : null;
+}

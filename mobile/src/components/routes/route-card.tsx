@@ -12,7 +12,7 @@ import { healthLabel } from '@/lib/labels';
 
 import { HealthDot } from './quality-bar';
 import { loadRouteQuality } from './quality-cache';
-import { describeRoute, routeIcon } from './route-geometry';
+import { coverageNote, describeRoute, routeIcon } from './route-geometry';
 
 type Loaded = { key: string; quality: RouteQuality | null; failed: boolean };
 
@@ -82,7 +82,13 @@ export function RouteCard({ route, refreshToken, onPress, onDelete }: Props) {
           ) : (
             <>
               <HealthDot cls={quality.summary.overall} />
-              <ThemedText type="small">{healthLabel(quality.summary.overall)}</ThemedText>
+              <ThemedText type="small">
+                {quality.summary.overall !== 'unknown'
+                  ? healthLabel(quality.summary.overall)
+                  : coverageNote(quality)?.kind === 'outside'
+                    ? s.outsideAreaShort
+                    : s.notMeasuredShort}
+              </ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
                 ·
               </ThemedText>

@@ -29,6 +29,13 @@ const en = {
   cardHint: 'Opens the route. Press and hold to delete it.',
   computingShort: 'Checking road quality…',
   qualityFailed: "Couldn't get road quality",
+  /** Why the overall rating is "not measured" (short: route card, long: route detail). */
+  notMeasuredShort: 'Not measured yet',
+  outsideAreaShort: 'Outside the covered area',
+  notMeasuredLong: 'Not measured yet: no bus has driven this road so far.',
+  outsideAreaLong: 'Outside the area covered so far, so there is no road data here yet.',
+  /** `pct` is already formatted, e.g. "40%". */
+  measuredShare: (pct: string) => `Based on the measured ${pct} of the route.`,
   warningCount: (n: number) => plural(n, { one: '{n} warning', other: '{n} warnings' }),
   noWarningsShort: 'No warnings',
 
@@ -125,6 +132,11 @@ const pl: typeof en = {
   cardHint: 'Otwiera trasę. Przytrzymaj, aby usunąć.',
   computingShort: 'Sprawdzanie stanu drogi…',
   qualityFailed: 'Nie udało się pobrać stanu drogi',
+  notMeasuredShort: 'Jeszcze nie zmierzone',
+  outsideAreaShort: 'Poza obszarem pomiarów',
+  notMeasuredLong: 'Jeszcze nie zmierzone: żaden autobus nie przejechał jeszcze tą drogą.',
+  outsideAreaLong: 'Poza obszarem objętym na razie pomiarami, więc nie ma tu jeszcze danych o drogach.',
+  measuredShare: (pct: string) => `Na podstawie zmierzonych ${pct} trasy.`,
   warningCount: (n: number) =>
     plural(n, {
       one: '{n} ostrzeżenie',
@@ -222,6 +234,11 @@ const uk: typeof en = {
   cardHint: 'Відкриває маршрут. Утримуйте, щоб видалити.',
   computingShort: 'Перевіряємо стан дороги…',
   qualityFailed: 'Не вдалося отримати стан дороги',
+  notMeasuredShort: 'Ще не виміряно',
+  outsideAreaShort: 'Поза зоною вимірювань',
+  notMeasuredLong: 'Ще не виміряно: жоден автобус ще не проїхав цією дорогою.',
+  outsideAreaLong: 'Поза зоною, яку вже охоплено вимірюваннями, тож даних про дороги тут ще немає.',
+  measuredShare: (pct: string) => `На основі виміряних ${pct} маршруту.`,
   warningCount: (n: number) =>
     plural(n, {
       one: '{n} попередження',

@@ -12,7 +12,7 @@ import { Icon } from '@/components/icon';
 import { confirmAction, showMessage } from '@/components/routes/confirm';
 import { HealthDot, QualityBar } from '@/components/routes/quality-bar';
 import { invalidateRouteQuality, loadRouteQuality } from '@/components/routes/quality-cache';
-import { aheadOfUser, AHEAD_ALERT_M, describeRoute, ON_ROUTE_M, routeIcon } from '@/components/routes/route-geometry';
+import { aheadOfUser, AHEAD_ALERT_M, coverageNote, describeRoute, ON_ROUTE_M, routeIcon } from '@/components/routes/route-geometry';
 import { ROUTE_MAP_SUPPORTED, RouteQualityMap } from '@/components/routes/route-quality-map';
 import { RoutesSignInGate } from '@/components/routes/sign-in-prompt';
 import { ThemedText } from '@/components/themed-text';
@@ -185,6 +185,19 @@ export default function RouteScreen() {
               {s.overall(healthLabel(summary.overall))}
             </ThemedText>
           </View>
+          {(() => {
+            const note = coverageNote(quality);
+            if (!note) return null;
+            let text: string;
+            if (note.kind === 'partial') text = s.measuredShare(`${Math.max(1, Math.round(note.share * 100))}%`);
+            else if (note.kind === 'outside') text = s.outsideAreaLong;
+            else text = s.notMeasuredLong;
+            return (
+              <ThemedText type="small" themeColor="textSecondary">
+                {text}
+              </ThemedText>
+            );
+          })()}
           <View style={styles.kind}>
             <Icon name={routeIcon(route)} size={14} color={theme.textSecondary} />
             <ThemedText type="small" themeColor="textSecondary">
