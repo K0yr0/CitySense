@@ -2,8 +2,8 @@
 
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { getAdminStats } from "@/lib/api";
-import { deptLabel, fmtDuration, fmtNumber } from "@/lib/format";
-import { useApi } from "@/lib/hooks";
+import { deptLabel, fmtDuration, fmtNumber, timeAgo } from "@/lib/format";
+import { useApi, useNow } from "@/lib/hooks";
 import type { AdminStats, DepartmentLoad } from "@/lib/types";
 import { LoadingLabel, Skeleton } from "../Skeleton";
 import { Card } from "../ui";
@@ -15,16 +15,30 @@ const WORK_PARTS: { key: "todo" | "in_progress" | "done"; label: string; color: 
   { key: "done", label: "Done", color: "var(--good)" },
 ];
 
-// Trend: validated pair (light + dark) - new = accent, done = good.
-const NEW_COLOR = "var(--accent)";
-const DONE_COLOR = "var(--good)";
+// Trend: CVD-validated pair in both themes (--chart-new / --chart-done). The brand navy is not used
+// for data: it reads grey (fails the chroma floor).
+const NEW_COLOR = "var(--chart-new)";
+const DONE_COLOR = "var(--chart-done)";
+
+/** Colour key in a card header (Stitch): squares carry the colour, text stays in ink. */
+function Legend({ items }: { items: [string, string][] }) {
+  return (
+    <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-2" aria-label="Legend">
+      {items.map(([label, color]) => (
+        <li key={label} className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: color }} /> {label}
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 function Tile({ label, value, hint, strong = false }: { label: string; value: string; hint: string; strong?: boolean }) {
   return (
-    <div className={`rounded-2xl border border-line bg-surface px-5 py-4 ${strong ? "border-l-4 border-l-accent" : ""}`} title={hint}>
-      <div className="tabular text-[2rem] font-semibold leading-none tracking-tight">{value}</div>
-      <div className="mt-1.5 text-sm font-medium text-ink-2">{label}</div>
-      <div className="mt-0.5 text-xs text-muted">{hint}</div>
+    <div className={`rounded-xl border border-line bg-surface px-5 py-5 ${strong ? "border-l-4 border-l-accent" : ""}`} title={hint}>
+      <div className="text-[2rem] font-bold leading-none tracking-tight">{value}</div>
+      <div className="mt-2 text-sm font-medium text-ink">{label}</div>
+      <div className="mt-4 text-xs text-muted">{hint}</div>
     </div>
   );
 }
@@ -40,21 +54,21 @@ function Funnel({ s }: { s: AdminStats }) {
   return (
     <div>
       <div className="flex items-baseline gap-2">
-        <span className="tabular text-2xl font-semibold">{fmtNumber(s.reports_total)}</span>
-        <span className="text-ink-2">citizen reports received</span>
+        <span className="font-mono text-2xl font-bold">{fmtNumber(s.reports_total)}</span>
+        <span className="text-sm text-ink-2">citizen reports received</span>
       </div>
-      <ol className="mt-4 flex flex-col gap-3">
+      <ol className="mt-5 flex flex-col gap-4">
         {steps.map((st) => (
           <li key={st.label} className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-center gap-3">
-            <span className="text-base font-medium">{st.label}</span>
+            <span className="text-sm font-medium">{st.label}</span>
             <div className="min-w-0">
               <div className="flex items-center gap-3">
-                <div className="h-6 min-w-0 flex-1 rounded-r bg-surface-2">
-                  <div className="h-full rounded-r bg-accent" style={{ width: `${Math.max(1, (100 * st.value) / base)}%` }} />
+                <div className="h-8 min-w-0 flex-1 overflow-hidden rounded bg-surface-2">
+                  <div className="h-full rounded bg-accent" style={{ width: `${Math.max(1, (100 * st.value) / base)}%` }} />
                 </div>
-                <span className="tabular w-12 text-right text-lg font-semibold">{fmtNumber(st.value)}</span>
+                <span className="w-12 text-right font-mono text-lg font-semibold">{fmtNumber(st.value)}</span>
               </div>
-              <div className="mt-0.5 text-sm text-muted">{st.note}</div>
+              <div className="mt-1 text-xs text-muted">{st.note}</div>
             </div>
           </li>
         ))}
@@ -67,28 +81,21 @@ function DepartmentBars({ rows }: { rows: DepartmentLoad[] }) {
   const max = Math.max(1, ...rows.map((d) => d.todo + d.in_progress + d.done));
   return (
     <div>
-      <ul className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink-2" aria-label="Legend">
-        {WORK_PARTS.map((p) => (
-          <li key={p.key} className="flex items-center gap-1.5">
-            <span className="inline-block h-3 w-3 rounded-sm" style={{ background: p.color }} /> {p.label}
-          </li>
-        ))}
-      </ul>
       <ul className="flex flex-col gap-3">
         {rows.map((d) => {
           const sum = d.todo + d.in_progress + d.done;
           return (
             <li key={d.department} className="grid grid-cols-[minmax(0,1fr)_3rem] items-center gap-x-3 gap-y-1 sm:grid-cols-[minmax(0,10rem)_minmax(0,1fr)_3rem]">
-              <span className="col-span-2 truncate font-medium sm:col-span-1" title={deptLabel(d.department)}>
+              <span className="col-span-2 truncate text-sm font-medium sm:col-span-1" title={deptLabel(d.department)}>
                 {deptLabel(d.department)}
               </span>
-              <div className="flex h-7 gap-0.5" style={{ width: `${Math.max(2, (100 * sum) / max)}%` }}>
+              <div className="flex h-8 gap-0.5" style={{ width: `${Math.max(2, (100 * sum) / max)}%` }}>
                 {WORK_PARTS.map((p) =>
                   d[p.key] > 0 ? (
                     <div
                       key={p.key}
                       title={`${deptLabel(d.department)} · ${p.label}: ${d[p.key]}`}
-                      className="tabular flex items-center justify-center overflow-hidden text-sm font-semibold first:rounded-l last:rounded-r"
+                      className="flex items-center justify-center overflow-hidden font-mono text-xs font-semibold first:rounded-l last:rounded-r"
                       style={{ flexGrow: d[p.key], flexBasis: 0, background: p.color, color: p.key === "todo" ? "var(--ink)" : p.key === "in_progress" ? "var(--accent-ink)" : "#fff" }}
                     >
                       {(100 * d[p.key]) / max >= 6 ? d[p.key] : ""}
@@ -96,14 +103,14 @@ function DepartmentBars({ rows }: { rows: DepartmentLoad[] }) {
                   ) : null,
                 )}
               </div>
-              <span className="tabular text-right text-ink-2">{sum}</span>
+              <span className="text-right font-mono text-sm font-semibold text-ink">{sum}</span>
             </li>
           );
         })}
       </ul>
       <div className="-mx-5 mt-5 overflow-x-auto px-5">
-        <table className="tabular w-full min-w-[32rem] text-left text-sm">
-          <thead className="text-muted">
+        <table className="w-full min-w-[32rem] text-left text-sm">
+          <thead className="text-[0.6875rem] uppercase tracking-wider text-muted">
             <tr className="border-b border-line">
               <th className="py-2 pr-3 font-semibold">Department</th>
               <th className="py-2 pr-3 text-right font-semibold">To do</th>
@@ -116,12 +123,12 @@ function DepartmentBars({ rows }: { rows: DepartmentLoad[] }) {
           <tbody className="divide-y divide-line">
             {rows.map((d) => (
               <tr key={d.department}>
-                <td className="py-2 pr-3 font-medium">{deptLabel(d.department)}</td>
-                <td className="py-2 pr-3 text-right">{d.todo}</td>
-                <td className="py-2 pr-3 text-right">{d.in_progress}</td>
-                <td className="py-2 pr-3 text-right">{d.done}</td>
-                <td className="py-2 pr-3 text-right">{d.verified}</td>
-                <td className="py-2 text-right">{fmtDuration(d.avg_repair_hours)}</td>
+                <td className="py-2.5 pr-3 font-medium">{deptLabel(d.department)}</td>
+                <td className="py-2.5 pr-3 text-right font-mono">{d.todo}</td>
+                <td className="py-2.5 pr-3 text-right font-mono">{d.in_progress}</td>
+                <td className="py-2.5 pr-3 text-right font-mono">{d.done}</td>
+                <td className="py-2.5 pr-3 text-right font-mono">{d.verified}</td>
+                <td className="py-2.5 text-right font-mono font-semibold">{fmtDuration(d.avg_repair_hours)}</td>
               </tr>
             ))}
           </tbody>
@@ -149,19 +156,9 @@ function TrendTooltip({ active, payload, label }: { active?: boolean; payload?: 
 }
 
 function Trend({ daily }: { daily: AdminStats["daily"] }) {
-  const tick = { fill: "var(--muted)", fontSize: 13 };
+  const tick = { fill: "var(--muted)", fontSize: 12, fontFamily: "var(--font-mono)" };
   return (
     <figure>
-      <ul className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink-2" aria-label="Legend">
-        {[
-          ["New incidents", NEW_COLOR],
-          ["Marked done", DONE_COLOR],
-        ].map(([label, color]) => (
-          <li key={label} className="flex items-center gap-1.5">
-            <span className="inline-block h-3 w-3 rounded-sm" style={{ background: color }} /> {label}
-          </li>
-        ))}
-      </ul>
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={daily} margin={{ top: 8, right: 8, bottom: 0, left: -12 }} barGap={2} barCategoryGap="22%">
@@ -174,9 +171,9 @@ function Trend({ daily }: { daily: AdminStats["daily"] }) {
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <figcaption className="mt-2 text-sm text-ink-2">Per day (UTC): incidents first seen vs incidents the city marked done.</figcaption>
-      <details className="mt-2 text-sm">
-        <summary className="cursor-pointer text-muted hover:text-ink">Show data table</summary>
+      <figcaption className="mt-3 border-t border-line pt-3 text-xs text-ink-2">Per day (UTC): incidents first seen vs incidents the city marked done.</figcaption>
+      <details className="mt-2 text-xs">
+        <summary className="cursor-pointer font-semibold text-ink-2 hover:text-ink">Show data table</summary>
         <table className="tabular mt-2 w-full max-w-sm text-left">
           <thead className="text-muted">
             <tr>
@@ -202,12 +199,13 @@ function Trend({ daily }: { daily: AdminStats["daily"] }) {
 
 /** W5: how the city keeps up - funnel, repair times, department load, 14-day trend. */
 export default function StatsView() {
-  const { data: s, loading } = useApi("admin-stats", getAdminStats, 30_000);
+  const { data: s, loading, updatedAt } = useApi("admin-stats", getAdminStats, 30_000);
+  const now = useNow(10_000);
 
   return (
-    <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 lg:px-6 lg:py-8">
+    <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-8 lg:px-10">
       <h1 className="text-3xl font-bold tracking-tight">Statistics</h1>
-      <p className="mt-1 text-lg text-ink-2">From citizen report to repaired street, across all departments.</p>
+      <p className="mt-1 text-base text-ink-2">From citizen report to repaired street, across all departments.</p>
 
       {loading || !s ? (
         <>
@@ -227,24 +225,39 @@ export default function StatsView() {
         </>
       ) : (
         <>
-          <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="mt-7 grid grid-cols-2 gap-4 lg:grid-cols-4">
             <Tile label="Average repair time" value={fmtDuration(s.avg_repair_hours)} hint={`first seen → marked done · median ${fmtDuration(s.median_repair_hours)}`} strong />
             <Tile label="Average verification" value={s.avg_verification_min != null ? `${Math.round(s.avg_verification_min)} min` : "—"} hint="vehicle asked → sensor confirmed" />
             <Tile label="Work in progress" value={fmtNumber(s.in_progress_total)} hint="crews on it right now" />
             <Tile label="Found before any report" value={fmtNumber(s.found_before_report)} hint="detected by vehicle sensors first" />
           </div>
 
-          <div className="mt-5 grid gap-5 lg:grid-cols-2">
-            <Card title="Report → incident → verified → done">
+          <div className="mt-6 grid gap-6 lg:grid-cols-2">
+            <Card title="Report → incident → verified → done" className="!p-6">
               <Funnel s={s} />
             </Card>
-            <Card title="Last 14 days">
+            <Card
+              title="Last 14 days"
+              className="!p-6"
+              action={
+                <Legend
+                  items={[
+                    ["New incidents", NEW_COLOR],
+                    ["Marked done", DONE_COLOR],
+                  ]}
+                />
+              }
+            >
               <Trend daily={s.daily} />
             </Card>
           </div>
 
-          <Card title="Load per department" className="mt-5">
-            {s.departments.length ? <DepartmentBars rows={s.departments} /> : <p className="text-lg text-ink-2">No incidents yet.</p>}
+          <Card title="Load per department" className="mt-6 !p-6" action={<Legend items={WORK_PARTS.map((p) => [p.label, p.color])} />}>
+            {s.departments.length ? <DepartmentBars rows={s.departments} /> : <p className="text-sm text-ink-2">No incidents yet.</p>}
+            <div className="mt-6 flex flex-wrap justify-between gap-2 border-t border-line pt-4 text-xs text-muted">
+              <span>Simulated data · measured in a simulation of Warsaw&apos;s bus and tram fleet</span>
+              <span>Last refresh: {updatedAt ? timeAgo(new Date(updatedAt).toISOString(), now) : "—"}</span>
+            </div>
           </Card>
         </>
       )}
