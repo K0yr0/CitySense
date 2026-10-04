@@ -4,12 +4,15 @@ import { fmtPct, fmtScore, pctOf, scorePct, SOURCE_LABEL, SOURCE_VAR, sourceKind
 import type { IncidentStatus, IncidentSummary, WorkStatus } from "@/lib/types";
 import { IconCheck, IconClock, IconEyeOff, IconRadar } from "./icons";
 
+// Shared building blocks, styled after the Stitch design system: white cards with 1px slate borders,
+// confidence as filled pills, city work as outlined 4 px tags, numbers in monospace.
+
 export function Card({ title, children, className = "", action }: { title?: ReactNode; children: ReactNode; className?: string; action?: ReactNode }) {
   return (
     <section className={`rounded-2xl border border-line bg-surface p-5 ${className}`}>
       {(title || action) && (
         <div className="mb-3 flex items-center justify-between gap-3">
-          {title && <h2 className="text-base font-semibold text-ink-2">{title}</h2>}
+          {title && <h2 className="text-sm font-bold text-ink">{title}</h2>}
           {action}
         </div>
       )}
@@ -20,9 +23,9 @@ export function Card({ title, children, className = "", action }: { title?: Reac
 
 export function ScoreBar({ score, wide = false }: { score: number; wide?: boolean }) {
   return (
-    <div className="flex items-center gap-2.5" title={`Priority score ${fmtScore(score)} (0–1.5)`}>
-      <span className="tabular w-11 text-right text-lg font-semibold">{fmtScore(score)}</span>
-      <span className={`h-2 overflow-hidden rounded-full bg-accent-soft ${wide ? "w-40" : "w-20"}`}>
+    <div className="flex items-center gap-2" title={`Priority score ${fmtScore(score)} (0–1.5)`}>
+      <span className="w-10 text-right font-mono text-sm font-bold text-ink">{fmtScore(score)}</span>
+      <span className={`h-2 overflow-hidden rounded-full border border-line bg-surface-2 ${wide ? "w-36" : "w-14"}`}>
         <span className="block h-full rounded-full bg-accent" style={{ width: `${scorePct(score)}%` }} />
       </span>
     </div>
@@ -31,52 +34,56 @@ export function ScoreBar({ score, wide = false }: { score: number; wide?: boolea
 
 const STATUS_STYLE: Record<IncidentStatus, string> = {
   candidate: "bg-surface-2 text-ink-2 border-line-strong",
-  likely: "bg-warn-soft text-warn-ink border-transparent",
-  verified: "bg-good-soft text-good-ink border-transparent",
+  likely: "bg-warn-soft text-warn-ink border-warn/40",
+  verified: "bg-good-soft text-good-ink border-good/40",
   dismissed: "bg-surface-2 text-muted border-line",
   closed: "bg-surface-2 text-muted border-line",
 };
 
-/** Candidate / Likely / Verified (+ confidence %), from the confidence engine. */
+/** Confidence status (engine): a filled pill with the %, never confused with the outlined work tag. */
 export function StatusChip({ status, confidence }: { status: IncidentStatus | null | undefined; confidence?: number | null }) {
   const s = status ?? "candidate";
   const showPct = confidence != null && s !== "closed";
   return (
     <span
       title={STATUS_HINT[s]}
-      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-sm font-medium ${STATUS_STYLE[s] ?? STATUS_STYLE.candidate}`}
+      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-semibold ${STATUS_STYLE[s] ?? STATUS_STYLE.candidate}`}
     >
-      {s === "verified" && <IconCheck width={15} height={15} />}
-      {s === "dismissed" && <IconEyeOff width={15} height={15} />}
+      {s === "verified" && <IconCheck width={12} height={12} strokeWidth={2.5} />}
+      {s === "dismissed" && <IconEyeOff width={12} height={12} />}
       {statusLabel(s)}
-      {showPct && <span className="tabular opacity-80">· {fmtPct(confidence)}</span>}
+      {showPct && <span className="font-mono opacity-90">· {fmtPct(confidence)}</span>}
     </span>
   );
 }
 
 const WORK_STYLE: Record<WorkStatus, string> = {
-  todo: "border-line-strong text-ink-2",
-  in_progress: "border-accent text-accent",
-  done: "border-good text-good-ink",
+  todo: "border-line-strong bg-surface text-ink-2",
+  in_progress: "border-accent bg-accent-soft/50 text-accent",
+  done: "border-good bg-good-soft/60 text-good-ink",
 };
 
-/** City work status (to do / in progress / done). Outlined, so it never reads as a confidence chip. */
+/** City work status (to do / in progress / done): an outlined 4 px tag, the "civic stepper" of Stitch. */
 export function WorkChip({ work }: { work: WorkStatus | null | undefined }) {
   const w = work ?? "todo";
   return (
-    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border-2 px-2 py-0.5 text-sm font-semibold ${WORK_STYLE[w] ?? WORK_STYLE.todo}`}>
-      {w === "done" ? <IconCheck width={14} height={14} /> : <span className={`h-2 w-2 rounded-full ${w === "in_progress" ? "bg-accent" : "bg-line-strong"}`} />}
+    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded border-[1.5px] px-2 py-0.5 text-xs font-semibold ${WORK_STYLE[w] ?? WORK_STYLE.todo}`}>
+      {w === "done" ? (
+        <IconCheck width={12} height={12} strokeWidth={2.5} />
+      ) : (
+        <span className={`h-1.5 w-1.5 rounded-full ${w === "in_progress" ? "bg-accent" : "border border-ink-2"}`} />
+      )}
       {workLabel(w)}
     </span>
   );
 }
 
 const METER_FILL: Record<IncidentStatus, string> = {
-  candidate: "bg-line-strong",
+  candidate: "bg-muted",
   likely: "bg-warn",
   verified: "bg-good",
-  dismissed: "bg-muted",
-  closed: "bg-muted",
+  dismissed: "bg-line-strong",
+  closed: "bg-line-strong",
 };
 
 /** Confidence bar with the Likely (60 %) and Verified (85 %) thresholds marked. */
@@ -85,26 +92,48 @@ export function ConfidenceMeter({ value, status, label }: { value: number | null
   return (
     <div>
       {label && (
-        <div className="mb-1 flex items-baseline justify-between gap-3 text-sm">
-          <span className="text-ink-2">{label}</span>
-          <span className="tabular font-semibold">{value == null ? "no data yet" : `${pct}%`}</span>
+        <div className="mb-1 flex items-baseline justify-between gap-3 text-xs font-semibold text-ink-2">
+          <span>{label}</span>
+          <span className="font-mono font-bold text-ink">{value == null ? "no data yet" : `${pct}%`}</span>
         </div>
       )}
-      <div className="relative h-2.5 rounded-full bg-surface-2" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label={label ?? "Confidence"}>
+      <div
+        className="relative h-2 overflow-hidden rounded-full border border-line bg-surface-2"
+        role="meter"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={pct}
+        aria-label={label ?? "Confidence"}
+      >
         <div className={`h-full rounded-full ${METER_FILL[status ?? "candidate"]}`} style={{ width: `${value == null ? 0 : Math.max(2, pct)}%` }} />
         {[LIKELY_AT, VERIFIED_AT].map((t) => (
-          <span key={t} className="absolute -top-0.5 h-3.5 w-0.5 rounded bg-ink/40" style={{ left: `${t * 100}%` }} aria-hidden="true" />
+          <span key={t} className="absolute inset-y-0 w-0.5 bg-surface/90" style={{ left: `${t * 100}%` }} aria-hidden="true" />
         ))}
       </div>
     </div>
   );
 }
 
-export function SourceTag({ incident }: { incident: Pick<IncidentSummary, "has_sensor" | "has_report"> }) {
+/** Where the evidence comes from. `pill` = tinted outlined pill (cards), default = dot + text (rows). */
+export function SourceTag({ incident, pill = false }: { incident: Pick<IncidentSummary, "has_sensor" | "has_report">; pill?: boolean }) {
   const k = sourceKind(incident);
+  if (pill) {
+    return (
+      <span
+        className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold text-ink"
+        style={{
+          background: `color-mix(in srgb, ${SOURCE_VAR[k]} 9%, transparent)`,
+          borderColor: `color-mix(in srgb, ${SOURCE_VAR[k]} 40%, transparent)`,
+        }}
+      >
+        <span className="h-1.5 w-1.5 rounded-full" style={{ background: SOURCE_VAR[k] }} />
+        {SOURCE_LABEL[k]}
+      </span>
+    );
+  }
   return (
-    <span className="inline-flex items-center gap-2 text-sm text-ink-2">
-      <span className="inline-block h-3 w-3 rounded-full ring-2 ring-surface" style={{ background: SOURCE_VAR[k] }} />
+    <span className="inline-flex items-center gap-1.5 text-xs text-ink-2">
+      <span className="inline-block h-2 w-2 rounded-full" style={{ background: SOURCE_VAR[k] }} />
       {SOURCE_LABEL[k]}
     </span>
   );
@@ -112,12 +141,12 @@ export function SourceTag({ incident }: { incident: Pick<IncidentSummary, "has_s
 
 function Badge({ children, tone }: { children: ReactNode; tone: "accent" | "good" | "warn" | "neutral" }) {
   const cls = {
-    accent: "bg-accent-soft text-accent",
-    good: "bg-good-soft text-good-ink",
-    warn: "bg-warn-soft text-warn-ink",
-    neutral: "bg-surface-2 text-muted",
+    accent: "border-line-strong bg-surface-2 text-ink",
+    good: "border-good/40 bg-good-soft text-good-ink",
+    warn: "border-warn/40 bg-warn-soft text-warn-ink",
+    neutral: "border-line bg-surface-2 text-muted",
   }[tone];
-  return <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-0.5 text-sm font-semibold ${cls}`}>{children}</span>;
+  return <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded border px-2 py-0.5 text-xs font-medium ${cls}`}>{children}</span>;
 }
 
 /** "Found before any report", "Verified by tram 17", "Tram 17 verifying · ~6 min", "No anomaly on 2 passes". */
@@ -128,22 +157,22 @@ export function IncidentBadges({ incident }: { incident: IncidentSummary }) {
     <>
       {incident.found_before_report && (
         <Badge tone="accent">
-          <IconRadar width={15} height={15} /> Found before any report
+          <IconRadar width={13} height={13} className="text-both" /> Found before any report
         </Badge>
       )}
       {incident.status === "verified" && incident.has_sensor && incident.verify_vehicle && (
         <Badge tone="good">
-          <IconCheck width={15} height={15} /> Verified by {incident.verify_vehicle}
+          <IconCheck width={12} height={12} strokeWidth={2.5} /> Verified by {incident.verify_vehicle}
         </Badge>
       )}
       {incident.awaiting_verification && v && (
         <Badge tone="warn">
-          <IconClock width={15} height={15} /> {v} verifying{incident.verify_eta_min != null ? ` · ~${incident.verify_eta_min} min` : ""}
+          <IconClock width={13} height={13} /> {v} verifying{incident.verify_eta_min != null ? ` · ~${incident.verify_eta_min} min` : ""}
         </Badge>
       )}
       {open && incident.sensor_misses > 0 && (
         <Badge tone="neutral">
-          <IconEyeOff width={15} height={15} /> No anomaly on {incident.sensor_misses} pass{incident.sensor_misses === 1 ? "" : "es"}
+          <IconEyeOff width={13} height={13} /> No anomaly on {incident.sensor_misses} pass{incident.sensor_misses === 1 ? "" : "es"}
         </Badge>
       )}
     </>
@@ -162,6 +191,7 @@ export function verificationText(i: IncidentSummary): string {
   return "Not requested yet";
 }
 
+/** Single-choice filter chips (Stitch: navy filled when on, quiet slate otherwise; counts in mono). */
 export function Segmented<T extends string>({
   label,
   value,
@@ -184,12 +214,12 @@ export function Segmented<T extends string>({
             role="radio"
             aria-checked={on}
             onClick={() => onChange(o.value)}
-            className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
-              on ? "border-accent bg-accent text-accent-ink" : "border-line-strong bg-surface text-ink-2 hover:bg-surface-2"
+            className={`rounded-full px-3 py-1 text-[0.8125rem] font-semibold transition-colors ${
+              on ? "bg-accent text-accent-ink" : "bg-surface-2 text-ink-2 hover:bg-line"
             } ${!on && o.count === 0 ? "opacity-50" : ""}`}
           >
             {o.label}
-            {o.count !== undefined && <span className={`tabular ml-1.5 ${on ? "opacity-80" : "text-muted"}`}>{o.count}</span>}
+            {o.count !== undefined && <span className={`ml-1.5 font-mono text-xs ${on ? "opacity-80" : "text-muted"}`}>{o.count}</span>}
           </button>
         );
       })}
