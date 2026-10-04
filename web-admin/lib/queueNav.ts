@@ -7,7 +7,7 @@ export interface QueueOrder {
   query: string; // the queue's search params, e.g. "department=ZDM&work=todo"
 }
 
-const KEY = "cityecho.queue";
+const KEY = "citysense.queue";
 const EMPTY: QueueOrder = { ids: [], query: "" };
 let cached: QueueOrder | null = null;
 let raw: string | null = null;

@@ -1,4 +1,4 @@
-# CityEcho frontend
+# CitySense frontend
 
 Next.js 16 (App Router, TypeScript, Tailwind 4) + MapLibre GL 6 + deck.gl 9 + recharts 3.
 Codes against `docs/ARCHITECTURE.md` §6; types live in `lib/types.ts`.

@@ -355,7 +355,7 @@ export default function IncidentQueue() {
                 <button
                   type="button"
                   disabled={!list.length}
-                  onClick={() => downloadText(`cityecho-incidents-${new Date().toISOString().slice(0, 10)}.csv`, incidentsCsv(list))}
+                  onClick={() => downloadText(`citysense-incidents-${new Date().toISOString().slice(0, 10)}.csv`, incidentsCsv(list))}
                   className="font-semibold text-accent hover:underline disabled:opacity-50"
                 >
                   Export CSV

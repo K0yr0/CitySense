@@ -1,5 +1,5 @@
 {
- "_comment": "SAMPLE DATA, NOT LIVE. Hand-made offline fallback for CityEcho demos: positions of real Warsaw tram/bus lines near the city centre (Marszałkowska, Al. Jerozolimskie, Trakt Królewski) in the raw ZTM busestrams_get format, one payload per kind. 'previous' is the same fleet one 30 s frame earlier, used to estimate heading. Time is Europe/Warsaw local time, as in the real API.",
+ "_comment": "SAMPLE DATA, NOT LIVE. Hand-made offline fallback for CitySense demos: positions of real Warsaw tram/bus lines near the city centre (Marszałkowska, Al. Jerozolimskie, Trakt Królewski) in the raw ZTM busestrams_get format, one payload per kind. 'previous' is the same fleet one 30 s frame earlier, used to estimate heading. Time is Europe/Warsaw local time, as in the real API.",
  "captured_at": "2026-10-02T12:01:00+02:00",
  "tram": {
   "result": [

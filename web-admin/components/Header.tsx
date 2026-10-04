@@ -13,7 +13,7 @@ const NAV = [
   { href: "/stats", label: "Stats", Icon: IconChart },
 ];
 
-/** CityEcho emblem (Stitch): navy disc with radar rings, a light ring around it. */
+/** CitySense emblem (Stitch): navy disc with radar rings, a light ring around it. */
 export function Logo({ size = 32 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true" className="shrink-0">
@@ -90,9 +90,9 @@ export default function Header() {
     <header className="sticky top-0 z-40 border-b border-line bg-surface">
       <div className="flex h-16 items-center justify-between gap-2 px-2.5 sm:gap-4 sm:px-6">
         <div className="flex shrink-0 items-center gap-5">
-          <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="CityEcho home">
+          <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="CitySense home">
             <Logo size={34} />
-            <span className="hidden text-xl font-extrabold tracking-tight min-[480px]:inline">CityEcho</span>
+            <span className="hidden text-xl font-extrabold tracking-tight min-[480px]:inline">CitySense</span>
             <span className="hidden rounded border border-line-strong bg-surface-2 px-1.5 py-0.5 text-[0.6875rem] font-bold uppercase tracking-wider text-ink-2 sm:inline">
               Admin
             </span>

@@ -104,7 +104,7 @@ function BrandPanel() {
             <circle cx="16" cy="16" r="3" fill="#fff" />
           </svg>
         </span>
-        <span className="text-2xl font-extrabold tracking-tight">CityEcho</span>
+        <span className="text-2xl font-extrabold tracking-tight">CitySense</span>
         <span className="rounded border border-white/30 px-1.5 py-0.5 text-[0.6875rem] font-bold uppercase tracking-wider text-white/80">Admin</span>
       </div>
 
@@ -166,7 +166,7 @@ export default function LoginView() {
         <div className="flex items-center justify-between gap-3 px-6 py-5 sm:px-10">
           <span className="flex items-center gap-2 lg:invisible">
             <Logo size={32} />
-            <span className="text-lg font-extrabold tracking-tight">CityEcho</span>
+            <span className="text-lg font-extrabold tracking-tight">CitySense</span>
           </span>
           <span className="flex items-center gap-3">
             <DemoBadge />
@@ -233,7 +233,7 @@ export default function LoginView() {
             </div>
 
             <p className="mt-10 border-t border-line pt-5 text-xs leading-relaxed text-muted">
-              For municipal staff only. Need access? Ask the CityEcho team to add your email to the admin list.
+              For municipal staff only. Need access? Ask the CitySense team to add your email to the admin list.
             </p>
           </div>
         </div>

@@ -1,4 +1,4 @@
-// Typed client for the CityEcho FastAPI backend (docs/ARCHITECTURE.md §6).
+// Typed client for the CitySense FastAPI backend (docs/ARCHITECTURE.md §6).
 // NEXT_PUBLIC_USE_MOCK=1 -> fixtures only. Otherwise every call falls back to fixtures when the
 // request fails, and the header shows a "Demo data" badge (see lib/demo.ts).
 import { getSession, setSession, signOut, type Session } from "./auth";
@@ -83,7 +83,7 @@ async function request<T>(
     markLive(endpoint);
     return data;
   } catch (err) {
-    console.warn(`[cityecho] ${endpoint} failed, serving demo data`, err);
+    console.warn(`[citysense] ${endpoint} failed, serving demo data`, err);
     markFallback(endpoint);
     return fallback();
   }
@@ -91,7 +91,7 @@ async function request<T>(
 
 // ---------------------------------------------------------------- admin login (docs/ARCHITECTURE.md §8)
 
-const MOCK_ADMIN: Session = { token: "mock", user: { id: 1, email: "admin@cityecho.demo", name: "Demo admin", role: "admin" } };
+const MOCK_ADMIN: Session = { token: "mock", user: { id: 1, email: "admin@citysense.demo", name: "Demo admin", role: "admin" } };
 
 function adminOnly(session: Session): Session {
   if (session.user.role !== "admin") {

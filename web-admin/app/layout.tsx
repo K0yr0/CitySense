@@ -11,9 +11,9 @@ const sans = Public_Sans({ subsets: ["latin", "latin-ext"], variable: "--font-pu
 const mono = JetBrains_Mono({ subsets: ["latin", "latin-ext"], variable: "--font-jetbrains-mono", display: "swap" });
 
 export const metadata: Metadata = {
-  title: { default: "CityEcho admin · Warsaw city health", template: "%s · CityEcho admin" },
+  title: { default: "CitySense admin · Warsaw city health", template: "%s · CitySense admin" },
   description: "Warsaw's buses verify its citizens — and its citizens verify its buses. Sensor rides and 19115 reports fused into verified incidents.",
-  applicationName: "CityEcho",
+  applicationName: "CitySense",
 };
 
 export const viewport: Viewport = {

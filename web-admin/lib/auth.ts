@@ -22,7 +22,7 @@ export const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
 /** Show the "sign in with email" form (backend needs AUTH_DEV_LOGIN=1). Local testing only. */
 export const DEV_LOGIN = process.env.NEXT_PUBLIC_AUTH_DEV_LOGIN === "1";
 
-const KEY = "cityecho.admin.session";
+const KEY = "citysense.admin.session";
 const listeners = new Set<() => void>();
 let cached: Session | null | undefined; // undefined = not read from storage yet
 
