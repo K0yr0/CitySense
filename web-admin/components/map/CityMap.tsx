@@ -125,8 +125,8 @@ export default function CityMap({ focusId = null, filters = NO_FILTERS }: { focu
   };
 
   const layers = useMemo(() => {
-    const ring: RGBA = dark ? [26, 26, 25, 255] : [255, 255, 255, 255];
-    const accent: RGBA = dark ? [144, 133, 233, 255] : [74, 58, 167, 255];
+    const ring: RGBA = dark ? [14, 20, 36, 255] : [255, 255, 255, 255];
+    const accent: RGBA = dark ? [141, 177, 242, 255] : [15, 45, 89, 255];
     const casing: RGBA = dark ? [0, 0, 0, 200] : [255, 255, 255, 235];
     const all = segments.data ?? [];
     const measured = all.filter((d) => d.health != null);
@@ -206,7 +206,7 @@ export default function CityMap({ focusId = null, filters = NO_FILTERS }: { focu
           getPixelOffset: [0, -15],
           getColor: dark ? [240, 240, 235, 255] : [11, 11, 11, 255],
           background: true,
-          getBackgroundColor: dark ? [26, 26, 25, 230] : [255, 255, 255, 230],
+          getBackgroundColor: dark ? [14, 20, 36, 230] : [255, 255, 255, 230],
           backgroundPadding: [4, 1],
           fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
           fontWeight: 600,

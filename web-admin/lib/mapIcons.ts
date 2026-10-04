@@ -27,7 +27,7 @@ export function incidentIconUrl(type: IssueType, source: SourceKind, dark: boole
   let url = cache.get(key);
   if (!url) {
     const [r, g, b] = sourceRGBA(source, dark);
-    const ring = dark ? "#1a1a19" : "#ffffff";
+    const ring = dark ? "#0e1424" : "#ffffff";
     const svg =
       `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">` +
       `<circle cx="32" cy="32" r="29" fill="rgb(${r},${g},${b})" stroke="${ring}" stroke-width="4"/>` +

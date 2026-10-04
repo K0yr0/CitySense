@@ -93,18 +93,18 @@ export const SOURCE_VAR: Record<SourceKind, string> = {
 
 type RGBA = [number, number, number, number];
 
-/** Deck.gl colours for incident sources; validated categorical slots (blue / aqua / orange). */
+/** Deck.gl colours for incident sources (= --report / --sensor / --both); CVD-validated in both themes. */
 export function sourceRGBA(kind: SourceKind, dark: boolean): RGBA {
-  const light = { report: [42, 120, 214], sensor: [27, 175, 122], both: [235, 104, 52] } as const;
-  const night = { report: [57, 135, 229], sensor: [25, 158, 112], both: [217, 89, 38] } as const;
+  const light = { report: [37, 99, 235], sensor: [13, 148, 136], both: [234, 88, 12] } as const;
+  const night = { report: [59, 130, 246], sensor: [13, 148, 136], both: [234, 88, 12] } as const;
   const c = (dark ? night : light)[kind];
   return [c[0], c[1], c[2], 235];
 }
 
 const HEALTH_STOPS: [number, [number, number, number]][] = [
-  [0, [208, 59, 59]], // critical
-  [0.5, [250, 178, 25]], // warning
-  [1, [12, 163, 12]], // good
+  [0, [220, 38, 38]], // critical
+  [0.5, [245, 158, 11]], // warning
+  [1, [22, 163, 74]], // good
 ];
 
 /** Segment health 0..1 -> red..amber..green; null -> grey. */
@@ -148,8 +148,9 @@ export function healthClass(h: number | null | undefined): HealthClass {
 
 /** Deck.gl colour per health class (status ramp: good / warning / critical; grey = not measured). */
 export function healthClassRGBA(c: HealthClass, dark: boolean): RGBA {
-  const light = { good: [12, 163, 12, 235], worn: [240, 160, 0, 240], poor: [208, 59, 59, 245], unknown: [118, 117, 110, 150] } as const;
-  const night = { good: [46, 180, 46, 235], worn: [250, 178, 25, 240], poor: [232, 84, 84, 245], unknown: [150, 150, 144, 140] } as const;
+  // Stitch: good #16a34a, worn #f59e0b, poor #dc2626, unmeasured slate.
+  const light = { good: [22, 163, 74, 235], worn: [245, 158, 11, 240], poor: [220, 38, 38, 245], unknown: [100, 116, 139, 140] } as const;
+  const night = { good: [16, 185, 129, 235], worn: [245, 158, 11, 240], poor: [239, 68, 68, 245], unknown: [100, 116, 139, 150] } as const;
   const v = (dark ? night : light)[c];
   return [v[0], v[1], v[2], v[3]];
 }

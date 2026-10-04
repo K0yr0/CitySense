@@ -22,7 +22,7 @@ export default function LocationMapInner({ incident: i }: { incident: IncidentSu
   const segments = useApi(`segments:near:${bbox}`, () => getSegments({ bbox }));
 
   const layers = useMemo(() => {
-    const ring: [number, number, number, number] = dark ? [26, 26, 25, 255] : [255, 255, 255, 255];
+    const ring: [number, number, number, number] = dark ? [14, 20, 36, 255] : [255, 255, 255, 255];
     return [
       new PathLayer<Segment>({
         id: "near-segments",

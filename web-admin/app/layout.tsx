@@ -1,7 +1,13 @@
 import type { Metadata, Viewport } from "next";
+import { JetBrains_Mono, Public_Sans } from "next/font/google";
 import AuthGate from "@/components/auth/AuthGate";
 import Header from "@/components/Header";
 import "./globals.css";
+
+// Stitch design system: Public Sans for the interface, JetBrains Mono for ids, numbers and labels.
+// latin-ext covers Polish street names (ł, ś, ż …).
+const sans = Public_Sans({ subsets: ["latin", "latin-ext"], variable: "--font-public-sans", display: "swap" });
+const mono = JetBrains_Mono({ subsets: ["latin", "latin-ext"], variable: "--font-jetbrains-mono", display: "swap" });
 
 export const metadata: Metadata = {
   title: { default: "CityEcho admin · Warsaw city health", template: "%s · CityEcho admin" },
@@ -14,13 +20,13 @@ export const viewport: Viewport = {
   initialScale: 1,
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#1a1a19" },
+    { media: "(prefers-color-scheme: dark)", color: "#0e1424" },
   ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
       <body className="flex min-h-dvh flex-col">
         <Header />
         <AuthGate>{children}</AuthGate>
