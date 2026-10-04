@@ -30,7 +30,7 @@ export default function QuickWork({ incident, onChanged }: { incident: IncidentS
     }
   };
 
-  const btn = "rounded-lg px-2.5 py-1 text-sm font-semibold disabled:opacity-60";
+  const btn = "rounded px-2.5 py-1 text-[0.6875rem] font-medium disabled:opacity-60";
   return (
     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
       {confirming ? (
@@ -47,14 +47,14 @@ export default function QuickWork({ incident, onChanged }: { incident: IncidentS
           type="button"
           disabled={busy}
           onClick={() => (to === "done" ? setConfirming(true) : run())}
-          className={`${btn} border border-line-strong text-ink-2 hover:border-accent hover:text-accent`}
+          className={`${btn} border border-line-strong bg-surface text-accent hover:bg-surface-2`}
           title={to === "done" ? "Mark as done: the app stops asking about it and contributor trust is settled" : "Move to in progress"}
         >
           {busy ? "Saving…" : to === "done" ? "Mark done" : "Start work"}
         </button>
       )}
       {error && (
-        <span role="alert" className="text-sm font-medium text-crit-ink">
+        <span role="alert" className="text-xs font-medium text-crit-ink">
           {error}
         </span>
       )}
