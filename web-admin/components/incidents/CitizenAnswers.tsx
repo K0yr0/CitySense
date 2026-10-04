@@ -11,42 +11,42 @@ export default function CitizenAnswers({ incident: i, now }: { incident: Inciden
   return (
     <div>
       <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-xl bg-good-soft px-3.5 py-2.5">
-          <div className="tabular text-2xl font-semibold text-good-ink">{i.yes_count}</div>
-          <div className="text-sm text-ink-2">YES, still there</div>
+        <div className="rounded-lg border border-good/40 bg-good-soft px-3.5 py-3">
+          <div className="font-mono text-2xl font-bold text-good-ink">{i.yes_count}</div>
+          <div className="mt-1 text-[0.6875rem] font-medium uppercase tracking-wide text-good-ink">YES, still there</div>
         </div>
-        <div className="rounded-xl bg-surface-2 px-3.5 py-2.5">
-          <div className="tabular text-2xl font-semibold">{i.no_count}</div>
-          <div className="text-sm text-ink-2">NO, not there</div>
+        <div className="rounded-lg border border-line bg-surface-2 px-3.5 py-3">
+          <div className="font-mono text-2xl font-bold">{i.no_count}</div>
+          <div className="mt-1 text-[0.6875rem] font-medium uppercase tracking-wide text-ink-2">NO, not there</div>
         </div>
       </div>
-      <p className="mt-2 text-sm text-muted">
+      <p className="mt-2 text-xs text-muted">
         {reportYes > 0 ? `${reportYes} YES from the reports themselves, ` : ""}
         {i.responses.length} explicit answer{i.responses.length === 1 ? "" : "s"} from the app. Each answer counts by the contributor&apos;s trust.
       </p>
 
       {i.responses.length > 0 && (
-        <ul className="mt-3 divide-y divide-line">
+        <ul className="mt-3 space-y-2 border-t border-line pt-3">
           {i.responses.slice(0, SHOW).map((r, n) => (
-            <li key={`${r.created_at}-${n}`} className="flex items-center gap-3 py-2">
-              <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full ${r.answer === "yes" ? "bg-good-soft text-good-ink" : "bg-surface-2 text-ink-2"}`}>
-                {r.answer === "yes" ? <IconCheck width={15} height={15} /> : <IconX width={15} height={15} />}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="font-medium">{r.answer === "yes" ? "Yes" : "No"}</div>
-                <div className="text-sm text-muted" title={formatDateTime(r.created_at)}>
+            <li key={`${r.created_at}-${n}`} className="flex items-center justify-between gap-3 text-xs">
+              <span className="flex min-w-0 items-center gap-2">
+                <span className={`grid h-4 w-4 shrink-0 place-items-center rounded-full ${r.answer === "yes" ? "bg-good-soft text-good-ink" : "bg-surface-2 text-ink-2"}`}>
+                  {r.answer === "yes" ? <IconCheck width={10} height={10} strokeWidth={3} /> : <IconX width={10} height={10} strokeWidth={3} />}
+                </span>
+                <span className="font-medium text-ink">{r.answer === "yes" ? "Yes" : "No"}</span>
+                <span className="text-muted" title={formatDateTime(r.created_at)}>
                   {timeAgo(r.created_at, now)}
                   {r.settled ? " · scored" : ""}
-                </div>
-              </div>
-              <span className="tabular text-sm text-ink-2" title="Contributor trust (0–1): how often their past answers matched the outcome">
+                </span>
+              </span>
+              <span className="font-mono text-[0.6875rem] text-muted" title="Contributor trust (0–1): how often their past answers matched the outcome">
                 trust {r.trust != null ? r.trust.toFixed(2) : "—"}
               </span>
             </li>
           ))}
         </ul>
       )}
-      {i.responses.length > SHOW && <p className="mt-1 text-sm text-muted">+ {i.responses.length - SHOW} more in the timeline.</p>}
+      {i.responses.length > SHOW && <p className="mt-2 text-xs text-muted">+ {i.responses.length - SHOW} more in the timeline.</p>}
     </div>
   );
 }

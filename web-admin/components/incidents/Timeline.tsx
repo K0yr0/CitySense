@@ -17,7 +17,7 @@ const NO_ANSWER = { cls: "bg-line-strong text-ink", Icon: IconX };
 
 /** Evidence timeline: reports, citizen answers, sensor hits and misses, verified / dismissed. */
 export default function Timeline({ events, now }: { events: TimelineEvent[]; now: number }) {
-  if (!events.length) return <p className="text-ink-2">No events yet.</p>;
+  if (!events.length) return <p className="text-xs text-muted">No events yet.</p>;
   return (
     <ol className="relative">
       {events.map((e, idx) => {
@@ -25,14 +25,14 @@ export default function Timeline({ events, now }: { events: TimelineEvent[]; now
         const k = e.kind === "response" && /\bNO\b/.test(e.label) ? NO_ANSWER : (KIND[e.kind] ?? KIND.report);
         const last = idx === events.length - 1;
         return (
-          <li key={`${e.ts}-${idx}`} className="relative flex gap-3 pb-5 last:pb-0">
-            {!last && <span className="absolute left-[0.9rem] top-8 bottom-0 w-px bg-line-strong" aria-hidden="true" />}
-            <span className={`relative z-10 grid h-7 w-7 shrink-0 place-items-center rounded-full ring-4 ring-surface ${k.cls}`}>
-              <k.Icon width={15} height={15} />
+          <li key={`${e.ts}-${idx}`} className="relative flex gap-3 pb-4 last:pb-0">
+            {!last && <span className="absolute bottom-0 left-[0.6rem] top-6 w-0.5 bg-line" aria-hidden="true" />}
+            <span className={`relative z-10 grid h-5 w-5 shrink-0 place-items-center rounded-full ring-4 ring-surface ${k.cls}`}>
+              <k.Icon width={11} height={11} strokeWidth={2.5} />
             </span>
-            <div className="min-w-0 pt-0.5">
-              <div className="text-base font-medium leading-snug">{e.label}</div>
-              <div className="text-sm text-muted">
+            <div className="min-w-0">
+              <div className="text-xs font-semibold leading-snug text-ink">{e.label}</div>
+              <div className="text-[0.6875rem] text-muted">
                 {formatDateTime(e.ts)} · {timeAgo(e.ts, now)}
               </div>
             </div>

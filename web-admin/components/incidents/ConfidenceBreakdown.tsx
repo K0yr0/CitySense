@@ -19,15 +19,15 @@ export default function ConfidenceBreakdown({ incident: i }: { incident: Inciden
     <div className="flex flex-col gap-4">
       <div>
         <ConfidenceMeter label="Sensor confidence" value={i.sensor_confidence} status={i.status} />
-        <p className="mt-1 text-sm text-muted">{sensorNote}</p>
+        <p className="mt-1 text-[0.6875rem] text-muted">{sensorNote}</p>
       </div>
       <div>
         <ConfidenceMeter label="Citizen confidence" value={i.citizen_confidence} status={i.status} />
-        <p className="mt-1 text-sm text-muted">{citizenNote}</p>
+        <p className="mt-1 text-[0.6875rem] text-muted">{citizenNote}</p>
       </div>
-      <div className="rounded-xl bg-surface-2 p-3.5">
+      <div className="rounded-lg border border-line bg-surface-2 p-3">
         <ConfidenceMeter label="Confidence engine" value={i.confidence} status={i.status} />
-        <p className="mt-2 text-base">
+        <p className="mt-2 text-xs leading-relaxed">
           <span className="font-semibold">{statusLabel(i.status)}</span>
           <span className="text-ink-2"> at {fmtPct(i.confidence)}. Likely from 60%, verified from 85%.</span>
           {crowdOnly && <span className="text-ink-2"> Citizen answers alone stop at likely; a vehicle sensor pass can verify it.</span>}
