@@ -306,3 +306,42 @@ def test_scenarios_refuse_to_run_without_an_admin_token(monkeypatch, world):
     monkeypatch.setattr(sim, "admin_token", lambda api: None)
     with pytest.raises(SystemExit, match="admin-only"):
         sim.Scenario(types_ns(api="http://x", token=None, chunk_s=10, speed=0), {}, world)
+
+
+# --------------------------------------------------------------------------- road / rail surface (health map realism)
+
+def test_surface_is_a_property_of_the_place_not_the_line():
+    """Two lines over the same OSM way feel the same surface, so they agree on its health."""
+    _, geoms, names, ways = sim.map_index("road")
+    factor = {w: sim.surface_factor("road", w) for w in set(ways)}
+    assert all(sim.surface_factor("road", w) == f for w, f in list(factor.items())[:50])  # deterministic
+    s171, f171 = sim.surface_profile(sim.route_for("road", "171"))
+    s171r, f171r = sim.surface_profile(sim.route_for("road", "171", reverse=True))
+    assert sorted(np.round(f171, 3)) == pytest.approx(sorted(np.round(f171r, 3)), abs=0.5)  # same stretches backwards
+    assert set(np.round(f171, 3)) - {1.0} <= {round(f, 3) for f in factor.values()}
+
+
+@pytest.mark.parametrize("mode", ["road", "tram"])
+def test_surface_shares_follow_the_configuration(mode):
+    _, _, _, ways = sim.map_index(mode)
+    f = np.array([sim.surface_factor(mode, w) for w in sorted(set(ways))])
+    (smooth, (lo, hi)), (worn, _), (bad, (blo, bhi)) = sim.SURFACE[mode]
+    assert abs(np.mean(f <= hi) - smooth) < 0.06 and abs(np.mean(f >= blo) - bad) < 0.04
+    assert f.min() >= lo and f.max() <= bhi
+
+
+def test_rough_surface_shakes_more_and_defaults_stay_unchanged():
+    route = synth.Route("17")
+    base = synth.world_on_route(route, [])
+    smooth, _ = synth.generate_ride(route=route, world={**base, "roughness": ([0.0], [0.5])}, seed=4)
+    rough, _ = synth.generate_ride(route=route, world={**base, "roughness": ([0.0], [2.0])}, seed=4)
+    plain, _ = synth.generate_ride(route=route, world=base, seed=4)
+    assert rough["az"].std() > 1.5 * smooth["az"].std()
+    same, _ = synth.generate_ride(route=route, world={**base, "roughness": ([0.0], [1.0])}, seed=4)
+    pd.testing.assert_frame_equal(plain, same)
+
+
+def test_vehicle_worlds_carry_the_surface(world):
+    w, _ = sim.vehicle_world(sim.route_for("road", "160"), world)
+    s, f = w["roughness"]
+    assert len(s) == len(f) > 100 and s[0] == 0.0 and np.all(np.diff(s) > 0)

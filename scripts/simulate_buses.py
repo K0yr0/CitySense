@@ -5,7 +5,9 @@ to POST /devices/stream exactly like a real on-board device would (docs/ARCHITEC
 Everything here is SIMULATED (no real sensors). The world is fixed: potholes, track defects and
 broken streetlights sit at known coordinates in data/demo/sim_world.json (the ground truth), so
 every vehicle whose route passes over a defect feels it. Lines sharing a street hit the same
-potholes; the tram on Marszałkowska never hits the road potholes 20 m beside its tracks.
+potholes; the tram on Marszałkowska never hits the road potholes 20 m beside its tracks. Each OSM way also
+has a fixed surface (smooth / worn / bad, SURFACE) that scales the running vibration, so road health
+shows real stretches.
 
 Fleet = DEVICE_KEYS in .env, ids `<bus|tram>-<line>-<nn>`, e.g. bus-171-01, tram-17-01. Each
 vehicle drives its line back and forth (`--rides` trips) in its own thread, sending a chunk
@@ -99,16 +101,65 @@ def _inside(lon: float, lat: float) -> bool:
     return DEMO_BBOX[0] <= lon <= DEMO_BBOX[2] and DEMO_BBOX[1] <= lat <= DEMO_BBOX[3]
 
 
-@lru_cache(maxsize=1)
-def road_index(path: Path = GEOJSON):
-    """STRtree over the map's road segments in local metres: (tree, geometries, street names)."""
+@lru_cache(maxsize=2)
+def map_index(mode: str = "road", path: Path = GEOJSON):
+    """STRtree over the map's segments of one mode in local metres: (tree, geometries, names, OSM way ids)."""
     from shapely import STRtree
     from shapely.geometry import LineString
 
     feats = [f for f in json.loads(Path(path).read_text(encoding="utf-8"))["features"]
-             if f["properties"]["mode"] == "road"]
+             if f["properties"]["mode"] == mode]
     geoms = [LineString([_m(x, y) for x, y in f["geometry"]["coordinates"]]) for f in feats]
-    return STRtree(geoms), geoms, [f["properties"]["name"] for f in feats]
+    return (STRtree(geoms), geoms, [f["properties"]["name"] for f in feats],
+            [int(f["properties"].get("osm_way_id") or 0) for f in feats])
+
+
+def road_index():
+    tree, geoms, names, _ = map_index("road")
+    return tree, geoms, names
+
+
+# Road / rail surface per OSM way (fixed by WORLD_SEED): most of it smooth, some worn, a little bad. It scales
+# the running vibration, so the health map shows real stretches instead of noise around one value.
+SURFACE = {  # mode: [(share, factor range)]
+    "road": [(0.70, (0.6, 0.9)), (0.22, (1.3, 1.7)), (0.08, (1.9, 2.1))],
+    "tram": [(0.75, (0.45, 0.75)), (0.20, (1.2, 1.5)), (0.05, (1.7, 1.9))],  # rail joints add their own clicks
+}
+SURFACE_STEP_M = 10.0
+SURFACE_MATCH_M = 15.0
+
+
+def surface_factor(mode: str, way_id: int) -> float:
+    rng = np.random.default_rng([WORLD_SEED, 7, int(way_id) % (2 ** 32)])
+    u, cum = rng.random(), 0.0
+    for share, (lo, hi) in SURFACE[mode]:
+        cum += share
+        if u < cum:
+            return round(float(rng.uniform(lo, hi)), 3)
+    return round(float(rng.uniform(*SURFACE[mode][-1][1])), 3)
+
+
+@lru_cache(maxsize=64)
+def _surface_profile(mode: str, line: str, reverse: bool) -> tuple[np.ndarray, np.ndarray]:
+    from shapely.geometry import Point
+
+    route = route_for(mode, line, reverse=reverse)
+    tree, geoms, _, ways = map_index(mode)
+    s = np.arange(0.0, route.length, SURFACE_STEP_M)
+    factors = np.ones_like(s)
+    for k, t in enumerate(s):
+        p = Point(_m(*(float(v) for v in route.at(t))))
+        near = list(tree.query(p.buffer(SURFACE_MATCH_M)))
+        if near:
+            j = min(near, key=lambda i: geoms[i].distance(p))
+            if geoms[j].distance(p) <= SURFACE_MATCH_M:
+                factors[k] = surface_factor(mode, ways[j])
+    return s, factors
+
+
+def surface_profile(route: synth.Route) -> tuple[np.ndarray, np.ndarray]:
+    """(breakpoints along the route, surface factor from there on), from the map segments it drives over."""
+    return _surface_profile(route.mode, route.line, bool(getattr(route, "reverse", False)))
 
 
 def road_distance(lon: float, lat: float) -> float:
@@ -306,6 +357,7 @@ def vehicle_world(route: synth.Route, defects: list[dict]) -> tuple[dict, list[d
         world = base
     else:
         world = synth.world_on_route(route, mine)
+    world["roughness"] = surface_profile(route)
     passed = []
     for d in mine:
         s, off = route.locate(d["lon"], d["lat"])

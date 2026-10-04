@@ -8,20 +8,20 @@ Setup: the real detectors (`backend/sensor/detect.py`, `backend/sensor/lights.py
 
 | condition | rides | pothole/track defects passed | defect recall | defect precision | broken lamps passed | lamp recall | lamp precision |
 |---|---|---|---|---|---|---|---|
-| baseline | 100 | 560 | 100.0% | 100.0% | 200 | 97.5% | 100.0% |
-| vibration noise x1.5 | 100 | 560 | 100.0% | 99.8% | 200 | 97.5% | 100.0% |
-| vibration noise x2 | 100 | 560 | 100.0% | 84.6% | 200 | 97.5% | 100.0% |
-| vibration noise x3 | 100 | 560 | 100.0% | 9.2% | 200 | 97.5% | 100.0% |
-| slow traffic (speed x0.6) | 100 | 560 | 95.7% | 100.0% | 200 | 96.0% | 100.0% |
-| fast (speed x1.3) | 100 | 560 | 100.0% | 100.0% | 200 | 99.0% | 100.0% |
-| phone lying flat | 100 | 560 | 100.0% | 100.0% | 200 | 97.5% | 100.0% |
-| phone upright (holder/pocket) | 100 | 560 | 100.0% | 100.0% | 200 | 97.5% | 100.0% |
-| GPS error 5 m | 100 | 560 | 100.0% | 100.0% | 200 | 79.0% | 94.8% |
-| GPS error 10 m | 100 | 560 | 85.7% | 85.7% | 200 | 65.5% | 33.5% |
-| hard: noise x2 + slow + GPS 5 m | 100 | 560 | 95.0% | 100.0% | 200 | 79.0% | 95.3% |
+| baseline | 100 | 560 | 100.0% | 99.8% | 200 | 97.5% | 100.0% |
+| vibration noise x1.5 | 100 | 560 | 100.0% | 76.8% | 200 | 97.5% | 100.0% |
+| vibration noise x2 | 100 | 560 | 100.0% | 34.5% | 200 | 97.5% | 100.0% |
+| vibration noise x3 | 100 | 560 | 100.0% | 11.4% | 200 | 97.5% | 100.0% |
+| slow traffic (speed x0.6) | 100 | 560 | 95.5% | 100.0% | 200 | 96.0% | 100.0% |
+| fast (speed x1.3) | 100 | 560 | 100.0% | 98.2% | 200 | 99.0% | 100.0% |
+| phone lying flat | 100 | 560 | 100.0% | 99.8% | 200 | 97.5% | 100.0% |
+| phone upright (holder/pocket) | 100 | 560 | 100.0% | 99.8% | 200 | 97.5% | 100.0% |
+| GPS error 5 m | 100 | 560 | 100.0% | 99.8% | 200 | 79.0% | 94.8% |
+| GPS error 10 m | 100 | 560 | 85.7% | 85.6% | 200 | 65.5% | 33.5% |
+| hard: noise x2 + slow + GPS 5 m | 100 | 560 | 94.5% | 86.3% | 200 | 79.0% | 95.3% |
 
 Baseline by vehicle type:
-- **bus (road potholes)**: recall 100.0%, precision 100.0%
+- **bus (road potholes)**: recall 100.0%, precision 99.8%
 - **tram (track defects)**: recall 100.0%, precision 100.0%
 
 Not measured here: the fusion step (several rides -> one verified incident). In the end-to-end Docker run

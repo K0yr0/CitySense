@@ -276,6 +276,11 @@ def generate_ride(*, line: str = "17", seed: int = 1, night: bool = False, bumps
     t, s_t, v_t, dwells = _speed_profile(route, world, rng, speed=float(cond["speed"]))
     n = t.size
     speed_scale = np.minimum(v_t / 8.33, 2.0)  # vibration grows with speed (1.0 at 30 km/h)
+    surface = noise                             # running-vibration multiplier: conditions x road surface
+    if world.get("roughness") is not None:     # road surface along the route: (breakpoints s, factor per stretch)
+        rough_s, rough_f = world["roughness"]
+        surface = noise * np.asarray(rough_f, dtype=float)[
+            np.clip(np.searchsorted(rough_s, s_t, side="right") - 1, 0, len(rough_f) - 1)]
 
     def t_at(s: float) -> float:
         return float(np.interp(s, s_t, t))
@@ -284,7 +289,7 @@ def generate_ride(*, line: str = "17", seed: int = 1, night: bool = False, bumps
         return float(np.clip(np.interp(tt, t, v_t) / 8.33, 0.5, 2.0))
 
     # Vertical specific force on the car body (vehicle frame, m/s² on top of gravity).
-    vert = _bandnoise(rng, n, 2.0, 25.0) * (0.06 + 0.20 * speed_scale) * noise   # running vibration
+    vert = _bandnoise(rng, n, 2.0, 25.0) * (0.06 + 0.20 * speed_scale) * surface   # running vibration
     vert += _bandnoise(rng, n, 0.4, 1.4) * 0.25 * speed_scale * noise             # body bounce (< high-pass)
     for s_b, amp, freq in world["bumps"]:                                 # injected defects
         tb = t_at(s_b)
@@ -303,8 +308,8 @@ def generate_ride(*, line: str = "17", seed: int = 1, night: bool = False, bumps
                 _add_pulse(vert, td, rng.uniform(2.0, 4.5), 6.0, 0.1)
 
     v_smooth = np.convolve(v_t, np.ones(FS // 2) / (FS // 2), mode="same")
-    a_long = np.gradient(v_smooth, 1.0 / FS) + 0.3 * _bandnoise(rng, n, 1.0, 20.0) * (0.06 + 0.2 * speed_scale) * noise
-    a_lat = 0.4 * _bandnoise(rng, n, 0.5, 20.0) * (0.06 + 0.2 * speed_scale) * noise
+    a_long = np.gradient(v_smooth, 1.0 / FS) + 0.3 * _bandnoise(rng, n, 1.0, 20.0) * (0.06 + 0.2 * speed_scale) * surface
+    a_lat = 0.4 * _bandnoise(rng, n, 0.5, 20.0) * (0.06 + 0.2 * speed_scale) * surface
     f_vehicle = np.column_stack([a_long, a_lat, G + vert])
 
     yaw, pitch, roll = rng.uniform(0, 2 * np.pi), rng.uniform(-1.0, 1.0), rng.uniform(-0.7, 0.7)
