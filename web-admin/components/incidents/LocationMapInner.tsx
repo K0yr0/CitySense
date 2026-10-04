@@ -6,7 +6,8 @@ import { useMemo } from "react";
 import Map, { NavigationControl } from "react-map-gl/maplibre";
 import { getSegments } from "@/lib/api";
 import { healthRGBA, sourceKind, sourceRGBA } from "@/lib/format";
-import { useApi, usePrefersDark } from "@/lib/hooks";
+import { useDarkTheme } from "@/lib/theme";
+import { useApi } from "@/lib/hooks";
 import { MAP_STYLE, MAPLIBRE_WORKER_URL } from "@/lib/map";
 import type { IncidentSummary, Segment } from "@/lib/types";
 import DeckOverlay from "../map/DeckOverlay";
@@ -17,7 +18,7 @@ const PAD_LAT = 0.003;
 
 /** Small map of one incident with the road / track health around it. Browser only (see LocationMap). */
 export default function LocationMapInner({ incident: i }: { incident: IncidentSummary }) {
-  const dark = usePrefersDark();
+  const dark = useDarkTheme();
   const bbox = [i.lon - PAD_LON, i.lat - PAD_LAT, i.lon + PAD_LON, i.lat + PAD_LAT].map((v) => v.toFixed(5)).join(",");
   const segments = useApi(`segments:near:${bbox}`, () => getSegments({ bbox }));
 

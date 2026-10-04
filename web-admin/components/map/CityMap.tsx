@@ -9,7 +9,8 @@ import Map, { NavigationControl, type MapRef, type ViewStateChangeEvent } from "
 import { getIncidents, getSegments, getVehicles } from "@/lib/api";
 import { type Filters, filtersQuery, hasFilters, matches } from "@/lib/filters";
 import { deptLabel, fmtScore, freshness, FRESHNESS_ALPHA, healthClass, healthClassRGBA, healthWord, sourceKind, statusLabel, timeAgo, typeLabel, workLabel } from "@/lib/format";
-import { useApi, useNow, usePrefersDark } from "@/lib/hooks";
+import { useDarkTheme } from "@/lib/theme";
+import { useApi, useNow } from "@/lib/hooks";
 import { MAP_STYLE, MAPLIBRE_WORKER_URL, WARSAW_VIEW } from "@/lib/map";
 import { incidentIconUrl } from "@/lib/mapIcons";
 import type { IncidentSummary, Segment, Vehicle } from "@/lib/types";
@@ -46,7 +47,7 @@ const NO_FILTERS: Filters = { department: "", status: "", work: "", q: "" };
  * `filters` (from the queue's "Show on the map"): show only matching incidents and fit the camera to them.
  */
 export default function CityMap({ focusId = null, filters = NO_FILTERS }: { focusId?: number | null; filters?: Filters }) {
-  const dark = usePrefersDark();
+  const dark = useDarkTheme();
   const router = useRouter();
   const mapRef = useRef<MapRef>(null);
   const positioned = useRef(false);

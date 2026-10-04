@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { JetBrains_Mono, Public_Sans } from "next/font/google";
 import AuthGate from "@/components/auth/AuthGate";
 import Header from "@/components/Header";
+import { THEME_SCRIPT } from "@/lib/themeScript";
 import "./globals.css";
 
 // Stitch design system: Public Sans for the interface, JetBrains Mono for ids, numbers and labels.
@@ -18,15 +19,15 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0e1424" },
-  ],
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
+    <html lang="en" className={`${sans.variable} ${mono.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="flex min-h-dvh flex-col">
         <Header />
         <AuthGate>{children}</AuthGate>

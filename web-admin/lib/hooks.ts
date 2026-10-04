@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useEffectEvent, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useEffectEvent, useState } from "react";
 
 interface ApiState<T> {
   key: string;
@@ -40,23 +40,6 @@ export function useApi<T>(key: string, fn: () => Promise<T>, intervalMs: number 
     updatedAt: state.at,
     reload,
   };
-}
-
-const darkQuery = "(prefers-color-scheme: dark)";
-
-function subscribeDark(cb: () => void) {
-  const mq = window.matchMedia(darkQuery);
-  mq.addEventListener("change", cb);
-  return () => mq.removeEventListener("change", cb);
-}
-
-/** Follows the OS colour scheme (used for the basemap and deck.gl colours). */
-export function usePrefersDark(): boolean {
-  return useSyncExternalStore(
-    subscribeDark,
-    () => window.matchMedia(darkQuery).matches,
-    () => false,
-  );
 }
 
 /** Re-renders every `ms` so relative times ("3 min ago") stay current. */

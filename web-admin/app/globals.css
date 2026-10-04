@@ -15,6 +15,7 @@
   --line: #e2e8f0;
   --line-strong: #cbd5e1;
   --accent: #0f2d59;
+  --brand: #0f2d59;
   --accent-hover: #1e3a8a;
   --accent-ink: #ffffff;
   --accent-soft: #e1ecf6;
@@ -36,36 +37,35 @@
   --elevation: 0 4px 6px -1px rgb(15 45 89 / 0.12), 0 0 0 1px #cbd5e1;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-    --bg: #090d16;
-    --surface: #0e1424;
-    --surface-2: #141c2e;
-    --ink: #f1f5f9;
-    --ink-2: #cbd5e1;
-    --muted: #94a3b8;
-    --line: #1e293b;
-    --line-strong: #334155;
-    --accent: #8db1f2;
-    --accent-hover: #a9c4f6;
-    --accent-ink: #0a1d3a;
-    --accent-soft: #15264a;
-    --focus: #60a5fa;
-    --report: #3b82f6;
-    --good: #16a34a;
-    --good-ink: #4ade80;
-    --good-soft: #0b2a1a;
-    --warn: #f59e0b;
-    --warn-ink: #fbbf24;
-    --warn-soft: #2a1f0a;
-    --crit: #ef4444;
-    --crit-ink: #f87171;
-    --crit-soft: #2c1214;
-    --chart-new: #3b82f6;
-    --chart-done: #16a34a;
-    --elevation: 0 4px 10px -2px rgb(0 0 0 / 0.5), 0 0 0 1px #334155;
-  }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --brand: #0b2147;
+  --bg: #090d16;
+  --surface: #0e1424;
+  --surface-2: #141c2e;
+  --ink: #f1f5f9;
+  --ink-2: #cbd5e1;
+  --muted: #94a3b8;
+  --line: #1e293b;
+  --line-strong: #334155;
+  --accent: #8db1f2;
+  --accent-hover: #a9c4f6;
+  --accent-ink: #0a1d3a;
+  --accent-soft: #15264a;
+  --focus: #60a5fa;
+  --report: #3b82f6;
+  --good: #16a34a;
+  --good-ink: #4ade80;
+  --good-soft: #0b2a1a;
+  --warn: #f59e0b;
+  --warn-ink: #fbbf24;
+  --warn-soft: #2a1f0a;
+  --crit: #ef4444;
+  --crit-ink: #f87171;
+  --crit-soft: #2c1214;
+  --chart-new: #3b82f6;
+  --chart-done: #16a34a;
+  --elevation: 0 4px 10px -2px rgb(0 0 0 / 0.5), 0 0 0 1px #334155;
 }
 
 @theme inline {
@@ -78,6 +78,7 @@
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
   --color-accent: var(--accent);
+  --color-brand: var(--brand);
   --color-accent-hover: var(--accent-hover);
   --color-accent-ink: var(--accent-ink);
   --color-accent-soft: var(--accent-soft);
@@ -162,17 +163,15 @@ body {
 .maplibregl-ctrl-group button + button {
   border-top-color: var(--line) !important;
 }
-@media (prefers-color-scheme: dark) {
-  .maplibregl-ctrl-group button .maplibregl-ctrl-icon {
-    filter: invert(1);
-  }
-  .maplibregl-ctrl-attrib {
-    background: rgba(14, 20, 36, 0.8) !important;
-    color: var(--ink-2);
-  }
-  .maplibregl-ctrl-attrib a {
-    color: var(--ink-2) !important;
-  }
+[data-theme="dark"] .maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+  filter: invert(1);
+}
+[data-theme="dark"] .maplibregl-ctrl-attrib {
+  background: rgba(14, 20, 36, 0.8) !important;
+  color: var(--ink-2);
+}
+[data-theme="dark"] .maplibregl-ctrl-attrib a {
+  color: var(--ink-2) !important;
 }
 
 @keyframes ce-pulse {
