@@ -183,13 +183,22 @@ export default function IncidentDetailView({ id }: { id: number }) {
   if (loading) return <DetailSkeleton />;
   if (!inc) {
     return (
-      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center px-6 py-16 text-center">
-        <IconAlert width={36} height={36} className="text-muted" />
-        <h1 className="mt-3 text-2xl font-semibold">Incident #{Number.isFinite(id) ? id : "?"} not found</h1>
-        <p className="mt-1 text-lg text-ink-2">It may have been merged into another incident or closed.</p>
-        <Link href="/incidents" className="mt-5 rounded-xl bg-accent px-4 py-2 font-semibold text-accent-ink">
-          Back to the queue
-        </Link>
+      <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-10 lg:px-6">
+        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-line border-l-4 border-l-warn bg-surface p-5">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-warn-soft text-warn-ink">
+            <IconAlert width={18} height={18} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-warn-ink">
+              Incident not found <span className="ml-1 rounded border border-line bg-surface-2 px-1.5 py-0.5 font-mono font-medium normal-case text-muted">HTTP 404</span>
+            </p>
+            <h1 className="mt-1 text-sm font-bold">Incident #{Number.isFinite(id) ? id : "?"} not found</h1>
+            <p className="text-xs text-ink-2">It may have been merged into another incident or closed.</p>
+          </div>
+          <Link href="/incidents" className="rounded-lg border border-line-strong bg-surface px-3 py-1.5 text-xs font-medium hover:bg-surface-2">
+            ← Back to the queue
+          </Link>
+        </div>
       </main>
     );
   }
@@ -218,9 +227,9 @@ export default function IncidentDetailView({ id }: { id: number }) {
             </div>
           </div>
           <div className="flex min-w-[16rem] items-center gap-6 self-start rounded-xl border border-line bg-surface p-4 md:self-auto">
-            <div className="flex-1">
-              <div className="mb-1 flex items-baseline justify-between">
-                <span className="text-xs font-medium text-muted">Priority score</span>
+            <div className="min-w-[7.5rem] flex-1">
+              <div className="mb-1 flex items-baseline justify-between gap-3">
+                <span className="whitespace-nowrap text-xs font-medium text-muted">Priority score</span>
                 <span className="font-mono text-base font-bold">{inc.score.toFixed(2)}</span>
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-surface-2">

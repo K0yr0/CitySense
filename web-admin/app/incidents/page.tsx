@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Incident queue" };
 export default function IncidentsPage() {
   // IncidentQueue reads its filters from the URL (useSearchParams), which needs a Suspense boundary.
   return (
-    <Suspense fallback={<main className="flex-1 px-6 py-16 text-center text-lg text-muted">Loading incidents…</main>}>
+    <Suspense fallback={<main className="flex-1 px-6 py-16 text-center text-sm text-muted">Loading incidents…</main>}>
       <IncidentQueue />
     </Suspense>
   );

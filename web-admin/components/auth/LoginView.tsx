@@ -6,6 +6,7 @@ import { DEV_LOGIN, GOOGLE_CLIENT_ID } from "@/lib/auth";
 import { USE_MOCK } from "@/lib/demo";
 import { usePrefersDark } from "@/lib/hooks";
 import { Logo } from "../Header";
+import { IconAlert } from "../icons";
 
 // Minimal typing for Google Identity Services (https://accounts.google.com/gsi/client).
 interface GoogleId {
@@ -96,16 +97,18 @@ export default function LoginView() {
   };
 
   return (
-    <main className="flex flex-1 items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-7 shadow-sm">
-        <div className="flex items-center gap-3">
-          <Logo size={40} />
+    <main className="grid-backdrop flex flex-1 items-center justify-center bg-bg px-4 py-12">
+      <div className="w-full max-w-[30rem] rounded-xl border border-line bg-surface p-9 shadow-lg">
+        <div className="flex items-center gap-4">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-lg border border-line bg-surface-2">
+            <Logo size={32} />
+          </span>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">CityEcho admin</h1>
-            <p className="text-ink-2">Warsaw municipal dashboard</p>
+            <h1 className="text-xl font-bold tracking-tight">CityEcho admin</h1>
+            <p className="text-sm text-muted">Warsaw municipal dashboard</p>
           </div>
         </div>
-        <p className="mt-5 text-lg text-ink-2">
+        <p className="mt-6 text-sm leading-relaxed text-ink-2">
           Sign in with a city account. Only emails on the admin list can open the incident queue, workflow and live map.
         </p>
 
@@ -113,14 +116,14 @@ export default function LoginView() {
           {showGoogle && <GoogleButton onToken={(t) => run(() => loginWithGoogle(t))} />}
 
           {showGoogle && showEmail && (
-            <div className="flex items-center gap-3 text-sm text-muted">
+            <div className="flex items-center gap-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-muted">
               <span className="h-px flex-1 bg-line" /> or <span className="h-px flex-1 bg-line" />
             </div>
           )}
 
           {showEmail && (
             <form onSubmit={onEmail} className="flex flex-col gap-2.5">
-              <label htmlFor="login-email" className="text-sm font-semibold text-ink-2">
+              <label htmlFor="login-email" className="text-xs font-medium text-ink-2">
                 {USE_MOCK ? "Demo mode: any email signs in as admin" : "Email (local testing, AUTH_DEV_LOGIN=1)"}
               </label>
               <input
@@ -131,12 +134,12 @@ export default function LoginView() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@um.warszawa.pl"
-                className="rounded-xl border border-line-strong bg-surface px-3.5 py-2.5 text-base outline-none focus:border-accent"
+                className="rounded-lg border border-line-strong bg-surface px-3.5 py-2.5 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
               />
               <button
                 type="submit"
                 disabled={busy}
-                className="rounded-xl bg-accent px-4 py-3 text-base font-semibold text-accent-ink hover:bg-accent-hover disabled:opacity-60"
+                className="mt-1 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-ink hover:bg-accent-hover disabled:opacity-60"
               >
                 {busy ? "Signing in…" : "Sign in"}
               </button>
@@ -144,14 +147,15 @@ export default function LoginView() {
           )}
 
           {!showGoogle && !showEmail && (
-            <p className="rounded-xl bg-warn-soft px-3.5 py-2.5 font-medium text-warn-ink">
+            <p className="rounded-lg border border-warn/40 bg-warn-soft px-3.5 py-2.5 text-xs font-medium text-warn-ink">
               No sign-in method is configured. Set NEXT_PUBLIC_GOOGLE_CLIENT_ID (or NEXT_PUBLIC_AUTH_DEV_LOGIN=1 for local testing).
             </p>
           )}
 
           {error && (
-            <p className="rounded-xl bg-crit-soft px-3.5 py-2.5 font-medium text-crit-ink" role="alert">
-              {error}
+            <p className="flex items-start gap-2.5 rounded-lg border border-crit/30 bg-crit-soft px-3.5 py-3 text-xs font-medium text-crit-ink" role="alert">
+              <IconAlert width={16} height={16} className="mt-px shrink-0" />
+              <span>{error}</span>
             </p>
           )}
         </div>

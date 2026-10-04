@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { photoUrl } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
 import type { IncidentReport } from "@/lib/types";
-import { IconX } from "../icons";
+import { IconCamera, IconX } from "../icons";
 
 /** Every citizen photo of the incident (anonymised by the backend), with a full-size viewer. */
 export default function PhotoGallery({ reports, alt }: { reports: IncidentReport[]; alt: string }) {
@@ -25,7 +25,13 @@ export default function PhotoGallery({ reports, alt }: { reports: IncidentReport
     return () => window.removeEventListener("keydown", onKey);
   }, [open, photos.length]);
 
-  if (!photos.length) return <p className="text-lg text-ink-2">No photos were attached to the reports.</p>;
+  if (!photos.length)
+    return (
+      <div className="flex flex-col items-center rounded-lg border border-dashed border-line-strong bg-surface-2/50 px-4 py-6 text-center">
+        <IconCamera width={24} height={24} className="text-muted" />
+        <p className="mt-2 text-sm font-medium text-ink">No photos were attached to the reports.</p>
+      </div>
+    );
   const current = open === null ? null : photos[open];
 
   return (
@@ -33,11 +39,11 @@ export default function PhotoGallery({ reports, alt }: { reports: IncidentReport
       <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {photos.map((p, i) => (
           <li key={p.report.id}>
-            <button type="button" onClick={() => setOpen(i)} className="group block w-full overflow-hidden rounded-xl border border-line text-left">
+            <button type="button" onClick={() => setOpen(i)} className="group block w-full overflow-hidden rounded-lg border border-line text-left">
               {/* eslint-disable-next-line @next/next/no-img-element -- served by the backend, any size */}
               <img src={p.src} alt={`${alt}, report #${p.report.id}`} className="aspect-[4/3] w-full object-cover transition-transform group-hover:scale-[1.03]" />
             </button>
-            <p className="mt-1 text-sm text-muted">{formatDateTime(p.report.created_at)}</p>
+            <p className="mt-1 font-mono text-[0.6875rem] text-muted">{formatDateTime(p.report.created_at)}</p>
           </li>
         ))}
       </ul>

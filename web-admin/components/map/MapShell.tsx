@@ -7,7 +7,7 @@ import { filtersFrom, filtersQuery } from "@/lib/filters";
 // MapLibre + deck.gl touch window/WebGL, so the map only ever renders in the browser.
 const CityMap = dynamic(() => import("./CityMap"), {
   ssr: false,
-  loading: () => <div className="absolute inset-0 grid place-items-center text-lg text-muted">Loading map…</div>,
+  loading: () => <div className="absolute inset-0 grid place-items-center text-sm text-muted">Loading map…</div>,
 });
 
 /**
