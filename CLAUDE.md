@@ -18,7 +18,7 @@ Three people, each working **on their own computer** and pushing to the same rep
 | | Person A: 📱 Mobile (citizens) | Person B: 🖥️ Web admin (city) | Person C: 📡 Sensor simulation and data |
 |---|---|---|---|
 | Main folders | `mobile/` (code in `mobile/src/`) | `web-admin/` | `backend/sensor/`, sensor scripts |
-| Task codes | M0–M7 | W0–W5 | S0–S6 |
+| Task codes | M0–M7 | W0–W6 | S0–S6 |
 | Migration numbers | 100–199 | 200–299 | 300–399 |
 
 **First thing:** run `git config --get cityecho.role`.
@@ -88,7 +88,7 @@ git push                                  # 5. small, frequent pushes
 
 ```
 A → M0 → M1 → M2 → M3 → M4 → M5 → M6 (→ M7)
-B → W0 → W1 → W2 → W3 → W4 → W5
+B → W0 → W1 → W2 → W3 → W4 → W5 → W6  (W6: admin map looks like the mobile map)
 C → S1 → S2 → S3 → S4 → S5 → S6  (S0 map: done)
 ```
 

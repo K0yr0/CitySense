@@ -116,6 +116,31 @@ If a contract must change: announce it in the group, the people involved approve
 | W3 | Work flow | **Not started → in progress → done**, who changed it and when. A field separate from the confidence status. **Done** → `trust.settle` is called, the question stops |
 | W4 | Live map (display) | Shows the `segments.health` and freshness that C writes; live bus/tram positions (the Warsaw API already works) |
 | W5 | Statistics | Report → incident → verified → done, average repair time, department load |
+| W6 | **Admin map looks like the mobile map** | Same road colours, pin colours, legend and controls as the citizen app, so both apps show the same picture. Details below |
+
+### W6: make the admin map match the mobile map (owner B)
+
+**Why:** today the two maps disagree. The same road can be yellow in the app and green on the admin
+map, and a pin's colour means "confidence" in the app but "source" on the admin map. On stage the
+jury sees both side by side.
+
+**Match exactly (reference: `mobile/src/lib/labels.ts`, `backend/api/mobile.py`):**
+
+| Element | Mobile (the reference) | Admin today | Change |
+|---|---|---|---|
+| Road colours | 4 classes: health ≥ 0.7 **good** `#1F9D55`, ≥ 0.4 **fair** `#F2B300`, below **poor** `#D93025`, no data **not measured** `#9AA0A6` | smooth red→yellow→green gradient with stops 0 / 0.5 / 1 (`healthRGBA` in `web-admin/lib/format.ts`) | Use the same 4 classes, thresholds and colours. Keep the admin's freshness fading on top (old data paler) |
+| Legend | Bar "Good · Fair · Poor · Not measured" with coloured swatches, top of the map | none | Add the same legend (same labels, same swatches) |
+| Problem markers | Pin coloured by **confidence status**: candidate `#9AA0A6`, likely `#F29900`, verified `#D93025`, dismissed/closed `#5F6368`; **work done** overrides with `#1F9D55` | circle coloured by **source** (report / sensor / both), size by score | Colour by status the same way (pin shape, e.g. deck.gl `IconLayer`). Keep size by score; show the source in the side panel instead of the colour |
+| Tapped problem | Card: type icon, address, "Status: likely (80%)", "Repair: in progress", "Reported by N people", Details | richer side panel | Keep the admin panel, but use the same status / repair wording and colour dots at the top |
+| Zoom | + / − and a separate **zoom-out** step, max ≈ all of Warsaw | `NavigationControl` + / − | Fine as is; optionally a "show all of Warsaw" button |
+| Layer toggles | "Problems" and "Road colours" chips | layer panel | Keep the panel; use the same two names |
+| Labels | English, Polish, Ukrainian | English | Same English words as the app (`mobile/src/i18n/map.ts`) |
+
+**Keep the admin extras:** live buses and trams, freshness fading, work-status filters, queue
+filters on the map. They are admin-only on purpose; citizens still never see sensor data.
+
+**Done when:** a screenshot of the admin map and the app's map of the same area shows the same road
+colours and pin colours; `npm run build` passes.
 
 ## 📡 Person C: sensor simulation and data tasks
 
@@ -171,7 +196,7 @@ Day 0:  A → backend foundation + sign-in + mobile/ skeleton   [SHARED commits]
         B → frontend/ → web-admin/ move
         C → S0 (map segments)
 Then:   A → M0 → M1 → M2 → M3 → M4 → M5 → M6 (→ M7)
-        B → W0 → W1 → W2 → W3 → W4 → W5
+        B → W0 → W1 → W2 → W3 → W4 → W5 → W6
         C → S1 → S2 → S3 → S4 → S5 → S6
 ```
 
