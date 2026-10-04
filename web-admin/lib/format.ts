@@ -5,7 +5,7 @@ export const TYPE_LABEL: Record<IssueType, string> = {
   tram_track: "Tram track defect",
   streetlight: "Streetlight out",
   flooding: "Flooding",
-  waste: "Waste",
+  waste: "Litter", // same word as the citizen app
   other: "Other",
 };
 
@@ -101,30 +101,6 @@ export function sourceRGBA(kind: SourceKind, dark: boolean): RGBA {
   return [c[0], c[1], c[2], 235];
 }
 
-const HEALTH_STOPS: [number, [number, number, number]][] = [
-  [0, [220, 38, 38]], // critical
-  [0.5, [245, 158, 11]], // warning
-  [1, [22, 163, 74]], // good
-];
-
-/** Segment health 0..1 -> red..amber..green; null -> grey. */
-export function healthRGBA(h: number | null | undefined, dark: boolean): RGBA {
-  if (h === null || h === undefined || Number.isNaN(h)) {
-    return dark ? [120, 120, 115, 150] : [150, 149, 143, 150];
-  }
-  const x = Math.min(1, Math.max(0, h));
-  const i = x <= 0.5 ? 0 : 1;
-  const [x0, c0] = HEALTH_STOPS[i];
-  const [x1, c1] = HEALTH_STOPS[i + 1];
-  const f = (x - x0) / (x1 - x0);
-  return [
-    Math.round(c0[0] + (c1[0] - c0[0]) * f),
-    Math.round(c0[1] + (c1[1] - c0[1]) * f),
-    Math.round(c0[2] + (c1[2] - c0[2]) * f),
-    230,
-  ];
-}
-
 /** How recent a health measurement is: fresh (< 1 h), today (< 24 h), older (< 7 d) or stale. */
 export type Freshness = "fresh" | "today" | "older" | "stale";
 
@@ -138,30 +114,70 @@ export function freshness(iso: string | null | undefined, now: number): Freshnes
 /** Map opacity per freshness: old measurements fade so the live picture stands out. */
 export const FRESHNESS_ALPHA: Record<Freshness, number> = { fresh: 235, today: 190, older: 120, stale: 70 };
 
-/** Map class of a segment: three readable colours instead of a gradient (same cut-offs as healthWord). */
-export type HealthClass = "good" | "worn" | "poor" | "unknown";
+/*
+ * W6: the admin map shows the same picture as the citizen app. Classes, cut-offs, colours and words
+ * below are copied from mobile/src/lib/labels.ts + mobile/src/i18n (labels, map) and
+ * backend/api/mobile.py (GOOD_AT 0.7, FAIR_AT 0.4). Change them only together with A.
+ */
+export type HealthClass = "good" | "fair" | "poor" | "unknown";
+
+export const HEALTH_CLASSES: HealthClass[] = ["good", "fair", "poor", "unknown"];
 
 export function healthClass(h: number | null | undefined): HealthClass {
   if (h === null || h === undefined || Number.isNaN(h)) return "unknown";
-  return h >= 0.75 ? "good" : h >= 0.45 ? "worn" : "poor";
+  return h >= 0.7 ? "good" : h >= 0.4 ? "fair" : "poor";
 }
 
-/** Deck.gl colour per health class (status ramp: good / warning / critical; grey = not measured). */
-export function healthClassRGBA(c: HealthClass, dark: boolean): RGBA {
-  // Stitch: good #16a34a, worn #f59e0b, poor #dc2626, unmeasured slate.
-  const light = { good: [22, 163, 74, 235], worn: [245, 158, 11, 240], poor: [220, 38, 38, 245], unknown: [100, 116, 139, 140] } as const;
-  const night = { good: [16, 185, 129, 235], worn: [245, 158, 11, 240], poor: [239, 68, 68, 245], unknown: [100, 116, 139, 150] } as const;
-  const v = (dark ? night : light)[c];
-  return [v[0], v[1], v[2], v[3]];
-}
+export const HEALTH_HEX: Record<HealthClass, string> = { good: "#1F9D55", fair: "#F2B300", poor: "#D93025", unknown: "#9AA0A6" };
 
-export const HEALTH_CLASS_LABEL: Record<HealthClass, string> = { good: "Good", worn: "Worn", poor: "Poor", unknown: "Not measured" };
+export const HEALTH_CLASS_LABEL: Record<HealthClass, string> = { good: "Good", fair: "Fair", poor: "Poor", unknown: "Not measured" };
 
 export function healthWord(h: number | null | undefined): string {
-  if (h === null || h === undefined) return "Not measured";
-  if (h >= 0.75) return "Good";
-  if (h >= 0.45) return "Worn";
-  return "Poor";
+  return HEALTH_CLASS_LABEL[healthClass(h)];
+}
+
+function hexRGBA(hex: string, alpha = 255): RGBA {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255, alpha];
+}
+
+/** Deck.gl colour per health class (same hex in both themes, like the app). */
+export function healthClassRGBA(c: HealthClass): RGBA {
+  return hexRGBA(HEALTH_HEX[c], c === "unknown" ? 150 : 240);
+}
+
+/** Pin colour by confidence status; work done overrides with green (app: incidentColor). */
+export const PIN_STATUS_HEX: Record<IncidentStatus, string> = {
+  candidate: "#9AA0A6",
+  likely: "#F29900",
+  verified: "#D93025",
+  dismissed: "#5F6368",
+  closed: "#5F6368",
+};
+export const WORK_HEX: Record<WorkStatus, string> = { todo: "#9AA0A6", in_progress: "#1A73E8", done: "#1F9D55" };
+
+export function pinHex(i: Pick<IncidentSummary, "status" | "work_status">): string {
+  return i.work_status === "done" ? WORK_HEX.done : (PIN_STATUS_HEX[i.status] ?? PIN_STATUS_HEX.candidate);
+}
+
+export function pinRGBA(i: Pick<IncidentSummary, "status" | "work_status">): RGBA {
+  return hexRGBA(pinHex(i));
+}
+
+/** The app's citizen-facing words, used on the map so both apps say the same thing. */
+export const APP_STATUS_LABEL: Record<IncidentStatus, string> = {
+  candidate: "Unconfirmed",
+  likely: "Likely",
+  verified: "Verified",
+  dismissed: "Not found",
+  closed: "Closed",
+};
+export const APP_WORK_LABEL: Record<WorkStatus, string> = { todo: "Not started", in_progress: "City is working on it", done: "Fixed" };
+
+/** "Reported by 3 people" (app: map.card.reportedBy / noReports). */
+export function reportedBy(n: number): string {
+  if (n <= 0) return "No reports yet";
+  return `Reported by ${n} ${n === 1 ? "person" : "people"}`;
 }
 
 export function timeAgo(iso: string | null | undefined, now: number = Date.now()): string {

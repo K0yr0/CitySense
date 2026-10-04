@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { SOURCE_LABEL, SOURCE_VAR, timeAgo, type SourceKind } from "@/lib/format";
+import { APP_STATUS_LABEL, APP_WORK_LABEL, HEALTH_CLASS_LABEL, HEALTH_CLASSES, HEALTH_HEX, PIN_STATUS_HEX, timeAgo, WORK_HEX } from "@/lib/format";
 import { useNow } from "@/lib/hooks";
 import { IconLayers } from "../icons";
 
@@ -10,16 +10,34 @@ export interface LayerToggles {
   segments: boolean;
   incidents: boolean;
   vehicles: boolean;
-  hideDone: boolean; // hide incidents the city already marked done
+  showDone: boolean; // pins the city already fixed (green, like the app)
+  showClosed: boolean; // dismissed / closed incidents (not on the app's map)
 }
 
-// Same three classes as the map (lib/format healthClass), plus "not measured".
-const HEALTH_KEY: { label: string; color: string; quiet?: boolean }[] = [
-  { label: "Good", color: "var(--good)" },
-  { label: "Worn", color: "var(--warn)" },
-  { label: "Poor", color: "var(--crit)" },
-  { label: "Not measured", color: "var(--line-strong)", quiet: true },
+// Pin colours, in the app's words (lib/format: same hex as mobile/src/lib/labels.ts).
+const PIN_KEY: { label: string; color: string }[] = [
+  { label: APP_STATUS_LABEL.candidate, color: PIN_STATUS_HEX.candidate },
+  { label: APP_STATUS_LABEL.likely, color: PIN_STATUS_HEX.likely },
+  { label: APP_STATUS_LABEL.verified, color: PIN_STATUS_HEX.verified },
+  { label: APP_WORK_LABEL.done, color: WORK_HEX.done },
 ];
+
+/** Road colour key at the top of the map: the same bar as the citizen app (colour classes only). */
+export function HealthLegend({ className = "" }: { className?: string }) {
+  return (
+    <ul
+      aria-label="Road colours"
+      className={`absolute left-4 top-[4.25rem] z-10 flex items-center gap-3.5 rounded-full border border-line bg-surface/95 px-4 py-2 text-xs font-medium text-ink shadow-lg backdrop-blur xl:left-1/2 xl:top-4 xl:-translate-x-1/2 ${className}`}
+    >
+      {HEALTH_CLASSES.map((h) => (
+        <li key={h} className="flex items-center gap-1.5 whitespace-nowrap">
+          <span className="h-2.5 w-4 rounded-full" style={{ background: HEALTH_HEX[h] }} />
+          {HEALTH_CLASS_LABEL[h]}
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 function Layer({ checked, onToggle, title, count, children }: { checked: boolean; onToggle: () => void; title: string; count?: number; children: ReactNode }) {
   return (
@@ -89,34 +107,33 @@ export default function LayerPanel({
       </div>
 
       <div className="space-y-3.5 overflow-y-auto p-3.5">
-        <Layer checked={toggles.segments} onToggle={() => flip("segments")} title="Road & track health" count={counts.segments}>
-          <ul className="grid grid-cols-2 gap-x-2 gap-y-1.5">
-            {HEALTH_KEY.map((k) => (
-              <li key={k.label} className="flex items-center gap-1.5">
-                <span className="h-1 w-3 rounded-full" style={{ background: k.color }} />
-                <span className={k.quiet ? "text-muted" : "text-ink-2"}>{k.label}</span>
-              </li>
-            ))}
-          </ul>
+        <Layer checked={toggles.segments} onToggle={() => flip("segments")} title="Road colours" count={counts.segments}>
+          <p className="leading-snug text-ink-2">Good · Fair · Poor · Not measured, same colours as the citizen app.</p>
           <p className="text-[0.625rem] leading-tight text-muted">
-            Thicker = tram track. Faded = measured long ago. Latest: {latestMeasurement ? timeAgo(latestMeasurement, now) : "—"}.
+            Thicker = tram track. Faded = measured long ago (admin only). Latest: {latestMeasurement ? timeAgo(latestMeasurement, now) : "—"}.
           </p>
         </Layer>
 
-        <Layer checked={toggles.incidents} onToggle={() => flip("incidents")} title="Incidents" count={counts.incidents}>
-          <ul className="space-y-1">
-            {(["report", "sensor", "both"] as SourceKind[]).map((k) => (
-              <li key={k} className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ background: SOURCE_VAR[k] }} />
-                <span className="text-ink-2">{SOURCE_LABEL[k]}</span>
+        <Layer checked={toggles.incidents} onToggle={() => flip("incidents")} title="Problems" count={counts.incidents}>
+          <ul className="grid grid-cols-2 gap-x-2 gap-y-1">
+            {PIN_KEY.map((k) => (
+              <li key={k.label} className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: k.color }} />
+                <span className="text-ink-2">{k.label}</span>
               </li>
             ))}
           </ul>
-          <p className="text-[0.625rem] leading-tight text-muted">The icon shows the type; larger = higher priority.</p>
-          <label className="flex cursor-pointer items-center gap-1.5 pt-0.5 text-ink-2">
-            <input type="checkbox" checked={toggles.hideDone} onChange={() => flip("hideDone")} className="h-3 w-3 accent-[var(--accent)]" />
-            Hide finished work
-          </label>
+          <p className="text-[0.625rem] leading-tight text-muted">Pin colour = confidence (green once fixed), as in the app. The icon shows the type; larger = higher priority.</p>
+          <div className={filter ? "space-y-1.5 opacity-50" : "space-y-1.5"} title={filter ? "The queue filter decides which problems are shown" : undefined}>
+            <label className="flex cursor-pointer items-center gap-1.5 pt-0.5 text-ink-2">
+              <input type="checkbox" checked={toggles.showDone} onChange={() => flip("showDone")} className="h-3 w-3 accent-[var(--accent)]" disabled={Boolean(filter)} />
+              Show fixed problems
+            </label>
+            <label className="flex cursor-pointer items-center gap-1.5 text-ink-2">
+              <input type="checkbox" checked={toggles.showClosed} onChange={() => flip("showClosed")} className="h-3 w-3 accent-[var(--accent)]" disabled={Boolean(filter)} />
+              Show not found / closed <span className="text-muted">(admin only)</span>
+            </label>
+          </div>
           {filter && (
             <div className="mt-1 flex items-center justify-between gap-2 rounded border border-line bg-surface-2 p-2 text-[0.625rem]">
               <div className="min-w-0">

@@ -5,7 +5,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { useMemo } from "react";
 import Map, { NavigationControl } from "react-map-gl/maplibre";
 import { getSegments } from "@/lib/api";
-import { healthRGBA, sourceKind, sourceRGBA } from "@/lib/format";
+import { healthClass, healthClassRGBA, pinRGBA } from "@/lib/format";
 import { useDarkTheme } from "@/lib/theme";
 import { useApi } from "@/lib/hooks";
 import { MAP_STYLE, MAPLIBRE_WORKER_URL } from "@/lib/map";
@@ -29,12 +29,11 @@ export default function LocationMapInner({ incident: i }: { incident: IncidentSu
         id: "near-segments",
         data: segments.data ?? [],
         getPath: (d) => d.path,
-        getColor: (d) => healthRGBA(d.health, dark),
+        getColor: (d) => healthClassRGBA(healthClass(d.health)),
         getWidth: (d) => (d.mode === "tram" ? 6 : 4),
         widthUnits: "pixels",
         capRounded: true,
         jointRounded: true,
-        updateTriggers: { getColor: [dark] },
       }),
       new ScatterplotLayer<IncidentSummary>({
         id: "incident",
@@ -42,12 +41,12 @@ export default function LocationMapInner({ incident: i }: { incident: IncidentSu
         getPosition: (d) => [d.lon, d.lat],
         getRadius: 11,
         radiusUnits: "pixels",
-        getFillColor: (d) => sourceRGBA(sourceKind(d), dark),
+        getFillColor: (d) => pinRGBA(d),
         stroked: true,
         getLineColor: ring,
         getLineWidth: 3,
         lineWidthUnits: "pixels",
-        updateTriggers: { getFillColor: [dark], getLineColor: [dark] },
+        updateTriggers: { getLineColor: [dark] },
       }),
     ];
   }, [segments.data, i, dark]);

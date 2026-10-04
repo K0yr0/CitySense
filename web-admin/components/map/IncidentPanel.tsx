@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { deptLabel, timeAgo, typeLabel } from "@/lib/format";
+import { APP_STATUS_LABEL, APP_WORK_LABEL, deptLabel, fmtPct, pinHex, PIN_STATUS_HEX, reportedBy, timeAgo, typeLabel, WORK_HEX } from "@/lib/format";
 import { useNow } from "@/lib/hooks";
+import { useDarkTheme } from "@/lib/theme";
+import { incidentPinUrl } from "@/lib/mapIcons";
 import type { IncidentSummary } from "@/lib/types";
 import { IconArrowRight, IconX } from "../icons";
-import { ConfidenceMeter, IncidentBadges, ScoreBar, SourceTag, StatusChip, verificationText, WorkChip } from "../ui";
+import { ConfidenceMeter, IncidentBadges, ScoreBar, SourceTag, verificationText } from "../ui";
 
 function Fact({ label, children, mono = true }: { label: string; children: ReactNode; mono?: boolean }) {
   return (
@@ -20,6 +22,7 @@ function Fact({ label, children, mono = true }: { label: string; children: React
 /** Stitch "Overlay 2": the selected incident, top-right on desktop and a bottom sheet on phones. */
 export default function IncidentPanel({ incident: i, onClose }: { incident: IncidentSummary; onClose: () => void }) {
   const now = useNow();
+  const dark = useDarkTheme();
   return (
     <aside
       className="absolute inset-x-3 bottom-3 z-10 max-h-[70%] overflow-y-auto rounded-xl border border-line bg-surface/95 text-ink shadow-lg backdrop-blur md:inset-x-auto md:bottom-auto md:right-4 md:top-4 md:max-h-[calc(100%-6rem)] md:w-[22.5rem]"
@@ -33,14 +36,29 @@ export default function IncidentPanel({ incident: i, onClose }: { incident: Inci
       </div>
 
       <div className="space-y-4 px-5 py-4">
-        <div>
-          <h2 className="text-xl font-bold leading-snug tracking-tight">{typeLabel(i.type)}</h2>
-          <p className="mt-0.5 text-xs font-medium text-muted">{i.address ?? `${i.lat.toFixed(5)}, ${i.lon.toFixed(5)}`}</p>
+        <div className="flex items-start gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element -- same SVG data URL as the map pin */}
+          <img src={incidentPinUrl(i, dark)} alt="" width={28} height={35} className="mt-0.5 shrink-0" />
+          <div className="min-w-0">
+            <h2 className="text-xl font-bold leading-snug tracking-tight">{typeLabel(i.type)}</h2>
+            <p className="mt-0.5 text-xs font-medium text-muted">{i.address ?? `${i.lat.toFixed(5)}, ${i.lon.toFixed(5)}`}</p>
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5">
-          <StatusChip status={i.status} confidence={i.confidence} />
-          <WorkChip work={i.work_status} />
+        {/* Same lines as the citizen app's card (mobile map.card), so both apps say the same thing. */}
+        <ul className="space-y-1.5 text-sm" title={`Pin colour ${pinHex(i)}`}>
+          <li className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: PIN_STATUS_HEX[i.status] }} />
+            Status: <span className="font-semibold">{APP_STATUS_LABEL[i.status]}</span> ({fmtPct(i.confidence)})
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: WORK_HEX[i.work_status] }} />
+            Repair: <span className="font-semibold">{APP_WORK_LABEL[i.work_status]}</span>
+          </li>
+          <li className="pl-[1.125rem] text-xs text-muted">{reportedBy(i.report_count)}</li>
+        </ul>
+
+        <div className="flex flex-wrap items-center gap-1.5 empty:hidden">
           <IncidentBadges incident={i} />
         </div>
 

@@ -8,15 +8,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Map, { NavigationControl, type MapRef, type ViewStateChangeEvent } from "react-map-gl/maplibre";
 import { getIncidents, getSegments, getVehicles } from "@/lib/api";
 import { type Filters, filtersQuery, hasFilters, matches } from "@/lib/filters";
-import { deptLabel, fmtScore, freshness, FRESHNESS_ALPHA, healthClass, healthClassRGBA, healthWord, sourceKind, statusLabel, timeAgo, typeLabel, workLabel } from "@/lib/format";
+import { APP_STATUS_LABEL, APP_WORK_LABEL, deptLabel, fmtPct, fmtScore, freshness, FRESHNESS_ALPHA, healthClass, healthClassRGBA, healthWord, statusLabel, timeAgo, typeLabel, workLabel } from "@/lib/format";
 import { useDarkTheme } from "@/lib/theme";
 import { useApi, useNow } from "@/lib/hooks";
 import { MAP_STYLE, MAPLIBRE_WORKER_URL, WARSAW_VIEW } from "@/lib/map";
-import { incidentIconUrl } from "@/lib/mapIcons";
+import { incidentPinUrl, PIN_H, PIN_W } from "@/lib/mapIcons";
 import type { IncidentSummary, Segment, Vehicle } from "@/lib/types";
 import DeckOverlay from "./DeckOverlay";
 import IncidentPanel from "./IncidentPanel";
-import LayerPanel, { type LayerToggles } from "./LayerPanel";
+import LayerPanel, { HealthLegend, type LayerToggles } from "./LayerPanel";
 
 type Box = [number, number, number, number];
 type RGBA = [number, number, number, number];
@@ -40,6 +40,9 @@ function filterLabel(f: Filters): string {
 
 const incidentRadius = (d: IncidentSummary) => 7 + 13 * Math.min(1, Math.max(0, (d.score ?? 0) / 1.5));
 
+// Like the citizen app: dismissed / closed incidents are not pins (an admin can switch them on).
+const HIDDEN_STATUSES = ["dismissed", "closed"];
+
 const NO_FILTERS: Filters = { department: "", status: "", work: "", q: "" };
 
 /**
@@ -52,7 +55,8 @@ export default function CityMap({ focusId = null, filters = NO_FILTERS }: { focu
   const mapRef = useRef<MapRef>(null);
   const positioned = useRef(false);
   const filtered = hasFilters(filters);
-  const [toggles, setToggles] = useState<LayerToggles>({ segments: true, incidents: true, vehicles: true, hideDone: true });
+  // Defaults show the same pins as the citizen app: fixed ones in green, no dismissed / closed.
+  const [toggles, setToggles] = useState<LayerToggles>({ segments: true, incidents: true, vehicles: true, showDone: true, showClosed: false });
   // Re-evaluates segment freshness (fading) and tooltip ages once a minute.
   const now = useNow(60_000);
   const [box, setBox] = useState<Box>(INITIAL_BOX);
@@ -78,10 +82,14 @@ export default function CityMap({ focusId = null, filters = NO_FILTERS }: { focu
   const shownIncidents = useMemo(
     () =>
       (incidents.data ?? []).filter(
-        // A work filter from the queue (e.g. "done") wins over the "hide finished work" toggle.
-        (i) => matches(i, filters) && (filters.work !== "" || !toggles.hideDone || i.work_status !== "done"),
+        // From the queue ("Show these N on the map") the map shows exactly those N; the panel toggles
+        // only shape the unfiltered map.
+        (i) =>
+          filtered
+            ? matches(i, filters)
+            : (toggles.showDone || i.work_status !== "done") && (toggles.showClosed || !HIDDEN_STATUSES.includes(i.status)),
       ),
-    [incidents.data, toggles.hideDone, filters],
+    [incidents.data, toggles.showDone, toggles.showClosed, filters, filtered],
   );
   // From all incidents: a deep link to finished work still opens its panel even when done ones are hidden.
   const selected = incidents.data?.find((i) => i.id === selectedId) ?? null;
@@ -127,22 +135,21 @@ export default function CityMap({ focusId = null, filters = NO_FILTERS }: { focu
 
   const layers = useMemo(() => {
     const ring: RGBA = dark ? [14, 20, 36, 255] : [255, 255, 255, 255];
-    const accent: RGBA = dark ? [141, 177, 242, 255] : [15, 45, 89, 255];
     const casing: RGBA = dark ? [0, 0, 0, 200] : [255, 255, 255, 235];
     const all = segments.data ?? [];
     const measured = all.filter((d) => d.health != null);
     const unmeasured = all.filter((d) => d.health == null);
     // Old measurements fade; no timestamp = age unknown (pipeline may not write it yet): not faded.
     const fade = (d: Segment, a: number) => (d.updated_at ? Math.round((a * FRESHNESS_ALPHA[freshness(d.updated_at, now)]) / 235) : a);
-    // Highest priority drawn last, so it sits on top where markers overlap.
-    const byScore = [...shownIncidents].sort((a, b) => (a.score ?? 0) - (b.score ?? 0));
+    // Highest priority drawn last, so it sits on top where pins overlap; the selected one above all.
+    const byScore = [...shownIncidents].sort((a, b) => (a.id === selectedId ? 1 : 0) - (b.id === selectedId ? 1 : 0) || (a.score ?? 0) - (b.score ?? 0));
     return [
       toggles.segments &&
         new PathLayer<Segment>({
           id: "segments-unmeasured",
           data: unmeasured,
           getPath: (d) => d.path,
-          getColor: healthClassRGBA("unknown", dark),
+          getColor: healthClassRGBA("unknown"),
           getWidth: (d) => (d.mode === "tram" ? 2 : 1.5),
           widthUnits: "pixels",
           pickable: true,
@@ -167,7 +174,7 @@ export default function CityMap({ focusId = null, filters = NO_FILTERS }: { focu
           data: measured,
           getPath: (d) => d.path,
           getColor: (d) => {
-            const c = healthClassRGBA(healthClass(d.health), dark);
+            const c = healthClassRGBA(healthClass(d.health));
             return [c[0], c[1], c[2], fade(d, c[3])];
           },
           getWidth: (d) => (d.mode === "tram" ? 6 : 5),
@@ -221,33 +228,19 @@ export default function CityMap({ focusId = null, filters = NO_FILTERS }: { focu
           data: byScore,
           getPosition: (d) => [d.lon, d.lat],
           getIcon: (d) => {
-            const source = sourceKind(d);
-            return { url: incidentIconUrl(d.type, source, dark), id: `${d.type}:${source}:${dark ? 1 : 0}`, width: 64, height: 64 };
+            const url = incidentPinUrl(d, dark, d.id === selectedId);
+            return { url, id: url, width: PIN_W, height: PIN_H, anchorY: PIN_H };
           },
-          getSize: (d) => incidentRadius(d) * 2 + 4,
+          // Pin height in pixels; larger = higher priority (the selected pin a little larger still).
+          getSize: (d) => (incidentRadius(d) * 2 + 4) * 1.3 + (d.id === selectedId ? 8 : 0),
           sizeUnits: "pixels",
           pickable: true,
           autoHighlight: true,
           highlightColor: [255, 255, 255, 60],
-          updateTriggers: { getIcon: [dark] },
-        }),
-      toggles.incidents &&
-        selected &&
-        new ScatterplotLayer<IncidentSummary>({
-          id: "selected",
-          data: [selected],
-          getPosition: (d) => [d.lon, d.lat],
-          getRadius: (d) => incidentRadius(d) + 7,
-          radiusUnits: "pixels",
-          filled: false,
-          stroked: true,
-          getLineColor: accent,
-          getLineWidth: 3,
-          lineWidthUnits: "pixels",
-          updateTriggers: { getLineColor: [dark] },
+          updateTriggers: { getIcon: [dark, selectedId], getSize: [selectedId] },
         }),
     ];
-  }, [toggles, segments.data, vehicles.data, shownIncidents, selected, dark, now, zoom]);
+  }, [toggles, segments.data, vehicles.data, shownIncidents, selectedId, dark, now, zoom]);
 
   const getTooltip = ({ object, layer }: PickingInfo) => {
     if (!object || !layer) return null;
@@ -264,7 +257,7 @@ export default function CityMap({ focusId = null, filters = NO_FILTERS }: { focu
       text = `${v.kind === "tram" ? "Tram" : "Bus"} ${v.line}\nposition ${timeAgo(v.ts, Date.now())}`;
     } else if (layer.id === "incidents") {
       const i = object as IncidentSummary;
-      text = `${typeLabel(i.type)} · score ${fmtScore(i.score)}\n${i.address ?? ""}\n${statusLabel(i.status)} · work: ${workLabel(i.work_status).toLowerCase()}`;
+      text = `${typeLabel(i.type)} · score ${fmtScore(i.score)}\n${i.address ?? ""}\nStatus: ${APP_STATUS_LABEL[i.status]} (${fmtPct(i.confidence)}) · Repair: ${APP_WORK_LABEL[i.work_status].toLowerCase()}`;
     } else return null;
     return {
       text,
@@ -322,6 +315,8 @@ export default function CityMap({ focusId = null, filters = NO_FILTERS }: { focu
         open={layersOpen}
         setOpen={setLayersOpen}
       />
+      {/* Below xl the legend sits under the "Layers" button, so it steps aside while the panel is open. */}
+      {toggles.segments && <HealthLegend className={layersOpen ? "max-xl:hidden" : ""} />}
       {selected && <IncidentPanel incident={selected} onClose={() => select(null)} />}
     </div>
   );
